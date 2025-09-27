@@ -1,0 +1,6 @@
+@LegalMateAI.API_HostAddress = http://localhost:5101
+
+GET {{LegalMateAI.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
