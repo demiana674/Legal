@@ -1,0 +1,13 @@
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\bin\Debug\net9.0\LegalMateAI.Domain.deps.json
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\bin\Debug\net9.0\LegalMateAI.Domain.dll
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\bin\Debug\net9.0\LegalMateAI.Domain.pdb
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.csproj.AssemblyReference.cache
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.AssemblyInfoInputs.cache
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.AssemblyInfo.cs
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.csproj.CoreCompileInputs.cache
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.sourcelink.json
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.dll
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\refint\LegalMateAI.Domain.dll
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\LegalMateAI.Domain.pdb
+C:\Users\demia\LegalMateAI\LegalMateAI.Domain\obj\Debug\net9.0\ref\LegalMateAI.Domain.dll

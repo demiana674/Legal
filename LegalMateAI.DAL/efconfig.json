@@ -1,0 +1,5 @@
+{
+  "startupProject": "../LegalMateAI.API/LegalMateAI.API.csproj",
+  "contextAssembly": "LegalMateAI.DAL",
+  "contextType": "LegalMateAI.DAL.DBContext.LegalMateDbContext"
+}

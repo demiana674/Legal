@@ -36,6 +36,12 @@
               "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.BLL\\LegalMateAI.BLL.csproj": {
                 "projectPath": "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.BLL\\LegalMateAI.BLL.csproj"
               },
+              "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj": {
+                "projectPath": "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj"
+              },
+              "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj": {
+                "projectPath": "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj"
+              },
               "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj": {
                 "projectPath": "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj"
               }
@@ -58,6 +64,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "AutoMapper": {
+              "target": "Package",
+              "version": "[15.0.1, )"
+            },
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
               "version": "[12.0.1, )"
@@ -156,6 +166,20 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
+          "dependencies": {
+            "AutoMapper": {
+              "target": "Package",
+              "version": "[15.0.1, )"
+            },
+            "AutoMapper.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[12.0.1, )"
+            },
+            "FluentValidation": {
+              "target": "Package",
+              "version": "[12.0.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -236,6 +260,20 @@
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
               "version": "[9.0.9, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Microsoft.Extensions.Configuration": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Microsoft.Extensions.Configuration.Json": {
+              "target": "Package",
+              "version": "[9.0.9, )"
             }
           },
           "imports": [
@@ -304,6 +342,16 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -352,7 +400,14 @@
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj": {
+                "projectPath": "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj"
+              },
+              "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj": {
+                "projectPath": "C:\\Users\\demia\\LegalMateAI\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj"
+              }
+            }
           }
         },
         "warningProperties": {

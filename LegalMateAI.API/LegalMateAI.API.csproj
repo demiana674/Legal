@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+  <PackageReference Include="AutoMapper" Version="15.0.1" />
+  
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.9">
@@ -17,8 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LegalMateAI.BLL\LegalMateAI.BLL.csproj" />
-    <ProjectReference Include="..\LegalMateAI.DTOs\LegalMateAI.DTOs.csproj" />
-  </ItemGroup>
+  <ProjectReference Include="..\LegalMateAI.BLL\LegalMateAI.BLL.csproj" />
+  <ProjectReference Include="..\LegalMateAI.DAL\LegalMateAI.DAL.csproj" />
+  <ProjectReference Include="..\LegalMateAI.DTOs\LegalMateAI.DTOs.csproj" />
+  <ProjectReference Include="..\LegalMateAI.Domain\LegalMateAI.Domain.csproj" />
+</ItemGroup>
+
 
 </Project>

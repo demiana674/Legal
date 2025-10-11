@@ -1,4 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+<ItemGroup>
+      <ProjectReference Include="..\LegalMateAI.DAL\LegalMateAI.DAL.csproj" />
+    <ProjectReference Include="..\LegalMateAI.Domain\LegalMateAI.Domain.csproj" />
+
+</ItemGroup>
+
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
