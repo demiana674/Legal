@@ -1,0 +1,12 @@
+$kind: http-request
+name: "TC-064: Get All Users"
+url: "{{baseUrl}}/api/admin/users"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: pm.test("Status code is 200", function () {
+      pm.response.to.have.status(200); });
+    language: text/javascript
+order: 4000

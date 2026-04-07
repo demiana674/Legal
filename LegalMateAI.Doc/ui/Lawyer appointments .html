@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المواعيد — لوحة المحامي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C8A84B;
+      --gold-light: #E8C96A;
+      --gold-dim: rgba(200,168,75,0.11);
+      --gold-border: rgba(200,168,75,0.22);
+      --dark: #07090F;
+      --dark-mid: #0C1019;
+      --dark-panel: #101520;
+      --dark-card: #141A28;
+      --dark-hover: #192030;
+      --text: #EBE7DB;
+      --text-dim: #78746A;
+      --text-muted: #323028;
+      --green: #34D68A;
+      --green-dim: rgba(52,214,138,0.1);
+      --red: #EF5D58;
+      --red-dim: rgba(239,93,88,0.1);
+      --blue: #4C9EE6;
+      --blue-dim: rgba(76,158,230,0.1);
+      --amber: #F4A420;
+      --amber-dim: rgba(244,164,32,0.1);
+      --purple: #9B6FF5;
+      --purple-dim: rgba(155,111,245,0.1);
+      --sidebar-w: 250px;
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(200,168,75,0.18); border-radius: 2px; }
+
+    body { font-family: 'Cairo', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; direction: rtl; }
+
+    /* ══ SIDEBAR ══ */
+    .sidebar {
+      position: fixed; right: 0; top: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--dark-panel);
+      border-left: 1px solid var(--gold-border);
+      display: flex; flex-direction: column; z-index: 200;
+    }
+
+    .sb-logo {
+      padding: 18px 16px; border-bottom: 1px solid rgba(200,168,75,0.07);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sb-logo svg { width: 34px; height: 34px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(200,168,75,0.3)); }
+    .sb-logo-text { font-family: 'Amiri', serif; font-size: 0.88rem; font-weight: 700; color: var(--gold); line-height: 1.3; }
+
+    .sb-lawyer {
+      padding: 12px 14px; border-bottom: 1px solid rgba(200,168,75,0.06);
+    }
+    .sb-lawyer-inner {
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      border-radius: 10px; padding: 12px;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .sb-av {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--gold), #8A6020);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: #07090F; flex-shrink: 0;
+    }
+    .sb-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+    .sb-role { font-size: 0.66rem; color: var(--gold); margin-top: 1px; }
+    .sb-online { font-size: 0.62rem; color: var(--green); margin-top: 3px; display: flex; align-items: center; gap: 3px; }
+    .online-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+    .sb-nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+    .nav-lbl { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); letter-spacing: .1em; padding: 8px 10px 3px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 9px 11px; border-radius: 8px;
+      cursor: pointer; transition: all .18s;
+      font-size: 0.82rem; font-weight: 600; color: var(--text-dim); position: relative;
+    }
+    .nav-item:hover { background: rgba(200,168,75,.05); color: var(--text); }
+    .nav-item.active { background: var(--gold-dim); color: var(--gold); }
+    .nav-item.active::after { content:''; position:absolute; left:0; top:25%; bottom:25%; width:3px; background:var(--gold); border-radius:0 2px 2px 0; }
+    .nav-icon { font-size:.88rem; width:17px; text-align:center; flex-shrink:0; }
+    .nav-badge { margin-right:auto; font-size:.6rem; font-weight:700; padding:1px 6px; border-radius:10px; }
+    .nb-red { background:var(--red); color:#fff; }
+    .nb-gold { background:var(--gold); color:#07090F; }
+    .nb-blue { background:var(--blue); color:#fff; }
+
+    .sb-bottom { padding: 10px 8px; border-top: 1px solid rgba(200,168,75,.06); }
+
+    /* ══ MAIN ══ */
+    .main { margin-right: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .topbar {
+      padding: 14px 26px;
+      border-bottom: 1px solid rgba(200,168,75,.07);
+      background: rgba(7,9,15,.8); backdrop-filter: blur(14px);
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-family: 'Amiri', serif; font-size: 1.35rem; color: var(--gold); }
+    .topbar-sub { font-size: .72rem; color: var(--text-dim); margin-top: 2px; }
+    .tb-right { display: flex; gap: 8px; align-items: center; }
+    .tb-icon-btn {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 8px; width: 35px; height: 35px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: .88rem; color: var(--text-dim);
+      transition: all .2s; position: relative;
+    }
+    .tb-icon-btn:hover { border-color: var(--gold); color: var(--text); }
+    .tb-red-dot { position:absolute; top:5px; left:5px; width:7px; height:7px; border-radius:50%; background:var(--red); border:2px solid var(--dark); }
+
+    .view-toggle {
+      display: flex; background: var(--dark-panel); border: 1px solid var(--gold-border); border-radius: 8px; overflow: hidden;
+    }
+    .vt-btn {
+      padding: 7px 14px; font-size: .76rem; font-weight: 700;
+      cursor: pointer; font-family: 'Cairo', sans-serif;
+      color: var(--text-dim); background: transparent; border: none;
+      transition: all .18s; display: flex; align-items: center; gap: 5px;
+    }
+    .vt-btn:hover { color: var(--text); }
+    .vt-btn.on { background: var(--gold-dim); color: var(--gold); }
+
+    /* ══ CONTENT ══ */
+    .content { flex: 1; padding: 22px 26px; display: flex; flex-direction: column; gap: 20px; }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .a1{animation:fadeUp .4s ease .04s both}
+    .a2{animation:fadeUp .4s ease .1s both}
+    .a3{animation:fadeUp .4s ease .16s both}
+    .a4{animation:fadeUp .4s ease .22s both}
+
+    /* ══ KPI ══ */
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+    .kpi {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 12px; padding: 16px 15px;
+      position: relative; overflow: hidden;
+      transition: transform .2s; cursor: default;
+    }
+    .kpi:hover { transform: translateY(-2px); }
+    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+    .kpi-ic { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+    .kpi-badge { font-size: .62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+    .kb-up   { background: var(--green-dim); color: var(--green); }
+    .kb-down { background: var(--red-dim); color: var(--red); }
+    .kb-flat { background: var(--gold-dim); color: var(--gold); }
+    .kpi-num { font-family: 'Amiri', serif; font-size: 1.9rem; line-height: 1; margin-bottom: 3px; }
+    .kpi-lbl { font-size: .7rem; color: var(--text-dim); }
+    .kpi-line { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+
+    /* ══ LAYOUT ══ */
+    .page-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+
+    /* ══ REQUESTS PANEL ══ */
+    .panel {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .panel-header {
+      padding: 14px 18px; border-bottom: 1px solid rgba(200,168,75,.07);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: .88rem; color: var(--text);
+    }
+    .pt-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: .78rem; }
+    .panel-action { font-size:.72rem; color:var(--gold); background:none; border:none; font-family:'Cairo',sans-serif; cursor:pointer; opacity:.8; transition:opacity .2s; }
+    .panel-action:hover { opacity:1; }
+
+    /* Tabs */
+    .req-tabs { padding: 10px 16px 0; display: flex; gap: 4px; border-bottom: 1px solid rgba(200,168,75,.05); }
+    .req-tab {
+      padding: 7px 14px; font-size: .76rem; font-weight: 700;
+      cursor: pointer; border-radius: 8px 8px 0 0;
+      color: var(--text-dim); transition: all .18s;
+      position: relative; border: none; background: none;
+      font-family: 'Cairo', sans-serif;
+    }
+    .req-tab:hover { color: var(--text); }
+    .req-tab.on { color: var(--gold); background: var(--gold-dim); }
+    .req-tab.on::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:var(--gold); }
+    .tab-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      font-size: .6rem; font-weight: 700;
+      margin-right: 4px;
+    }
+    .tc-red { background:var(--red); color:#fff; }
+    .tc-amber { background:var(--amber); color:#07090F; }
+    .tc-green { background:var(--green); color:#07090F; }
+    .tc-blue { background:var(--blue); color:#fff; }
+    .tc-gray { background: rgba(120,116,106,.2); color:var(--text-dim); }
+
+    /* Request Cards */
+    .req-list { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; max-height: 600px; overflow-y: auto; }
+
+    .req-card {
+      background: var(--dark-card); border: 1px solid rgba(200,168,75,.1);
+      border-radius: 11px; overflow: hidden;
+      transition: all .22s; cursor: pointer; position: relative;
+    }
+    .req-card:hover { border-color: rgba(200,168,75,.3); box-shadow: 0 5px 18px rgba(0,0,0,.3); }
+    .req-card-body { display: flex; }
+    .req-accent { width: 5px; flex-shrink: 0; }
+    .req-inner { flex: 1; padding: 14px 16px; }
+
+    .req-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 9px; }
+    .req-client { display: flex; align-items: center; gap: 9px; }
+    .req-av {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .req-client-name { font-size: .84rem; font-weight: 700; color: var(--text); }
+    .req-client-id { font-size: .66rem; color: var(--text-dim); margin-top: 1px; }
+
+    .req-status {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 20px; font-size: .66rem; font-weight: 700;
+    }
+    .req-status::before { content:''; width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+    .rs-new       { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(244,164,32,.2); }
+    .rs-confirmed { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,214,138,.2); }
+    .rs-rejected  { background:rgba(120,116,106,.1); color:var(--text-dim); border:1px solid rgba(120,116,106,.2); }
+    .rs-completed { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(76,158,230,.2); }
+    .rs-reschedule{ background:var(--purple-dim); color:var(--purple); border:1px solid rgba(155,111,245,.2); }
+
+    .req-details { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .req-detail { display: flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--text-dim); }
+    .req-detail strong { color: var(--text); font-weight: 600; }
+
+    .req-notes {
+      font-size: .72rem; color: var(--text-dim);
+      background: var(--dark-mid); border: 1px solid rgba(200,168,75,.06);
+      border-radius: 6px; padding: 7px 10px; margin-bottom: 10px; line-height: 1.6;
+    }
+
+    .req-actions { display: flex; gap: 7px; align-items: center; }
+    .ra-btn {
+      padding: 4px 12px; border-radius: 6px; font-size: .72rem; font-weight: 700;
+      cursor: pointer; font-family: 'Cairo', sans-serif; transition: all .18s; border: 1px solid transparent;
+    }
+    .ra-confirm { background:var(--green-dim); color:var(--green); border-color:rgba(52,214,138,.2); }
+    .ra-confirm:hover { background:var(--green); color:#07090F; }
+    .ra-reject  { background:var(--red-dim); color:var(--red); border-color:rgba(239,93,88,.2); }
+    .ra-reject:hover  { background:var(--red); color:#fff; }
+    .ra-reschedule { background:var(--purple-dim); color:var(--purple); border-color:rgba(155,111,245,.2); }
+    .ra-reschedule:hover { background:var(--purple); color:#fff; }
+    .ra-view { background:var(--gold-dim); color:var(--gold); border-color:var(--gold-border); }
+    .ra-view:hover { background:var(--gold); color:#07090F; }
+
+    .req-id { font-size:.62rem; color:var(--text-muted); margin-right:auto; direction:ltr; }
+
+    /* Urgent ribbon */
+    .urgent-ribbon {
+      position: absolute; top: 10px; left: -22px;
+      background: var(--red); color: #fff;
+      font-size: .55rem; font-weight: 700;
+      padding: 2px 28px; transform: rotate(-45deg);
+      letter-spacing: .06em;
+    }
+
+    /* ══ RIGHT PANEL ══ */
+    .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+    /* Today's Schedule */
+    .schedule-card {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .sch-header { padding: 14px 16px; border-bottom: 1px solid rgba(200,168,75,.07); display: flex; align-items: center; justify-content: space-between; }
+    .sch-title { font-size: .88rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
+    .sch-date { font-size: .7rem; color: var(--gold); background: var(--gold-dim); border: 1px solid var(--gold-border); padding: 2px 9px; border-radius: 20px; }
+
+    .sch-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+    .sch-slot {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 12px; border-radius: 9px;
+      border: 1px solid rgba(200,168,75,.07);
+      background: var(--dark-card); transition: all .18s;
+    }
+    .sch-slot:hover { border-color: rgba(200,168,75,.2); }
+    .sch-slot.free { border-style: dashed; background: transparent; opacity: .5; }
+
+    .sch-time { font-size: .7rem; color: var(--text-dim); min-width: 60px; font-weight: 600; direction: ltr; text-align: left; margin-top: 2px; }
+    .sch-info { flex: 1; min-width: 0; }
+    .sch-name { font-size: .78rem; font-weight: 700; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sch-type { font-size: .66rem; color: var(--text-dim); }
+    .sch-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+
+    /* Availability Toggle */
+    .avail-card {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .avail-header { padding: 14px 16px; border-bottom: 1px solid rgba(200,168,75,.07); }
+    .avail-title { font-size: .88rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
+    .avail-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+    .avail-day {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 8px; background: var(--dark-card);
+      border: 1px solid rgba(200,168,75,.06);
+    }
+    .avail-day-name { font-size: .78rem; font-weight: 600; color: var(--text); }
+    .avail-hours { font-size: .66rem; color: var(--text-dim); }
+
+    /* Toggle Switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 6px; }
+    .toggle { position: relative; width: 34px; height: 18px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: rgba(120,116,106,.25);
+      border-radius: 9px; cursor: pointer; transition: .3s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--text-dim);
+      bottom: 3px; right: 3px; transition: .3s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--green); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(-16px); background: #fff; }
+
+    /* Quick stats mini */
+    .mini-stats {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 14px; padding: 14px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .mini-stat { text-align: center; padding: 10px 6px; background: var(--dark-card); border-radius: 9px; border: 1px solid rgba(200,168,75,.06); }
+    .ms-num { font-family: 'Amiri', serif; font-size: 1.5rem; line-height: 1; margin-bottom: 3px; }
+    .ms-lbl { font-size: .65rem; color: var(--text-dim); }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+    .empty-ic { font-size: 2.5rem; opacity: .3; margin-bottom: 10px; }
+    .empty-txt { font-size: .82rem; }
+
+    /* ══ WEEK VIEW ══ */
+    .week-view {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 14px; overflow: hidden; display: none;
+    }
+    .week-view.show { display: block; }
+    .week-header { padding: 14px 18px; border-bottom: 1px solid rgba(200,168,75,.07); display: flex; align-items: center; justify-content: space-between; }
+    .week-title { font-family: 'Amiri', serif; font-size: 1.05rem; color: var(--text); }
+    .week-nav { display: flex; gap: 6px; }
+    .week-nav-btn {
+      background: var(--dark-mid); border: 1px solid var(--gold-border);
+      border-radius: 7px; width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: .8rem; color: var(--gold); transition: all .18s;
+    }
+    .week-nav-btn:hover { background: var(--gold-dim); }
+
+    .week-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); border-top: 1px solid rgba(200,168,75,.06); }
+    .wg-day-header { padding: 10px 8px; text-align: center; border-left: 1px solid rgba(200,168,75,.05); font-size: .72rem; font-weight: 700; }
+    .wg-day-name { color: var(--text-dim); margin-bottom: 2px; }
+    .wg-day-num { font-family: 'Amiri', serif; font-size: 1.1rem; }
+    .wg-day-num.today-num { color: var(--gold); background: var(--gold-dim); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+
+    .wg-time-cell { padding: 0 8px; border-top: 1px solid rgba(200,168,75,.04); height: 48px; display: flex; align-items: flex-start; padding-top: 4px; }
+    .wg-time-lbl { font-size: .62rem; color: var(--text-muted); direction: ltr; }
+    .wg-appt-cell { border-top: 1px solid rgba(200,168,75,.04); border-left: 1px solid rgba(200,168,75,.04); height: 48px; position: relative; padding: 2px; }
+
+    .wg-appt-block {
+      position: absolute; left: 2px; right: 2px; top: 2px; bottom: 2px;
+      border-radius: 4px; padding: 3px 5px; overflow: hidden; cursor: pointer;
+      transition: opacity .18s;
+    }
+    .wg-appt-block:hover { opacity: .85; }
+    .wg-block-title { font-size: .6rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wg-block-time  { font-size: .55rem; opacity: .8; direction: ltr; }
+
+    /* ══ MODAL ══ */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(7,9,15,.9); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 15px; width: 100%; max-width: 520px; max-height: 90vh;
+      overflow-y: auto; animation: mIn .26s ease both;
+    }
+    @keyframes mIn { from{opacity:0;transform:scale(.94) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .modal-bar { height: 3px; background: linear-gradient(90deg,transparent,var(--gold),transparent); }
+    .modal-head { padding: 18px 20px 14px; border-bottom: 1px solid rgba(200,168,75,.07); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .mh-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--gold-dim); border: 1px solid var(--gold-border); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .modal-title { font-family: 'Amiri', serif; font-size: 1.1rem; color: var(--gold); }
+    .modal-sub { font-size: .7rem; color: var(--text-dim); margin-top: 2px; }
+    .modal-close { background:none; border:none; color:var(--text-dim); font-size:1.2rem; cursor:pointer; transition:color .2s; margin-right:auto; }
+    .modal-close:hover { color: var(--red); }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fl { font-size: .76rem; color: var(--text-dim); font-weight: 600; }
+    .fi, .fs, .fta {
+      background: var(--dark-mid); border: 1px solid rgba(200,168,75,.16);
+      border-radius: 7px; padding: 9px 12px;
+      color: var(--text); font-family: 'Cairo', sans-serif;
+      font-size: .83rem; outline: none; direction: rtl; transition: border-color .25s;
+    }
+    .fi:focus, .fs:focus, .fta:focus { border-color: var(--gold); }
+    .fta { resize: vertical; min-height: 68px; }
+    .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+
+    .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+    .tg-slot {
+      padding: 8px 5px; border-radius: 7px; text-align: center;
+      font-size: .73rem; font-weight: 600; cursor: pointer;
+      border: 1px solid rgba(200,168,75,.14); color: var(--text-dim);
+      background: var(--dark-mid); transition: all .18s; direction: ltr;
+    }
+    .tg-slot:hover:not(.tg-taken) { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+    .tg-slot.tg-sel { background: var(--gold); color: #07090F; border-color: var(--gold); font-weight: 700; }
+    .tg-slot.tg-taken { opacity: .3; cursor: not-allowed; text-decoration: line-through; }
+
+    .modal-foot { padding: 14px 20px; border-top: 1px solid rgba(200,168,75,.07); display: flex; gap: 9px; }
+    .btn-p { background: linear-gradient(135deg, var(--gold), #9A7020); border: none; border-radius: 7px; padding: 9px 22px; color: #07090F; font-family: 'Cairo', sans-serif; font-size: .83rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .btn-p:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(200,168,75,.2); }
+    .btn-s { background: transparent; border: 1px solid var(--gold-border); border-radius: 7px; padding: 9px 16px; color: var(--text-dim); font-family: 'Cairo', sans-serif; font-size: .83rem; cursor: pointer; transition: all .2s; }
+    .btn-s:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-danger { background: var(--red-dim); border: 1px solid rgba(239,93,88,.25); border-radius: 7px; padding: 9px 16px; color: var(--red); font-family: 'Cairo', sans-serif; font-size: .83rem; cursor: pointer; font-weight: 700; transition: all .2s; }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+
+    /* Confirm */
+    .confirm-ov { display:none; position:fixed; inset:0; background:rgba(7,9,15,.92); z-index:600; align-items:center; justify-content:center; padding:20px; }
+    .confirm-ov.open { display: flex; }
+    .confirm-box { background:var(--dark-panel); border:1px solid rgba(239,93,88,.28); border-radius:13px; padding:28px; max-width:360px; width:100%; text-align:center; animation:mIn .24s ease both; }
+    .cb-icon { font-size:2.4rem; margin-bottom:12px; }
+    .cb-title { font-family:'Amiri',serif; font-size:1.15rem; margin-bottom:7px; }
+    .cb-text { font-size:.8rem; color:var(--text-dim); line-height:1.6; margin-bottom:20px; }
+    .cb-actions { display:flex; gap:9px; justify-content:center; }
+
+    /* Toast */
+    .toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(18px); background:var(--dark-panel); border:1px solid var(--gold-border); border-radius:9px; padding:11px 20px; font-size:.82rem; font-weight:600; color:var(--text); opacity:0; transition:all .3s; z-index:999; pointer-events:none; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast.ok  { border-color:rgba(52,214,138,.3); }
+    .toast.err { border-color:rgba(239,93,88,.3); }
+    .toast.inf { border-color:rgba(76,158,230,.3); }
+
+    @media (max-width:1100px) { .page-layout{grid-template-columns:1fr} .right-col{display:grid;grid-template-columns:1fr 1fr;gap:14px} }
+    @media (max-width:900px)  { .sidebar{display:none} .main{margin-right:0} .kpi-row{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:600px)  { .content{padding:14px} .kpi-row{grid-template-columns:repeat(2,1fr)} .right-col{grid-template-columns:1fr} .time-grid{grid-template-columns:repeat(3,1fr)} }
+  </style>
+</head>
+<body>
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <svg viewBox="0 0 120 120" fill="none">
+      <path d="M60 8 L100 24 L100 60 C100 82 82 98 60 108 C38 98 20 82 20 60 L20 24 Z" fill="rgba(200,168,75,0.08)" stroke="#C8A84B" stroke-width="2"/>
+      <line x1="60" y1="32" x2="60" y2="80" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+      <line x1="36" y1="46" x2="84" y2="46" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+      <line x1="36" y1="46" x2="30" y2="62" stroke="#C8A84B" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M22 62 Q30 58 38 62 Q30 70 22 62Z" fill="rgba(200,168,75,0.3)" stroke="#C8A84B" stroke-width="1.5"/>
+      <line x1="84" y1="46" x2="90" y2="58" stroke="#C8A84B" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M82 58 Q90 54 98 58 Q90 66 82 58Z" fill="rgba(200,168,75,0.3)" stroke="#C8A84B" stroke-width="1.5"/>
+      <line x1="48" y1="80" x2="72" y2="80" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="60" cy="32" r="4" fill="#C8A84B"/>
+    </svg>
+    <div class="sb-logo-text">النظام القضائي<br>الإلكتروني</div>
+  </div>
+
+  <div class="sb-lawyer">
+    <div class="sb-lawyer-inner">
+      <div class="sb-av">كم</div>
+      <div>
+        <div class="sb-name">المستشار / كريم محمود</div>
+        <div class="sb-role">⚖️ محامٍ أول — قانون مدني</div>
+        <div class="sb-online"><div class="online-dot"></div> متصل الآن</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="nav-lbl">الرئيسية</div>
+    <div class="nav-item"><span class="nav-icon">🏛️</span> لوحة التحكم</div>
+    <div class="nav-item"><span class="nav-icon">📁</span> القضايا <span class="nav-badge nb-gold">12</span></div>
+    <div class="nav-item active"><span class="nav-icon">📅</span> المواعيد <span class="nav-badge nb-red">4</span></div>
+
+    <div class="nav-lbl">الموكلون</div>
+    <div class="nav-item"><span class="nav-icon">👥</span> موكلوني</div>
+    <div class="nav-item"><span class="nav-icon">📄</span> العقود <span class="nav-badge nb-blue">8</span></div>
+    <div class="nav-item"><span class="nav-icon">💰</span> الرسوم والمدفوعات</div>
+
+    <div class="nav-lbl">الأدوات</div>
+    <div class="nav-item"><span class="nav-icon">🤖</span> مساعد AI القانوني</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> المستندات</div>
+    <div class="nav-item"><span class="nav-icon">🔔</span> الإشعارات <span class="nav-badge nb-red">5</span></div>
+
+    <div class="nav-lbl">الحساب</div>
+    <div class="nav-item"><span class="nav-icon">👤</span> الملف الشخصي</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span> الإعدادات</div>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="nav-item" style="color:rgba(239,93,88,.7)"><span class="nav-icon">🚪</span> تسجيل الخروج</div>
+  </div>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">إدارة المواعيد</div>
+      <div class="topbar-sub">الأحد ١ مارس ٢٠٢٦ — لديك ٤ طلبات جديدة تنتظر الرد</div>
+    </div>
+    <div class="tb-right">
+      <div class="view-toggle">
+        <button class="vt-btn on" id="vt-list" onclick="switchView('list')">📋 القائمة</button>
+        <button class="vt-btn" id="vt-week" onclick="switchView('week')">📆 الأسبوع</button>
+      </div>
+      <div class="tb-icon-btn">🔔<span class="tb-red-dot"></span></div>
+      <div class="tb-icon-btn" onclick="openAddModal()">➕</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI — 4 cards only -->
+    <div class="kpi-row a1">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div class="kpi-ic" style="background:var(--amber-dim);color:var(--amber)">🔔</div>
+          <span class="kpi-badge kb-down">عاجل</span>
+        </div>
+        <div class="kpi-num" style="color:var(--amber)" id="kNewCount">4</div>
+        <div class="kpi-lbl">طلبات جديدة</div>
+        <div class="kpi-line" style="background:linear-gradient(90deg,var(--amber),transparent)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top">
+          <div class="kpi-ic" style="background:var(--green-dim);color:var(--green)">✅</div>
+          <span class="kpi-badge kb-up">+٢ هذا الأسبوع</span>
+        </div>
+        <div class="kpi-num" style="color:var(--green)" id="kConfCount">7</div>
+        <div class="kpi-lbl">مواعيد مؤكدة</div>
+        <div class="kpi-line" style="background:linear-gradient(90deg,var(--green),transparent)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top">
+          <div class="kpi-ic" style="background:var(--blue-dim);color:var(--blue)">📅</div>
+          <span class="kpi-badge kb-flat">اليوم</span>
+        </div>
+        <div class="kpi-num" style="color:var(--blue)">3</div>
+        <div class="kpi-lbl">مواعيد اليوم</div>
+        <div class="kpi-line" style="background:linear-gradient(90deg,var(--blue),transparent)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top">
+          <div class="kpi-ic" style="background:var(--purple-dim);color:var(--purple)">🔄</div>
+          <span class="kpi-badge kb-flat">مراجعة</span>
+        </div>
+        <div class="kpi-num" style="color:var(--purple)">2</div>
+        <div class="kpi-lbl">طلبات إعادة جدولة</div>
+        <div class="kpi-line" style="background:linear-gradient(90deg,var(--purple),transparent)"></div>
+      </div>
+    </div>
+
+    <!-- WEEK VIEW -->
+    <div class="week-view a2" id="weekView">
+      <div class="week-header">
+        <div class="week-title" id="weekRangeLabel">١ — ٧ مارس ٢٠٢٦</div>
+        <div class="week-nav">
+          <button class="week-nav-btn" onclick="prevWeek()">›</button>
+          <button class="week-nav-btn" onclick="nextWeek()">‹</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <div class="week-grid" id="weekGrid" style="min-width:600px"></div>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div class="page-layout a3" id="listView">
+
+      <!-- Requests Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="pt-icon" style="background:var(--amber-dim);color:var(--amber)">📥</div>
+            طلبات المواعيد
+          </div>
+          <button class="panel-action" onclick="openAddModal()">+ إضافة موعد يدوياً</button>
+        </div>
+
+        <div class="req-tabs">
+          <button class="req-tab on" onclick="setTab('new',this)"><span class="tab-count tc-amber" id="tc-new">4</span>جديدة</button>
+          <button class="req-tab" onclick="setTab('confirmed',this)"><span class="tab-count tc-green" id="tc-conf">7</span>مؤكدة</button>
+          <button class="req-tab" onclick="setTab('reschedule',this)"><span class="tab-count tc-blue" id="tc-res">2</span>إعادة جدولة</button>
+          <button class="req-tab" onclick="setTab('completed',this)"><span class="tab-count tc-blue" id="tc-comp">5</span>مكتملة</button>
+          <button class="req-tab" onclick="setTab('rejected',this)"><span class="tab-count tc-gray" id="tc-rej">3</span>مرفوضة</button>
+        </div>
+
+        <div class="req-list" id="reqList"></div>
+      </div>
+
+      <!-- Right Col -->
+      <div class="right-col">
+
+        <!-- Today's Schedule -->
+        <div class="schedule-card">
+          <div class="sch-header">
+            <div class="sch-title">📆 جدول اليوم</div>
+            <span class="sch-date">الأحد ١ مارس</span>
+          </div>
+          <div class="sch-body" id="todaySchedule"></div>
+        </div>
+
+        <!-- Mini Stats -->
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="ms-num" style="color:var(--green)">٢٣</div>
+            <div class="ms-lbl">هذا الشهر</div>
+          </div>
+          <div class="mini-stat">
+            <div class="ms-num" style="color:var(--gold)">١٥٤</div>
+            <div class="ms-lbl">إجمالي المواعيد</div>
+          </div>
+          <div class="mini-stat">
+            <div class="ms-num" style="color:var(--blue)">٢٧</div>
+            <div class="ms-lbl">موكل نشط</div>
+          </div>
+          <div class="mini-stat">
+            <div class="ms-num" style="color:var(--purple)">٤.٨</div>
+            <div class="ms-lbl">⭐ تقييم الموكلين</div>
+          </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="avail-card">
+          <div class="avail-header">
+            <div class="avail-title">🗓️ أوقات الإتاحة</div>
+          </div>
+          <div class="avail-body" id="availBody"></div>
+        </div>
+
+      </div><!-- /right-col -->
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ════ MODALS ════ -->
+<div class="overlay" id="actionOverlay" onclick="closeBg(event,'actionOverlay')">
+  <div class="modal">
+    <div class="modal-bar"></div>
+    <div class="modal-head">
+      <div class="mh-icon" id="mIcon">📅</div>
+      <div>
+        <div class="modal-title" id="mTitle">تفاصيل الموعد</div>
+        <div class="modal-sub"  id="mSub">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('actionOverlay')">✕</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-foot" id="mFoot"></div>
+  </div>
+</div>
+
+<div class="confirm-ov" id="confirmOv">
+  <div class="confirm-box">
+    <div class="cb-icon" id="cbIcon">❓</div>
+    <div class="cb-title" id="cbTitle">تأكيد الإجراء</div>
+    <div class="cb-text"  id="cbText">هل أنت متأكد؟</div>
+    <div class="cb-actions">
+      <button class="btn-p" id="cbConfirmBtn" onclick="executeConfirm()">تأكيد</button>
+      <button class="btn-s" onclick="closeConfirm()">تراجع</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let appointments = [
+  { id:'APT-001', clientName:'أحمد محمد علي',     clientId:'USR-4421', clientInitials:'أح', clientColor:'#C8A84B', clientBg:'rgba(200,168,75,0.12)',
+    type:'استشارة قانونية',     date:'2026-03-01', time:'10:00 AM', duration:60,  location:'المكتب الرئيسي', status:'confirmed',  urgent:false, notes:'مراجعة ملف عقد الإيجار وتقييم وضعه القانوني.' },
+  { id:'APT-002', clientName:'سارة عبد الرحمن',   clientId:'USR-3890', clientInitials:'سع', clientColor:'#34D68A', clientBg:'rgba(52,214,138,0.12)',
+    type:'مراجعة عقد شراكة',    date:'2026-03-01', time:'11:30 AM', duration:45,  location:'أونلاين — Zoom', status:'confirmed',  urgent:false, notes:'مراجعة بنود عقد الشراكة التجارية.' },
+  { id:'APT-003', clientName:'محمد إبراهيم حسن',  clientId:'USR-5102', clientInitials:'مح', clientColor:'#EF5D58', clientBg:'rgba(239,93,88,0.12)',
+    type:'استشارة عاجلة',       date:'2026-03-01', time:'02:00 PM', duration:90,  location:'المكتب الرئيسي', status:'confirmed',  urgent:true,  notes:'قضية عمالية عاجلة — قرار فصل تعسفي ينتهي خلال 48 ساعة.' },
+  { id:'APT-004', clientName:'ليلى عبد الفتاح',   clientId:'USR-2241', clientInitials:'لع', clientColor:'#4C9EE6', clientBg:'rgba(76,158,230,0.12)',
+    type:'استشارة قانونية',     date:'2026-03-03', time:'09:30 AM', duration:60,  location:'مكتب فرع المعادي', status:'new',      urgent:false, notes:'استفسار عن إجراءات قضية حضانة.' },
+  { id:'APT-005', clientName:'كريم الشناوي',       clientId:'USR-6673', clientInitials:'كش', clientColor:'#9B6FF5', clientBg:'rgba(155,111,245,0.12)',
+    type:'متابعة قضية',         date:'2026-03-04', time:'11:00 AM', duration:30,  location:'أونلاين — Zoom', status:'new',       urgent:false, notes:'متابعة سير قضية النزاع العقاري.' },
+  { id:'APT-006', clientName:'هدى مصطفى النجار',  clientId:'USR-1892', clientInitials:'هن', clientColor:'#F4A420', clientBg:'rgba(244,164,32,0.12)',
+    type:'مراجعة مستندات',      date:'2026-03-05', time:'10:00 AM', duration:45,  location:'المكتب الرئيسي', status:'new',       urgent:true,  notes:'مستندات ملكية عقارية تحتاج مراجعة عاجلة قبل موعد المحكمة.' },
+  { id:'APT-007', clientName:'أحمد محمد علي',     clientId:'USR-4421', clientInitials:'أح', clientColor:'#C8A84B', clientBg:'rgba(200,168,75,0.12)',
+    type:'إعادة جدولة — عقد إيجار', date:'2026-03-06', time:'03:00 PM', duration:60, location:'المكتب الرئيسي', status:'reschedule', urgent:false, notes:'يطلب تغيير الموعد من ١٥ مارس إلى ٦ مارس.' },
+  { id:'APT-008', clientName:'منى عزت إبراهيم',   clientId:'USR-3344', clientInitials:'مع', clientColor:'#34D68A', clientBg:'rgba(52,214,138,0.12)',
+    type:'إعادة جدولة — استشارة', date:'2026-03-07', time:'09:00 AM', duration:45, location:'أونلاين — Zoom', status:'reschedule', urgent:false, notes:'طلب تغيير الوقت من الصباح إلى المساء.' },
+  { id:'APT-009', clientName:'سامر حسين قاسم',    clientId:'USR-7712', clientInitials:'سق', clientColor:'#EF5D58', clientBg:'rgba(239,93,88,0.12)',
+    type:'استشارة قانونية',     date:'2026-02-20', time:'10:00 AM', duration:60,  location:'المكتب الرئيسي', status:'completed', urgent:false, notes:'تم مناقشة تفاصيل القضية.' },
+  { id:'APT-010', clientName:'نور محمد علام',      clientId:'USR-2290', clientInitials:'نع', clientColor:'#4C9EE6', clientBg:'rgba(76,158,230,0.12)',
+    type:'متابعة قضية',         date:'2026-02-22', time:'02:30 PM', duration:30,  location:'أونلاين — Zoom', status:'completed', urgent:false, notes:'متابعة إجراءات الاستئناف.' },
+  { id:'APT-011', clientName:'عمر فاروق البنا',    clientId:'USR-8834', clientInitials:'عف', clientColor:'#9B6FF5', clientBg:'rgba(155,111,245,0.12)',
+    type:'استشارة قانونية',     date:'2026-02-28', time:'11:00 AM', duration:60,  location:'المكتب الرئيسي', status:'new',       urgent:false, notes:'استشارة بخصوص عقد توريد جديد.' },
+  { id:'APT-012', clientName:'رانيا صلاح الدين',  clientId:'USR-5561', clientInitials:'رص', clientColor:'#F4A420', clientBg:'rgba(244,164,32,0.12)',
+    type:'استشارة قانونية',     date:'2026-02-25', time:'09:00 AM', duration:45,  location:'المكتب الرئيسي', status:'rejected',  urgent:false, notes:'تعارض في الجدول.' },
+  { id:'APT-013', clientName:'طارق عزيز منصور',   clientId:'USR-9902', clientInitials:'طم', clientColor:'#34D68A', clientBg:'rgba(52,214,138,0.12)',
+    type:'مراجعة عقد',          date:'2026-02-26', time:'03:30 PM', duration:60,  location:'أونلاين — Zoom', status:'rejected',  urgent:false, notes:'لم يتم استيفاء المستندات المطلوبة.' },
+  { id:'APT-014', clientName:'دينا أحمد فريد',    clientId:'USR-4411', clientInitials:'دف', clientColor:'#EF5D58', clientBg:'rgba(239,93,88,0.12)',
+    type:'استشارة عاجلة',       date:'2026-02-18', time:'10:30 AM', duration:90,  location:'المكتب الرئيسي', status:'completed', urgent:false, notes:'تمت المناقشة وتقديم المشورة اللازمة.' },
+  { id:'APT-015', clientName:'إيمان محمود حسن',   clientId:'USR-6620', clientInitials:'إح', clientColor:'#9B6FF5', clientBg:'rgba(155,111,245,0.12)',
+    type:'متابعة قضية',         date:'2026-02-15', time:'01:00 PM', duration:30,  location:'أونلاين — Zoom', status:'completed', urgent:false, notes:'تحديث الملف وإبلاغ الموكل بمستجدات القضية.' },
+  { id:'APT-016', clientName:'يوسف خليل مراد',    clientId:'USR-3310', clientInitials:'يم', clientColor:'#C8A84B', clientBg:'rgba(200,168,75,0.12)',
+    type:'استشارة قانونية',     date:'2026-02-10', time:'11:00 AM', duration:60,  location:'المكتب الرئيسي', status:'rejected',  urgent:false, notes:'تعارض مع موعد محكمة.' },
+];
+
+const availability = [
+  { day:'الأحد',    hours:'٩ ص — ٣ م', on:true  },
+  { day:'الاثنين',  hours:'٩ ص — ٣ م', on:true  },
+  { day:'الثلاثاء', hours:'٩ ص — ١ م', on:true  },
+  { day:'الأربعاء', hours:'١٠ ص — ٢ م',on:true  },
+  { day:'الخميس',  hours:'٩ ص — ١٢ م',on:true  },
+  { day:'الجمعة',  hours:'—',           on:false },
+  { day:'السبت',   hours:'—',           on:false },
+];
+
+const times = ['09:00 AM','09:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','01:00 PM','01:30 PM','02:00 PM','02:30 PM','03:00 PM','03:30 PM'];
+
+let currentTab    = 'new';
+let currentView   = 'list';
+let actionTarget  = null;
+let confirmAction = null;
+let selectedTime  = null;
+let weekOffset    = 0;
+
+const arMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const arDays   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+function switchView(v) {
+  currentView = v;
+  document.getElementById('listView').style.display = v === 'list' ? '' : 'none';
+  document.getElementById('weekView').classList.toggle('show', v === 'week');
+  document.getElementById('vt-list').classList.toggle('on', v === 'list');
+  document.getElementById('vt-week').classList.toggle('on', v === 'week');
+  if (v === 'week') buildWeekView();
+}
+
+function buildWeekView() {
+  const base = new Date(2026, 2, 1);
+  base.setDate(base.getDate() + weekOffset * 7);
+  const startOfWeek = new Date(base);
+  startOfWeek.setDate(base.getDate() - base.getDay());
+
+  const days = Array.from({length:7}, (_,i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return d;
+  });
+
+  const startLabel = days[0].getDate() + ' ' + arMonths[days[0].getMonth()];
+  const endLabel   = days[6].getDate() + ' ' + arMonths[days[6].getMonth()] + ' ' + days[6].getFullYear();
+  document.getElementById('weekRangeLabel').textContent = startLabel + ' — ' + endLabel;
+
+  const grid = document.getElementById('weekGrid');
+  const today = new Date(2026, 2, 1);
+
+  let html = '<div style="border-bottom:1px solid rgba(200,168,75,.06)"></div>';
+  days.forEach(d => {
+    const isToday = d.toDateString() === today.toDateString();
+    html += `<div class="wg-day-header" style="border-bottom:1px solid rgba(200,168,75,.06)">
+      <div class="wg-day-name">${arDays[d.getDay()].slice(0,3)}</div>
+      <div class="${isToday ? 'wg-day-num today-num' : 'wg-day-num'}">${d.getDate()}</div>
+    </div>`;
+  });
+
+  const slotTimes = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+  slotTimes.forEach(t => {
+    html += `<div class="wg-time-cell"><span class="wg-time-lbl">${t}</span></div>`;
+    days.forEach(d => {
+      const dateStr = d.toISOString().slice(0,10);
+      const hourNum = parseInt(t.split(':')[0]);
+      const appt = appointments.find(a => {
+        if (a.date !== dateStr) return false;
+        const ah = parseInt(a.time.split(':')[0]) + (a.time.includes('PM') && !a.time.startsWith('12') ? 12 : 0);
+        return ah === hourNum && a.status !== 'rejected' && a.status !== 'cancelled';
+      });
+      if (appt) {
+        const colors = { confirmed:'#34D68A', new:'#F4A420', reschedule:'#9B6FF5', completed:'#4C9EE6' };
+        const bg = colors[appt.status] || '#7A7668';
+        html += `<div class="wg-appt-cell">
+          <div class="wg-appt-block" style="background:${bg}20;border:1px solid ${bg}50" onclick="openView('${appt.id}')">
+            <div class="wg-block-title" style="color:${bg}">${appt.clientName}</div>
+            <div class="wg-block-time"  style="color:${bg}99">${appt.time}</div>
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="wg-appt-cell"></div>`;
+      }
+    });
+  });
+
+  grid.innerHTML = html;
+}
+
+function prevWeek() { weekOffset--; buildWeekView(); }
+function nextWeek() { weekOffset++; buildWeekView(); }
+
+function setTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.req-tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  renderRequests();
+}
+
+function renderRequests() {
+  const list = appointments.filter(a => a.status === currentTab)
+    .sort((a,b) => {
+      if (a.urgent !== b.urgent) return b.urgent - a.urgent;
+      return new Date(a.date) - new Date(b.date);
+    });
+
+  const container = document.getElementById('reqList');
+
+  if (!list.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-ic">📭</div><div class="empty-txt">لا توجد مواعيد في هذه الفئة</div></div>`;
+    return;
+  }
+
+  const statusConfigs = {
+    new:        { label:'جديد', cls:'rs-new' },
+    confirmed:  { label:'مؤكد', cls:'rs-confirmed' },
+    rejected:   { label:'مرفوض', cls:'rs-rejected' },
+    completed:  { label:'مكتمل', cls:'rs-completed' },
+    reschedule: { label:'إعادة جدولة', cls:'rs-reschedule' },
+  };
+
+  container.innerHTML = list.map(a => {
+    const sc = statusConfigs[a.status] || { label:a.status, cls:'rs-new' };
+    const d  = new Date(a.date);
+    const dateLabel = arDays[d.getDay()] + ' ' + d.getDate() + ' ' + arMonths[d.getMonth()];
+
+    const actions = {
+      new: `<button class="ra-btn ra-confirm" onclick="doConfirm('${a.id}',event)">✅ قبول</button>
+            <button class="ra-btn ra-reschedule" onclick="openReschedule('${a.id}',event)">🔄 إعادة جدولة</button>
+            <button class="ra-btn ra-view" onclick="openView('${a.id}',event)">👁 عرض</button>
+            <button class="ra-btn ra-reject" onclick="doReject('${a.id}',event)">✕ رفض</button>`,
+      confirmed: `<button class="ra-btn ra-view" onclick="openView('${a.id}',event)">👁 التفاصيل</button>
+                  <button class="ra-btn ra-reschedule" onclick="openReschedule('${a.id}',event)">🔄 إعادة جدولة</button>
+                  <button class="ra-btn ra-reject" onclick="doReject('${a.id}',event)">✕ إلغاء</button>`,
+      reschedule: `<button class="ra-btn ra-confirm" onclick="doConfirm('${a.id}',event)">✅ قبول الجدولة</button>
+                   <button class="ra-btn ra-view" onclick="openReschedule('${a.id}',event)">🔄 تعديل</button>
+                   <button class="ra-btn ra-reject" onclick="doReject('${a.id}',event)">✕ رفض</button>`,
+      completed: `<button class="ra-btn ra-view" onclick="openView('${a.id}',event)">👁 عرض</button>`,
+      rejected:  `<button class="ra-btn ra-view" onclick="openView('${a.id}',event)">👁 عرض</button>`,
+    };
+
+    return `
+    <div class="req-card" data-id="${a.id}">
+      ${a.urgent ? '<div class="urgent-ribbon">عاجل</div>' : ''}
+      <div class="req-card-body">
+        <div class="req-accent" style="background:${a.clientColor}"></div>
+        <div class="req-inner">
+          <div class="req-top">
+            <div class="req-client">
+              <div class="req-av" style="background:${a.clientBg};color:${a.clientColor}">${a.clientInitials}</div>
+              <div>
+                <div class="req-client-name">${a.clientName}</div>
+                <div class="req-client-id">${a.clientId}</div>
+              </div>
+            </div>
+            <span class="req-status ${sc.cls}">${sc.label}</span>
+          </div>
+
+          <div class="req-details">
+            <div class="req-detail">📋 <strong>${a.type}</strong></div>
+            <div class="req-detail">📅 <strong>${dateLabel}</strong></div>
+            <div class="req-detail">🕐 <strong>${a.time}</strong></div>
+            <div class="req-detail">⏱ <strong>${a.duration} دقيقة</strong></div>
+            <div class="req-detail">📍 <strong>${a.location}</strong></div>
+          </div>
+
+          ${a.notes ? `<div class="req-notes">📝 ${a.notes}</div>` : ''}
+
+          <div class="req-actions">
+            ${actions[a.status] || ''}
+            <span class="req-id">${a.id}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function doConfirm(id, e) {
+  if(e) e.stopPropagation();
+  actionTarget  = id;
+  confirmAction = 'confirm';
+  document.getElementById('cbIcon').textContent   = '✅';
+  document.getElementById('cbTitle').textContent  = 'تأكيد قبول الموعد';
+  document.getElementById('cbTitle').style.color  = 'var(--green)';
+  document.getElementById('cbText').textContent   = 'هل تريد تأكيد قبول هذا الموعد؟ سيتم إرسال إشعار للموكل.';
+  document.getElementById('cbConfirmBtn').style.background = 'linear-gradient(135deg, var(--green), #1E6A3A)';
+  document.getElementById('confirmOv').classList.add('open');
+}
+
+function doReject(id, e) {
+  if(e) e.stopPropagation();
+  actionTarget  = id;
+  confirmAction = 'reject';
+  const a = appointments.find(x => x.id === id);
+  document.getElementById('cbIcon').textContent   = '❌';
+  document.getElementById('cbTitle').textContent  = 'رفض الموعد';
+  document.getElementById('cbTitle').style.color  = 'var(--red)';
+  document.getElementById('cbText').innerHTML     = `هل تريد رفض موعد <strong style="color:var(--text)">${a?.clientName}</strong>؟<br>سيتم إخطار الموكل بالرفض.`;
+  document.getElementById('cbConfirmBtn').style.background = 'linear-gradient(135deg, var(--red), #8A1A1A)';
+  document.getElementById('confirmOv').classList.add('open');
+}
+
+function executeConfirm() {
+  if (!actionTarget || !confirmAction) return;
+  const idx = appointments.findIndex(a => a.id === actionTarget);
+  if (idx < 0) { closeConfirm(); return; }
+
+  if (confirmAction === 'confirm') {
+    appointments[idx].status = 'confirmed';
+    showToast('✅ تم قبول الموعد وإخطار الموكل', 'ok');
+  } else if (confirmAction === 'reject') {
+    appointments[idx].status = 'rejected';
+    showToast('❌ تم رفض الموعد وإخطار الموكل', 'err');
+  }
+
+  closeConfirm();
+  updateCounts();
+  renderRequests();
+  renderToday();
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOv').classList.remove('open');
+  actionTarget = null; confirmAction = null;
+}
+
+function openView(id, e) {
+  if(e) e.stopPropagation();
+  const a = appointments.find(x => x.id === id);
+  if (!a) return;
+  const d = new Date(a.date);
+  const dateLabel = arDays[d.getDay()] + ' ' + d.getDate() + ' ' + arMonths[d.getMonth()] + ' ' + d.getFullYear();
+  document.getElementById('mIcon').textContent  = '👁';
+  document.getElementById('mTitle').textContent = 'تفاصيل الموعد';
+  document.getElementById('mSub').textContent   = a.id + ' — ' + a.clientName;
+  document.getElementById('mBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--dark-card);border-radius:10px;border:1px solid rgba(200,168,75,.08)">
+      <div style="width:46px;height:46px;border-radius:10px;background:${a.clientBg};color:${a.clientColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0">${a.clientInitials}</div>
+      <div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--text)">${a.clientName}</div>
+        <div style="font-size:.7rem;color:var(--text-dim)">${a.clientId}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${[['📋 النوع',a.type],['📅 التاريخ',dateLabel],['🕐 الوقت',a.time],['⏱ المدة',a.duration+' دقيقة'],['📍 المكان',a.location],['🔖 الحالة',a.status]].map(([l,v])=>`
+      <div style="background:var(--dark-card);border:1px solid rgba(200,168,75,.06);border-radius:8px;padding:10px 12px">
+        <div style="font-size:.68rem;color:var(--text-dim);margin-bottom:3px">${l}</div>
+        <div style="font-size:.8rem;font-weight:700;color:var(--text)">${v}</div>
+      </div>`).join('')}
+    </div>
+    ${a.notes ? `<div class="req-notes" style="margin:0">📝 ${a.notes}</div>` : ''}
+  `;
+  document.getElementById('mFoot').innerHTML = `<button class="btn-s" onclick="closeModal('actionOverlay')">إغلاق</button>`;
+  document.getElementById('actionOverlay').classList.add('open');
+}
+
+function openReschedule(id, e) {
+  if(e) e.stopPropagation();
+  actionTarget = id;
+  const a = appointments.find(x => x.id === id);
+  selectedTime = a?.time || null;
+  document.getElementById('mIcon').textContent  = '🔄';
+  document.getElementById('mTitle').textContent = 'إعادة جدولة الموعد';
+  document.getElementById('mSub').textContent   = a?.clientName + ' — ' + a?.id;
+
+  const slotsHtml = times.map(t => {
+    const taken = appointments.some(x => x.date === a?.date && x.time === t && x.id !== id && x.status !== 'rejected');
+    return `<div class="tg-slot ${taken?'tg-taken':''} ${selectedTime===t?'tg-sel':''}" onclick="${taken?'':'pickT(this,\''+t+'\')'}">${t}</div>`;
+  }).join('');
+
+  document.getElementById('mBody').innerHTML = `
+    <div class="fg-row">
+      <div class="fg"><label class="fl">التاريخ الجديد</label><input class="fi" type="date" id="rs_date" value="${a?.date||''}"></div>
+      <div class="fg"><label class="fl">المكان</label>
+        <select class="fs" id="rs_loc">
+          ${['المكتب الرئيسي','مكتب فرع المعادي','مكتب فرع مدينة نصر','أونلاين — Zoom','أونلاين — Teams']
+            .map(l => `<option ${a?.location===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div><div class="fl" style="margin-bottom:8px">🕐 الوقت الجديد</div><div class="time-grid">${slotsHtml}</div></div>
+    <div class="fg"><label class="fl">ملاحظة للموكل (اختياري)</label><textarea class="fta" id="rs_note" placeholder="سبب إعادة الجدولة..."></textarea></div>
+  `;
+  document.getElementById('mFoot').innerHTML = `
+    <button class="btn-p" onclick="submitReschedule()">💾 حفظ الجدولة الجديدة</button>
+    <button class="btn-s" onclick="closeModal('actionOverlay')">إلغاء</button>
+  `;
+  document.getElementById('actionOverlay').classList.add('open');
+}
+
+function pickT(el, t) {
+  selectedTime = t;
+  document.querySelectorAll('.tg-slot').forEach(s => s.classList.remove('tg-sel'));
+  el.classList.add('tg-sel');
+}
+
+function submitReschedule() {
+  const date = document.getElementById('rs_date')?.value;
+  const loc  = document.getElementById('rs_loc')?.value;
+  const time = selectedTime;
+  if (!date || !time) { showToast('⚠️ اختر التاريخ والوقت', 'err'); return; }
+  const idx = appointments.findIndex(a => a.id === actionTarget);
+  if (idx >= 0) {
+    appointments[idx].date     = date;
+    appointments[idx].time     = time;
+    appointments[idx].location = loc;
+    appointments[idx].status   = 'confirmed';
+  }
+  closeModal('actionOverlay');
+  updateCounts(); renderRequests(); renderToday();
+  showToast('🔄 تم إعادة جدولة الموعد بنجاح', 'ok');
+}
+
+function openAddModal() {
+  actionTarget = null; selectedTime = null;
+  document.getElementById('mIcon').textContent  = '➕';
+  document.getElementById('mTitle').textContent = 'إضافة موعد يدوياً';
+  document.getElementById('mSub').textContent   = 'إضافة موعد مباشر لأحد الموكلين';
+
+  const slotsHtml = times.map(t => `<div class="tg-slot" onclick="pickT(this,'${t}')">${t}</div>`).join('');
+
+  document.getElementById('mBody').innerHTML = `
+    <div class="fg-row">
+      <div class="fg"><label class="fl">اسم الموكل</label><input class="fi" id="add_name" placeholder="اسم الموكل"></div>
+      <div class="fg"><label class="fl">رقم الموكل</label><input class="fi" id="add_id" placeholder="USR-XXXX"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label class="fl">نوع الموعد</label>
+        <select class="fs" id="add_type">
+          <option>استشارة قانونية</option>
+          <option>مراجعة عقد</option>
+          <option>متابعة قضية</option>
+          <option>استشارة عاجلة</option>
+          <option>مراجعة مستندات</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">المدة (دقيقة)</label><input class="fi" type="number" id="add_dur" value="60" min="15" step="15"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label class="fl">التاريخ</label><input class="fi" type="date" id="add_date"></div>
+      <div class="fg"><label class="fl">المكان</label>
+        <select class="fs" id="add_loc">
+          <option>المكتب الرئيسي</option><option>مكتب فرع المعادي</option><option>أونلاين — Zoom</option><option>أونلاين — Teams</option>
+        </select>
+      </div>
+    </div>
+    <div><div class="fl" style="margin-bottom:8px">🕐 الوقت</div><div class="time-grid">${slotsHtml}</div></div>
+    <div class="fg"><label class="fl">ملاحظات</label><textarea class="fta" id="add_notes" placeholder="تفاصيل الموعد..."></textarea></div>
+  `;
+  document.getElementById('mFoot').innerHTML = `
+    <button class="btn-p" onclick="submitAdd()">➕ إضافة الموعد</button>
+    <button class="btn-s" onclick="closeModal('actionOverlay')">إلغاء</button>
+  `;
+  document.getElementById('actionOverlay').classList.add('open');
+}
+
+function submitAdd() {
+  const name  = document.getElementById('add_name')?.value.trim();
+  const cid   = document.getElementById('add_id')?.value.trim() || 'USR-XXXX';
+  const type  = document.getElementById('add_type')?.value;
+  const date  = document.getElementById('add_date')?.value;
+  const loc   = document.getElementById('add_loc')?.value;
+  const dur   = parseInt(document.getElementById('add_dur')?.value) || 60;
+  const notes = document.getElementById('add_notes')?.value;
+  const time  = selectedTime;
+
+  if (!name || !date || !time) { showToast('⚠️ يرجى ملء جميع الحقول المطلوبة', 'err'); return; }
+
+  const colors = ['#C8A84B','#34D68A','#4C9EE6','#9B6FF5','#F4A420','#EF5D58'];
+  const c = colors[appointments.length % colors.length];
+  const newId = 'APT-' + String(appointments.length + 1).padStart(3,'0');
+  appointments.push({ id:newId, clientName:name, clientId:cid, clientInitials:name.slice(0,2), clientColor:c, clientBg:c+'20', type, date, time, duration:dur, location:loc, status:'confirmed', urgent:false, notes });
+
+  closeModal('actionOverlay');
+  updateCounts(); renderRequests(); renderToday();
+  showToast('✅ تمت إضافة الموعد بنجاح', 'ok');
+}
+
+function renderToday() {
+  const todayStr = '2026-03-01';
+  const todayAppts = appointments
+    .filter(a => a.date === todayStr && a.status !== 'rejected')
+    .sort((a,b) => a.time.localeCompare(b.time));
+
+  const schedule = ['09:00 AM','10:00 AM','11:30 AM','02:00 PM'];
+  const container = document.getElementById('todaySchedule');
+  const dotColors = { confirmed:'var(--green)', new:'var(--amber)', reschedule:'var(--purple)', completed:'var(--blue)' };
+
+  container.innerHTML = schedule.map(t => {
+    const a = todayAppts.find(x => x.time === t);
+    if (a) {
+      return `<div class="sch-slot">
+        <div class="sch-time">${t}</div>
+        <div class="sch-info">
+          <div class="sch-name">${a.clientName}</div>
+          <div class="sch-type">${a.type}</div>
+        </div>
+        <div class="sch-dot" style="background:${dotColors[a.status]||'var(--text-dim)'}"></div>
+      </div>`;
+    }
+    return `<div class="sch-slot free">
+      <div class="sch-time">${t}</div>
+      <div class="sch-info"><div class="sch-type">متاح</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAvailability() {
+  document.getElementById('availBody').innerHTML = availability.map((d, i) => `
+    <div class="avail-day">
+      <div>
+        <div class="avail-day-name">${d.day}</div>
+        <div class="avail-hours">${d.hours}</div>
+      </div>
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" ${d.on?'checked':''} onchange="toggleDay(${i},this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleDay(i, val) {
+  availability[i].on = val;
+  showToast(val ? '✅ تم تفعيل ' + availability[i].day : '🔕 تم إيقاف ' + availability[i].day, 'inf');
+}
+
+function updateCounts() {
+  const counts = { new:0, confirmed:0, reschedule:0, completed:0, rejected:0 };
+  appointments.forEach(a => { if (counts[a.status] !== undefined) counts[a.status]++; });
+  document.getElementById('tc-new').textContent  = counts.new;
+  document.getElementById('tc-conf').textContent = counts.confirmed;
+  document.getElementById('tc-res').textContent  = counts.reschedule;
+  document.getElementById('tc-comp').textContent = counts.completed;
+  document.getElementById('tc-rej').textContent  = counts.rejected;
+  document.getElementById('kNewCount').textContent  = counts.new;
+  document.getElementById('kConfCount').textContent = counts.confirmed;
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); actionTarget = null; selectedTime = null; }
+function closeBg(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type||'');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+renderRequests();
+renderToday();
+renderAvailability();
+updateCounts();
+</script>
+</body>
+</html>

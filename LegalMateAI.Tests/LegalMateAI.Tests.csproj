@@ -8,16 +8,34 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Testing packages -->
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
-    <PackageReference Include="FluentAssertions" Version="8.7.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    
+    <!-- ✅ BCrypt -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    
+    <!-- Entity Framework -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.9" />
+    
+    <!-- ASP.NET Core -->
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="9.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\LegalMateAI.API\LegalMateAI.API.csproj" />
+    <ProjectReference Include="..\LegalMateAI.BLL\LegalMateAI.BLL.csproj" />
+    <ProjectReference Include="..\LegalMateAI.DAL\LegalMateAI.DAL.csproj" />
+    <ProjectReference Include="..\LegalMateAI.Domain\LegalMateAI.Domain.csproj" />
+    <ProjectReference Include="..\LegalMateAI.DTOs\LegalMateAI.DTOs.csproj" />
+    <ProjectReference Include="..\LegalMateAI.Infrastructure\LegalMateAI.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

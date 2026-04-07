@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-multipart
+transformers
+torch
+sentence-transformers
+faiss-cpu
+scikit-learn
+numpy
+PyPDF2
+python-docx
+pydantic
+python-dotenv
+httpx
+slowapi

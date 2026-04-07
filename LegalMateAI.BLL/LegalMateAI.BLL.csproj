@@ -4,11 +4,16 @@
     <ProjectReference Include="..\LegalMateAI.DAL\LegalMateAI.DAL.csproj" />
     <ProjectReference Include="..\LegalMateAI.Domain\LegalMateAI.Domain.csproj" />
     <ProjectReference Include="..\LegalMateAI.DTOs\LegalMateAI.DTOs.csproj" />
+      <ProjectReference Include="..\LegalMateAI.Infrastructure\LegalMateAI.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-<PackageReference Include="AutoMapper" Version="15.0.1" />
+<PackageReference Include="AutoMapper" Version="12.0.1" />
 <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+<PackageReference Include="DinkToPdf" Version="1.0.8" />
+<PackageReference Include="HtmlRenderer.PdfSharp" Version="1.5.2" />
+<PackageReference Include="QuestPDF" Version="2026.2.4" />
 
 
     <PackageReference Include="FluentValidation" Version="12.0.0" />

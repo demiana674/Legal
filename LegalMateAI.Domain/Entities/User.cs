@@ -1,47 +1,39 @@
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
+using LegalMateAI.Domain.Enums;
+using LegalMateAI.Domain.Entities;  
 
 namespace LegalMateAI.Domain.Entities
 {
-    [Index(nameof(Email), IsUnique = true)]
     public class User
     {
-        [Key]
-        public int UserID { get; set; }
-        [Required]
-        [MaxLength(150)]
-
-        public string Name { get; set;}= string.Empty;
-        [Required]
-        [EmailAddress]
-        [MaxLength(150)]
-        public string Email { get; set; }= string.Empty;
-        [Required]
-        [MaxLength(500)]
+        public Guid UserID { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string FullName => $"{FirstName} {LastName}";
+        public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
-        public DateTime JoinDate { get; set; } = DateTime.UtcNow;
-        public bool IsActive { get; set; }= true;
-        public UserRole Role { get; set; }= UserRole.User;
-
-        public ICollection<UserContracts> UserContracts { get; set; }= new List<UserContracts>();
-        public ICollection<Consultation> UserConsultations { get; set; }= new List<Consultation>();
-        public ICollection<ChatbotLog> ChatbotLogs { get; set; } = new List<ChatbotLog>();
-        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-        public ICollection<IRDocuments> IRDocuments { get; set; } = new List<IRDocuments>();
-        public ICollection<IRQueries> IRQueries { get; set; } = new List<IRQueries>();
-
+        public string? Phone { get; set; }
+        // public string? AlternativePhone { get; set; }
+        public string? NationalId { get; set; }
+        public UserRole Role { get; set; }
+        public AccountStatus Status { get; set; } = AccountStatus.Pending;
+        public bool IsActive { get; set; } = true;
+        public bool EmailVerified { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? LastLogin { get; set; }
+        public DateTime JoinDate { get; set; }
+        public string? ProfilePicture { get; set; }
+        
+        // // ✅ ألغِ التعليق عن هذه الأسطر
+        // public int? CityId { get; set; }
+        // public City? City { get; set; }
+        
+        // Relationships
+        public LawyerProfile? LawyerProfile { get; set; }
+        public UserProfile? UserProfile {get; set;}
+        public ICollection<Document> Documents { get; set; } = new List<Document>();
+        public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+        public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
     }
-    public enum UserRole
-    {
-        Admin,
-        User,
-        Lawyer
-    }
-
 }

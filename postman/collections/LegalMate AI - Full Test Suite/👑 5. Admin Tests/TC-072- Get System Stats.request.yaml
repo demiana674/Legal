@@ -1,0 +1,19 @@
+$kind: http-request
+name: "TC-072: Get System Stats"
+url: "{{baseUrl}}/api/admin/stats"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Status code is 200", function () {
+      pm.response.to.have.status(200); });
+
+      pm.test("Response has totalUsers", function () {
+      pm.response.json().data.totalUsers !== undefined; });
+
+      pm.test("Response has totalLawyers", function () {
+      pm.response.json().data.totalLawyers !== undefined; });
+    language: text/javascript
+order: 6000

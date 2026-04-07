@@ -1,0 +1,29 @@
+// LegalMateAI.DTOs/ReadDTO/LogFilterDto.cs
+using System;
+using LegalMateAI.Domain.Enums;
+
+namespace LegalMateAI.DTOs.ReadDTO
+{
+    public class LogFilterDto
+    {
+        public string? AdminId { get; set; }
+        public AdminLogAction? Action { get; set; }
+        public string? TargetType { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+        
+        private int _page = 1;
+        public int Page 
+        { 
+            get => _page;
+            set => _page = value < 1 ? 1 : value;
+        }
+        
+        private int _pageSize = 50;
+        public int PageSize 
+        { 
+            get => _pageSize;
+            set => _pageSize = value < 1 ? 50 : (value > 500 ? 500 : value);
+        }
+    }
+}

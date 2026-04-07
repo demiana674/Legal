@@ -1,0 +1,10 @@
+# Use this workspace to collaborate
+workspace:
+  id: b9fd8be5-21ca-42ea-8a92-7f9cf4e12009
+
+localResources:
+  specs:
+    - ..\LegalMateAI.API\obj\Debug\net9.0\EndpointInfo\LegalMateAI.API.json
+cloudResources:
+  collections:
+    ..\postman\collections\LegalMate AI - Full Test Suite: fd601fcf-7829-4454-b35c-735404b8c627

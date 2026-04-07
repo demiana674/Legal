@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الملف الشخصي — النظام القضائي الإلكتروني</title>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C8A84B;
+      --gold-light: #E8C96A;
+      --gold-dim: rgba(200,168,75,0.11);
+      --gold-border: rgba(200,168,75,0.22);
+      --dark: #07090E;
+      --dark-mid: #0C1017;
+      --dark-panel: #101420;
+      --dark-card: #141828;
+      --dark-hover: #192030;
+      --text: #EDE9DD;
+      --text-dim: #787060;
+      --text-muted: #302E2A;
+      --green: #36D98E;
+      --green-dim: rgba(54,217,142,0.1);
+      --red: #F05C58;
+      --red-dim: rgba(240,92,88,0.1);
+      --blue: #4DA2EA;
+      --blue-dim: rgba(77,162,234,0.1);
+      --amber: #F6A71E;
+      --amber-dim: rgba(246,167,30,0.1);
+      --sidebar-w: 240px;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(200,168,75,0.18); border-radius: 2px; }
+
+    body { font-family: 'Cairo', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; direction: rtl; }
+
+    /* ═══ SIDEBAR ═══ */
+    .sidebar {
+      position: fixed; right: 0; top: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--dark-panel);
+      border-left: 1px solid var(--gold-border);
+      display: flex; flex-direction: column; z-index: 200;
+    }
+    .sb-logo { padding: 20px 16px; border-bottom: 1px solid rgba(200,168,75,0.07); display: flex; align-items: center; gap: 10px; }
+    .sb-logo svg { width: 34px; height: 34px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(200,168,75,0.3)); }
+    .sb-logo-text { font-family: 'Amiri', serif; font-size: 0.88rem; font-weight: 700; color: var(--gold); line-height: 1.3; }
+    .sb-nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 8px; cursor: pointer; transition: all .18s; font-size: 0.82rem; font-weight: 600; color: var(--text-dim); position: relative; }
+    .nav-item:hover { background: rgba(200,168,75,0.05); color: var(--text); }
+    .nav-item.active { background: var(--gold-dim); color: var(--gold); }
+    .nav-item.active::after { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px; background: var(--gold); border-radius: 0 2px 2px 0; }
+    .nav-icon { font-size: 0.88rem; width: 17px; text-align: center; flex-shrink: 0; }
+    .nav-badge { margin-right: auto; font-size: .6rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: var(--red); color: #fff; }
+    .sb-bottom { padding: 10px 8px; border-top: 1px solid rgba(200,168,75,0.06); }
+
+    /* ═══ MAIN ═══ */
+    .main { margin-right: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .topbar {
+      padding: 14px 26px;
+      border-bottom: 1px solid rgba(200,168,75,0.07);
+      background: rgba(7,9,14,0.8); backdrop-filter: blur(14px);
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-family: 'Amiri', serif; font-size: 1.3rem; color: var(--gold); }
+    .topbar-sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; }
+    .tb-right { display: flex; gap: 8px; align-items: center; }
+    .tb-btn {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 8px; width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.88rem; color: var(--text-dim);
+      transition: all .2s; position: relative;
+    }
+    .tb-btn:hover { border-color: var(--gold); color: var(--text); }
+    .tb-dot { position: absolute; top: 5px; left: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); border: 2px solid var(--dark); }
+
+    /* ═══ CONTENT ═══ */
+    .content { flex: 1; padding: 0; }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .a1{animation:fadeUp .45s ease .04s both}
+    .a2{animation:fadeUp .45s ease .10s both}
+    .a3{animation:fadeUp .45s ease .16s both}
+    .a4{animation:fadeUp .45s ease .22s both}
+
+    /* ═══ HERO BANNER ═══ */
+    .profile-hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #0D1020 0%, #131828 50%, #0A0E1A 100%);
+      border-bottom: 1px solid var(--gold-border);
+      padding: 0;
+    }
+
+    .hero-pattern {
+      position: absolute; inset: 0; opacity: 0.04;
+      background-image: repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 1px, transparent 0, transparent 50%);
+      background-size: 20px 20px;
+    }
+
+    .hero-glow {
+      position: absolute; top: -60px; right: 120px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,168,75,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner { position: relative; z-index: 2; padding: 36px 28px 0; }
+    .hero-top { display: flex; align-items: flex-end; gap: 24px; margin-bottom: 0; }
+
+    /* Avatar */
+    .avatar-wrap { position: relative; flex-shrink: 0; }
+    .avatar-ring {
+      width: 96px; height: 96px; border-radius: 22px;
+      background: linear-gradient(135deg, var(--gold), #8A6018);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Amiri', serif; font-size: 2rem; font-weight: 700;
+      color: #07090E;
+      box-shadow: 0 8px 28px rgba(200,168,75,0.3), 0 0 0 3px rgba(200,168,75,0.15);
+      position: relative; z-index: 1;
+      transition: transform .2s; cursor: pointer;
+    }
+    .avatar-ring:hover { transform: scale(1.04); }
+    .avatar-edit-btn {
+      position: absolute; bottom: -4px; left: -4px;
+      width: 26px; height: 26px; border-radius: 8px;
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; cursor: pointer; z-index: 2; transition: all .2s;
+    }
+    .avatar-edit-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+    .online-badge {
+      position: absolute; top: 6px; right: -4px;
+      display: flex; align-items: center; gap: 4px;
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 20px; padding: 2px 7px;
+      font-size: 0.6rem; color: var(--green); font-weight: 700;
+      white-space: nowrap; z-index: 2;
+    }
+    .ob-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+    .hero-info { flex: 1; padding-bottom: 20px; }
+    .hero-name { font-family: 'Amiri', serif; font-size: 1.7rem; color: var(--text); margin-bottom: 4px; }
+    .hero-id   { font-size: 0.72rem; color: var(--text-dim); direction: ltr; text-align: right; margin-bottom: 8px; }
+    .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .hero-tag {
+      display: flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700;
+    }
+    .ht-user    { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
+    .ht-active  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(54,217,142,0.2); }
+    .ht-verified{ background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(77,162,234,0.2); }
+
+    .hero-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+    .hs-item { text-align: center; }
+    .hs-num { font-family: 'Amiri', serif; font-size: 1.3rem; color: var(--gold); line-height: 1; }
+    .hs-lbl { font-size: 0.66rem; color: var(--text-dim); margin-top: 2px; }
+
+    /* Hero Tabs */
+    .hero-tabs {
+      display: flex; gap: 4px;
+      padding: 0 28px;
+      border-top: 1px solid rgba(200,168,75,0.08);
+      position: relative; z-index: 2;
+      margin-top: 20px;
+    }
+    .h-tab {
+      padding: 12px 16px; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; color: var(--text-dim);
+      border-bottom: 2px solid transparent;
+      transition: all .2s; background: none; border-top: none;
+      border-right: none; border-left: none;
+      font-family: 'Cairo', sans-serif;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .h-tab:hover { color: var(--text); }
+    .h-tab.on { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ═══ TAB CONTENT ═══ */
+    .tab-pane { display: none; padding: 24px 28px; }
+    .tab-pane.active { display: block; }
+
+    /* ═══ GRID LAYOUT ═══ */
+    .profile-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+    /* ═══ CARD ═══ */
+    .pcard {
+      background: var(--dark-panel);
+      border: 1px solid var(--gold-border);
+      border-radius: 14px; overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .pcard:last-child { margin-bottom: 0; }
+
+    .pcard-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(200,168,75,0.07);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .pcard-title {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 0.88rem; color: var(--text);
+    }
+    .pcard-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; }
+    .pcard-action { font-size: 0.72rem; color: var(--gold); background: none; border: none; font-family: 'Cairo', sans-serif; cursor: pointer; opacity: .8; transition: opacity .2s; }
+    .pcard-action:hover { opacity: 1; }
+
+    /* ═══ INFO GRID ═══ */
+    .info-grid { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .info-item { display: flex; flex-direction: column; gap: 3px; }
+    .info-label { font-size: 0.68rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    .info-value { font-size: 0.84rem; font-weight: 600; color: var(--text); }
+    .info-value.dir-ltr { direction: ltr; text-align: right; }
+
+    /* ═══ EDIT FORM ═══ */
+    .edit-form { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .fg { display: flex; flex-direction: column; gap: 5px; }
+    .fl { font-size: 0.74rem; color: var(--text-dim); font-weight: 600; }
+    .fi, .fs {
+      background: var(--dark-mid); border: 1px solid rgba(200,168,75,0.17);
+      border-radius: 8px; padding: 9px 12px;
+      color: var(--text); font-family: 'Cairo', sans-serif;
+      font-size: 0.83rem; outline: none; direction: rtl;
+      transition: border-color .25s;
+    }
+    .fi:focus, .fs:focus { border-color: var(--gold); }
+    .fi::placeholder { color: rgba(120,112,96,.4); }
+
+    .save-row { display: flex; gap: 9px; padding: 14px 18px; border-top: 1px solid rgba(200,168,75,0.07); }
+    .btn-save {
+      background: linear-gradient(135deg, var(--gold), #8A6018);
+      border: none; border-radius: 8px;
+      padding: 9px 22px; color: #07090E;
+      font-family: 'Cairo', sans-serif; font-size: .83rem; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-save:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(200,168,75,.22); }
+    .btn-cancel {
+      background: transparent; border: 1px solid var(--gold-border);
+      border-radius: 8px; padding: 9px 16px; color: var(--text-dim);
+      font-family: 'Cairo', sans-serif; font-size: .83rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-cancel:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ═══ PASSWORD CHANGE ROW ═══ */
+    .pass-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 14px 18px;
+    }
+    .pass-row-left { display: flex; align-items: center; gap: 12px; }
+    .pass-row-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--gold-dim); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .pass-row-title { font-size: 0.84rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .pass-row-sub   { font-size: 0.7rem; color: var(--text-dim); }
+    .pass-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: .74rem; font-weight: 700;
+      cursor: pointer; font-family: 'Cairo', sans-serif; transition: all .18s;
+      background: var(--gold-dim); color: var(--gold);
+      border: 1px solid var(--gold-border); white-space: nowrap;
+    }
+    .pass-btn:hover { background: var(--gold); color: #07090E; }
+
+    /* ═══ DOCUMENTS ═══ */
+    .doc-grid { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .doc-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 10px;
+      background: var(--dark-card); border: 1px solid rgba(200,168,75,0.07);
+      cursor: pointer; transition: all .18s;
+    }
+    .doc-item:hover { border-color: rgba(200,168,75,0.25); background: var(--dark-hover); }
+    .doc-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; }
+    .doc-info { flex: 1; min-width: 0; }
+    .doc-name { font-size: .8rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-meta { font-size: .66rem; color: var(--text-dim); margin-top: 2px; }
+    .doc-status { font-size: .64rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
+    .ds-ok  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(54,217,142,.2); }
+    .ds-wait{ background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(246,167,30,.2); }
+    .ds-exp { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(240,92,88,.2); }
+
+    .upload-area {
+      margin: 0 16px 14px;
+      border: 2px dashed var(--gold-border);
+      border-radius: 10px; padding: 18px;
+      text-align: center; cursor: pointer; transition: all .2s;
+    }
+    .upload-area:hover { border-color: var(--gold); background: var(--gold-dim); }
+    .upload-icon { font-size: 1.5rem; opacity: .4; margin-bottom: 6px; }
+    .upload-text { font-size: .75rem; color: var(--text-dim); }
+    .upload-text strong { color: var(--gold); }
+
+    /* ═══ NOTIFICATIONS PREFS ═══ */
+    .notif-item {
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(200,168,75,0.05);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .ni-info { flex: 1; }
+    .ni-title { font-size: .82rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .ni-sub { font-size: .68rem; color: var(--text-dim); }
+
+    /* Toggle */
+    .toggle { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .t-slider { position: absolute; inset: 0; background: rgba(120,112,96,.25); border-radius: 10px; cursor: pointer; transition: .3s; }
+    .t-slider::before { content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--text-dim); bottom: 3px; right: 3px; transition: .3s; }
+    .toggle input:checked + .t-slider { background: var(--green); }
+    .toggle input:checked + .t-slider::before { transform: translateX(-18px); background: #fff; }
+
+    /* ═══ LAWYER CARD ═══ */
+    .lawyer-card {
+      background: var(--dark-panel); border: 1px solid var(--gold-border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+    }
+    .lc-top {
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(200,168,75,0.06), transparent);
+      border-bottom: 1px solid rgba(200,168,75,0.07);
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+    }
+    .lc-av { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, var(--gold), #8A6018); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: #07090E; }
+    .lc-name { font-size: .86rem; font-weight: 700; color: var(--text); }
+    .lc-spec { font-size: .68rem; color: var(--gold); }
+    .lc-rating { display: flex; gap: 2px; font-size: .75rem; color: var(--amber); justify-content: center; margin-top: 2px; }
+    .lc-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .lc-stat { display: flex; justify-content: space-between; font-size: .76rem; }
+    .lc-stat-label { color: var(--text-dim); }
+    .lc-stat-value { font-weight: 700; color: var(--text); }
+    .lc-btn {
+      width: 100%; padding: 9px; border-radius: 8px; font-size: .78rem; font-weight: 700;
+      cursor: pointer; font-family: 'Cairo', sans-serif; transition: all .2s;
+      background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border);
+      margin-top: 4px;
+    }
+    .lc-btn:hover { background: var(--gold); color: #07090E; }
+
+    /* ═══ QUICK STATS ═══ */
+    .quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .qs-card { background: var(--dark-panel); border: 1px solid var(--gold-border); border-radius: 12px; padding: 14px 12px; text-align: center; position: relative; overflow: hidden; }
+    .qs-num { font-family: 'Amiri', serif; font-size: 1.6rem; line-height: 1; margin-bottom: 3px; }
+    .qs-lbl { font-size: .64rem; color: var(--text-dim); }
+    .qs-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--dark-panel); border: 1px solid var(--gold-border); border-radius: 9px; padding: 11px 20px; font-size: .82rem; font-weight: 600; color: var(--text); opacity: 0; transition: all .3s; z-index: 999; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.ok  { border-color: rgba(54,217,142,.3); }
+    .toast.err { border-color: rgba(240,92,88,.3); }
+
+    /* Password modal */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(7,9,14,.9); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+    .overlay.open { display: flex; }
+    .modal { background: var(--dark-panel); border: 1px solid var(--gold-border); border-radius: 14px; width: 100%; max-width: 440px; overflow: hidden; animation: mIn .26s ease both; }
+    @keyframes mIn { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+    .modal-bar { height: 3px; background: linear-gradient(90deg,transparent,var(--gold),transparent); }
+    .modal-head { padding: 18px 20px 14px; border-bottom: 1px solid rgba(200,168,75,.07); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-family: 'Amiri', serif; font-size: 1.1rem; color: var(--gold); }
+    .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.2rem; cursor: pointer; transition: color .2s; }
+    .modal-close:hover { color: var(--red); }
+    .modal-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-foot { padding: 12px 18px; border-top: 1px solid rgba(200,168,75,.07); display: flex; gap: 8px; }
+
+    @media (max-width:1100px) { .profile-grid { grid-template-columns: 1fr; } }
+    @media (max-width:900px)  { .sidebar { display: none; } .main { margin-right: 0; } }
+    @media (max-width:600px)  { .tab-pane { padding: 16px; } .info-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } .quick-stats { grid-template-columns: 1fr 1fr; } .hero-inner { padding: 24px 16px 0; } .hero-tabs { padding: 0 16px; } }
+  </style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <svg viewBox="0 0 120 120" fill="none">
+      <path d="M60 8 L100 24 L100 60 C100 82 82 98 60 108 C38 98 20 82 20 60 L20 24 Z" fill="rgba(200,168,75,0.08)" stroke="#C8A84B" stroke-width="2"/>
+      <line x1="60" y1="32" x2="60" y2="80" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+      <line x1="36" y1="46" x2="84" y2="46" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+      <line x1="36" y1="46" x2="30" y2="62" stroke="#C8A84B" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M22 62 Q30 58 38 62 Q30 70 22 62Z" fill="rgba(200,168,75,0.3)" stroke="#C8A84B" stroke-width="1.5"/>
+      <line x1="84" y1="46" x2="90" y2="58" stroke="#C8A84B" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M82 58 Q90 54 98 58 Q90 66 82 58Z" fill="rgba(200,168,75,0.3)" stroke="#C8A84B" stroke-width="1.5"/>
+      <line x1="48" y1="80" x2="72" y2="80" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="60" cy="32" r="4" fill="#C8A84B"/>
+    </svg>
+    <div class="sb-logo-text">النظام القضائي<br>الإلكتروني</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-item"><span class="nav-icon">🏠</span> لوحة التحكم</div>
+    <div class="nav-item"><span class="nav-icon">📄</span> عقودي</div>
+    <div class="nav-item"><span class="nav-icon">📅</span> مواعيدي</div>
+    <div class="nav-item"><span class="nav-icon">📁</span> القضايا</div>
+    <div class="nav-item"><span class="nav-icon">🤖</span> المساعد القانوني</div>
+    <div class="nav-item"><span class="nav-icon">🔔</span> الإشعارات <span class="nav-badge">3</span></div>
+    <div class="nav-item active"><span class="nav-icon">👤</span> الملف الشخصي</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span> الإعدادات</div>
+  </nav>
+  <div class="sb-bottom">
+    <div class="nav-item" style="color:rgba(240,92,88,.7)"><span class="nav-icon">🚪</span> تسجيل الخروج</div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">الملف الشخصي</div>
+      <div class="topbar-sub">إدارة بياناتك الشخصية وإعدادات حسابك</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-btn">🔔<span class="tb-dot"></span></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ HERO ═══ -->
+    <div class="profile-hero a1">
+      <div class="hero-pattern"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-inner">
+        <div class="hero-top">
+          <div class="avatar-wrap">
+            <div class="avatar-ring" title="تغيير الصورة" onclick="showToast('📸 سيتم إضافة رفع الصورة قريباً','ok')">أح</div>
+            <div class="avatar-edit-btn" title="تعديل الصورة">✏️</div>
+            <div class="online-badge"><div class="ob-dot"></div> نشط</div>
+          </div>
+          <div class="hero-info">
+            <div class="hero-name">أحمد محمد علي</div>
+            <div class="hero-id">USR-4421 — عضو منذ يناير ٢٠٢٤</div>
+            <div class="hero-tags">
+              <span class="hero-tag ht-user">👤 مستخدم عادي</span>
+              <span class="hero-tag ht-active">✅ حساب نشط</span>
+              <span class="hero-tag ht-verified">🔵 موثق</span>
+            </div>
+            <div class="hero-stats">
+              <div class="hs-item"><div class="hs-num">٥</div><div class="hs-lbl">عقود</div></div>
+              <div class="hs-item"><div class="hs-num">٣</div><div class="hs-lbl">مواعيد</div></div>
+              <div class="hs-item"><div class="hs-num">٢</div><div class="hs-lbl">قضايا</div></div>
+              <div class="hs-item"><div class="hs-num">١٤</div><div class="hs-lbl">شهراً معنا</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-tabs">
+          <button class="h-tab on" onclick="switchTab('info', this)">👤 المعلومات الشخصية</button>
+          <button class="h-tab" onclick="switchTab('docs', this)">📎 المستندات</button>
+          <button class="h-tab" onclick="switchTab('notifs', this)">🔔 الإشعارات</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TAB: PERSONAL INFO
+    ════════════════════════════════ -->
+    <div class="tab-pane active a2" id="tab-info">
+      <div class="profile-grid">
+
+        <!-- LEFT -->
+        <div>
+
+          <!-- Personal Data -->
+          <div class="pcard">
+            <div class="pcard-header">
+              <div class="pcard-title">
+                <div class="pcard-icon" style="background:var(--gold-dim);color:var(--gold)">👤</div>
+                البيانات الشخصية
+              </div>
+              <button class="pcard-action" onclick="toggleEdit('personal')">✏️ تعديل</button>
+            </div>
+
+            <div id="personal-view">
+              <div class="info-grid">
+                <div class="info-item"><div class="info-label">الاسم الأول</div><div class="info-value">أحمد</div></div>
+                <div class="info-item"><div class="info-label">الاسم الأخير</div><div class="info-value">محمد علي</div></div>
+                <div class="info-item"><div class="info-label">تاريخ الميلاد</div><div class="info-value">١٥ مارس ١٩٩٠</div></div>
+                <div class="info-item"><div class="info-label">الجنس</div><div class="info-value">ذكر</div></div>
+                <div class="info-item"><div class="info-label">الجنسية</div><div class="info-value">مصري</div></div>
+                <div class="info-item"><div class="info-label">الرقم القومي</div><div class="info-value dir-ltr">29003151234567</div></div>
+              </div>
+            </div>
+
+            <div id="personal-edit" style="display:none">
+              <div class="edit-form">
+                <div class="form-row">
+                  <div class="fg"><label class="fl">الاسم الأول</label><input class="fi" value="أحمد"></div>
+                  <div class="fg"><label class="fl">الاسم الأخير</label><input class="fi" value="محمد علي"></div>
+                </div>
+                <div class="form-row">
+                  <div class="fg"><label class="fl">تاريخ الميلاد</label><input class="fi" type="date" value="1990-03-15"></div>
+                  <div class="fg"><label class="fl">الجنس</label>
+                    <select class="fs"><option selected>ذكر</option><option>أنثى</option></select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="fg"><label class="fl">الجنسية</label><input class="fi" value="مصري"></div>
+                  <div class="fg"><label class="fl">الرقم القومي</label><input class="fi" value="29003151234567" style="direction:ltr"></div>
+                </div>
+              </div>
+              <div class="save-row">
+                <button class="btn-save" onclick="saveSection('personal','البيانات الشخصية')">💾 حفظ التغييرات</button>
+                <button class="btn-cancel" onclick="toggleEdit('personal')">إلغاء</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="pcard">
+            <div class="pcard-header">
+              <div class="pcard-title">
+                <div class="pcard-icon" style="background:var(--blue-dim);color:var(--blue)">📬</div>
+                بيانات التواصل
+              </div>
+              <button class="pcard-action" onclick="toggleEdit('contact')">✏️ تعديل</button>
+            </div>
+
+            <div id="contact-view">
+              <div class="info-grid">
+                <div class="info-item"><div class="info-label">البريد الإلكتروني</div><div class="info-value dir-ltr">ahmed.ali@email.com</div></div>
+                <div class="info-item"><div class="info-label">رقم الهاتف</div><div class="info-value dir-ltr">+20 101 234 5678</div></div>
+                <div class="info-item"><div class="info-label">المدينة</div><div class="info-value">القاهرة</div></div>
+                <div class="info-item"><div class="info-label">المنطقة</div><div class="info-value">مدينة نصر</div></div>
+                <div class="info-item" style="grid-column:1/-1"><div class="info-label">العنوان</div><div class="info-value">شارع مصطفى النحاس، بناية ١٢، شقة ٥</div></div>
+              </div>
+            </div>
+
+            <div id="contact-edit" style="display:none">
+              <div class="edit-form">
+                <div class="form-row">
+                  <div class="fg"><label class="fl">البريد الإلكتروني</label><input class="fi" value="ahmed.ali@email.com" style="direction:ltr"></div>
+                  <div class="fg"><label class="fl">رقم الهاتف</label><input class="fi" value="+20 101 234 5678" style="direction:ltr"></div>
+                </div>
+                <div class="form-row">
+                  <div class="fg"><label class="fl">المدينة</label><input class="fi" value="القاهرة"></div>
+                  <div class="fg"><label class="fl">المنطقة</label><input class="fi" value="مدينة نصر"></div>
+                </div>
+                <div class="fg"><label class="fl">العنوان التفصيلي</label><input class="fi" value="شارع مصطفى النحاس، بناية ١٢، شقة ٥"></div>
+              </div>
+              <div class="save-row">
+                <button class="btn-save" onclick="saveSection('contact','بيانات التواصل')">💾 حفظ التغييرات</button>
+                <button class="btn-cancel" onclick="toggleEdit('contact')">إلغاء</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password — مستقلة تحت بيانات التواصل -->
+          <div class="pcard">
+            <div class="pcard-header">
+              <div class="pcard-title">
+                <div class="pcard-icon" style="background:var(--gold-dim);color:var(--gold)">🔑</div>
+                كلمة المرور
+              </div>
+            </div>
+            <div class="pass-row">
+              <div class="pass-row-left">
+                <div class="pass-row-icon">🔑</div>
+                <div>
+                  <div class="pass-row-title">تغيير كلمة المرور</div>
+                  <div class="pass-row-sub">آخر تغيير: ١٥ يناير ٢٠٢٦</div>
+                </div>
+              </div>
+              <button class="pass-btn" onclick="openPassModal()">تغيير كلمة المرور</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Stats + Lawyer -->
+        <div>
+          <div class="quick-stats a3">
+            <div class="qs-card">
+              <div class="qs-num" style="color:var(--gold)">٥</div>
+              <div class="qs-lbl">عقود نشطة</div>
+              <div class="qs-bar" style="background:linear-gradient(90deg,var(--gold),transparent)"></div>
+            </div>
+            <div class="qs-card">
+              <div class="qs-num" style="color:var(--green)">٣</div>
+              <div class="qs-lbl">مواعيد مؤكدة</div>
+              <div class="qs-bar" style="background:linear-gradient(90deg,var(--green),transparent)"></div>
+            </div>
+            <div class="qs-card">
+              <div class="qs-num" style="color:var(--blue)">٢</div>
+              <div class="qs-lbl">قضايا جارية</div>
+              <div class="qs-bar" style="background:linear-gradient(90deg,var(--blue),transparent)"></div>
+            </div>
+            <div class="qs-card">
+              <div class="qs-num" style="color:var(--amber)">٧</div>
+              <div class="qs-lbl">مستندات مرفوعة</div>
+              <div class="qs-bar" style="background:linear-gradient(90deg,var(--amber),transparent)"></div>
+            </div>
+          </div>
+
+          <div class="lawyer-card a4">
+            <div class="lc-top">
+              <div class="lc-av">كم</div>
+              <div class="lc-name">المستشار / كريم محمود</div>
+              <div class="lc-spec">⚖️ قانون مدني وعقاري</div>
+              <div class="lc-rating">★★★★★</div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-stat"><span class="lc-stat-label">عدد القضايا معه</span><span class="lc-stat-value">٢ قضية</span></div>
+              <div class="lc-stat"><span class="lc-stat-label">آخر موعد</span><span class="lc-stat-value">٣ مارس ٢٠٢٦</span></div>
+              <div class="lc-stat"><span class="lc-stat-label">مدة التعاون</span><span class="lc-stat-value">١٤ شهراً</span></div>
+              <button class="lc-btn" onclick="showToast('📅 جاري فتح صفحة الحجز...','ok')">📅 حجز موعد</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TAB: DOCUMENTS
+    ════════════════════════════════ -->
+    <div class="tab-pane a2" id="tab-docs">
+      <div class="pcard">
+        <div class="pcard-header">
+          <div class="pcard-title"><div class="pcard-icon" style="background:var(--amber-dim);color:var(--amber)">📎</div>المستندات والملفات</div>
+          <button class="pcard-action" onclick="showToast('📎 جاري فتح نافذة الرفع...','ok')">+ رفع مستند</button>
+        </div>
+        <div class="upload-area" onclick="showToast('📁 اختر الملف للرفع','ok')">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">اسحب ملفاتك هنا أو <strong>اضغط للاختيار</strong></div>
+          <div style="font-size:.64rem;color:var(--text-muted);margin-top:4px">PDF, JPG, PNG — حجم أقصى ١٠ ميجابايت</div>
+        </div>
+        <div class="doc-grid">
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">📄</div>
+            <div class="doc-info"><div class="doc-name">بطاقة الرقم القومي</div><div class="doc-meta">PDF — ١.٢ MB — رُفع ١ يناير ٢٠٢٤</div></div>
+            <span class="doc-status ds-ok">موثّق</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">🏠</div>
+            <div class="doc-info"><div class="doc-name">عقد ملكية الشقة</div><div class="doc-meta">PDF — ٣.٨ MB — رُفع ١٥ يناير ٢٠٢٤</div></div>
+            <span class="doc-status ds-ok">موثّق</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">📋</div>
+            <div class="doc-info"><div class="doc-name">شهادة الميلاد</div><div class="doc-meta">PDF — ٠.٥ MB — رُفع ٢٠ يناير ٢٠٢٤</div></div>
+            <span class="doc-status ds-ok">موثّق</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">🚗</div>
+            <div class="doc-info"><div class="doc-name">رخصة القيادة</div><div class="doc-meta">JPG — ٠.٨ MB — رُفع ٥ فبراير ٢٠٢٤</div></div>
+            <span class="doc-status ds-wait">قيد المراجعة</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">💼</div>
+            <div class="doc-info"><div class="doc-name">شهادة خبرة العمل</div><div class="doc-meta">PDF — ١.١ MB — رُفع ١٠ مارس ٢٠٢٤</div></div>
+            <span class="doc-status ds-wait">قيد المراجعة</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">⚖️</div>
+            <div class="doc-info"><div class="doc-name">وكالة قانونية قديمة</div><div class="doc-meta">PDF — ٢.٢ MB — رُفع ٢٠ يونيو ٢٠٢٣</div></div>
+            <span class="doc-status ds-exp">منتهية</span>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon" style="background:var(--dark-mid);border:1px solid var(--gold-border)">📜</div>
+            <div class="doc-info"><div class="doc-name">صورة جواز السفر</div><div class="doc-meta">JPG — ١.٤ MB — رُفع ٣٠ يونيو ٢٠٢٤</div></div>
+            <span class="doc-status ds-ok">موثّق</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TAB: NOTIFICATIONS PREFS
+    ════════════════════════════════ -->
+    <div class="tab-pane a2" id="tab-notifs">
+      <div class="profile-grid">
+        <div>
+
+          <div class="pcard">
+            <div class="pcard-header"><div class="pcard-title"><div class="pcard-icon" style="background:var(--gold-dim);color:var(--gold)">🔔</div>إشعارات المواعيد</div></div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">تأكيد الموعد</div><div class="ni-sub">عند قبول أو رفض طلب الموعد</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">تذكير قبل الموعد بـ ٢٤ ساعة</div><div class="ni-sub">إشعار يوم قبل موعدك</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">تذكير قبل الموعد بساعة</div><div class="ni-sub">إشعار ساعة قبل موعدك</div></div>
+              <label class="toggle"><input type="checkbox" onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="pcard">
+            <div class="pcard-header"><div class="pcard-title"><div class="pcard-icon" style="background:var(--gold-dim);color:var(--gold)">🔔</div>إشعارات العقود</div></div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">تحديثات العقود</div><div class="ni-sub">عند تعديل أو توقيع عقد</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">انتهاء صلاحية العقد</div><div class="ni-sub">تنبيه قبل ٣٠ يوم من انتهاء العقد</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="pcard">
+            <div class="pcard-header"><div class="pcard-title"><div class="pcard-icon" style="background:var(--gold-dim);color:var(--gold)">🔔</div>إشعارات القضايا</div></div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">تحديثات القضية</div><div class="ni-sub">عند إضافة مستند أو تحديث في القضية</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">مواعيد الجلسات</div><div class="ni-sub">إشعار بمواعيد جلسات المحكمة</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="pcard">
+            <div class="pcard-header"><div class="pcard-title"><div class="pcard-icon" style="background:var(--gold-dim);color:var(--gold)">🔔</div>الإشعارات العامة</div></div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">رسائل البريد الإلكتروني</div><div class="ni-sub">إرسال الإشعارات على بريدك</div></div>
+              <label class="toggle"><input type="checkbox" onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">الرسائل النصية SMS</div><div class="ni-sub">إرسال الإشعارات على هاتفك</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+            <div class="notif-item">
+              <div class="ni-info"><div class="ni-title">إشعارات التطبيق</div><div class="ni-sub">الإشعارات الفورية على الجهاز</div></div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked?'✅ تم تفعيل الإشعار':'🔕 تم إيقاف الإشعار','ok')"><span class="t-slider"></span></label>
+            </div>
+          </div>
+
+        </div>
+
+        <div>
+          <div class="pcard a3">
+            <div class="pcard-header"><div class="pcard-title"><div class="pcard-icon" style="background:var(--blue-dim);color:var(--blue)">📬</div>إعدادات التواصل</div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div class="fg"><label class="fl">البريد للإشعارات</label><input class="fi" value="ahmed.ali@email.com" style="direction:ltr"></div>
+              <div class="fg"><label class="fl">رقم الهاتف للرسائل</label><input class="fi" value="+20 101 234 5678" style="direction:ltr"></div>
+              <div class="fg"><label class="fl">لغة الإشعارات</label><select class="fs"><option selected>العربية</option><option>English</option></select></div>
+              <button class="btn-save" onclick="showToast('✅ تم حفظ إعدادات التواصل','ok')">💾 حفظ الإعدادات</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ════ CHANGE PASSWORD MODAL ════ -->
+<div class="overlay" id="passOverlay" onclick="closeBg(event,'passOverlay')">
+  <div class="modal">
+    <div class="modal-bar"></div>
+    <div class="modal-head">
+      <div class="modal-title">🔑 تغيير كلمة المرور</div>
+      <button class="modal-close" onclick="closeModal('passOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">كلمة المرور الحالية</label><input class="fi" type="password" placeholder="••••••••"></div>
+      <div class="fg"><label class="fl">كلمة المرور الجديدة</label><input class="fi" type="password" id="newPass" placeholder="٨ أحرف على الأقل" oninput="checkStrength(this.value)"></div>
+      <div id="strengthBar" style="height:4px;border-radius:2px;background:rgba(200,168,75,.1);transition:all .3s;margin-top:-6px"></div>
+      <div id="strengthLabel" style="font-size:.7rem;color:var(--text-dim);margin-top:2px"></div>
+      <div class="fg"><label class="fl">تأكيد كلمة المرور الجديدة</label><input class="fi" type="password" placeholder="أعد كتابة كلمة المرور"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-save" onclick="submitPass()">💾 تغيير كلمة المرور</button>
+      <button class="btn-cancel" onclick="closeModal('passOverlay')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.h-tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('on');
+}
+
+function toggleEdit(section) {
+  const view = document.getElementById(section + '-view');
+  const edit = document.getElementById(section + '-edit');
+  const isEditing = edit.style.display !== 'none';
+  view.style.display = isEditing ? '' : 'none';
+  edit.style.display = isEditing ? 'none' : '';
+}
+
+function saveSection(section, label) {
+  toggleEdit(section);
+  showToast('✅ تم حفظ ' + label + ' بنجاح', 'ok');
+}
+
+function openPassModal() {
+  document.getElementById('passOverlay').classList.add('open');
+}
+
+function checkStrength(val) {
+  const bar = document.getElementById('strengthBar');
+  const lbl = document.getElementById('strengthLabel');
+  if (!val) { bar.style.width = '0'; lbl.textContent = ''; return; }
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { w:'25%', color:'var(--red)',   label:'ضعيفة' },
+    { w:'50%', color:'var(--amber)', label:'متوسطة' },
+    { w:'75%', color:'var(--gold)',  label:'جيدة' },
+    { w:'100%',color:'var(--green)', label:'قوية جداً' },
+  ];
+  const lvl = levels[score - 1] || levels[0];
+  bar.style.width = lvl.w;
+  bar.style.background = lvl.color;
+  lbl.textContent = 'قوة كلمة المرور: ' + lvl.label;
+  lbl.style.color = lvl.color;
+}
+
+function submitPass() {
+  closeModal('passOverlay');
+  showToast('🔑 تم تغيير كلمة المرور بنجاح', 'ok');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeBg(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type || '');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

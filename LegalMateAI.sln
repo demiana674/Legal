@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalMateAI.API", "LegalMateAI.API\LegalMateAI.API.csproj", "{3AEADE68-E75A-48E9-AED6-2EE0AFC9B384}"
 EndProject
@@ -13,9 +13,23 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalMateAI.DAL", "LegalMat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalMateAI.BLL", "LegalMateAI.BLL\LegalMateAI.BLL.csproj", "{FA218A13-6343-4111-8E66-D0937F7D77D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalMateAI.AI", "LegalMateAI.AI\LegalMateAI.AI.csproj", "{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalMateAI.Tests", "LegalMateAI.Tests\LegalMateAI.Tests.csproj", "{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{21EB7CB4-D995-4BE5-8E85-BEBB6441F18E}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalMateAI.Infrastructure", "LegalMateAI.Infrastructure\LegalMateAI.Infrastructure.csproj", "{72A12099-2E62-627F-B8B8-B63AF6009DD7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LegalMateAI_Python", "LegalMateAI_Python", "{9188E5AB-DC94-448B-9F1A-0493CCE4D4D6}"
+	ProjectSection(SolutionItems) = preProject
+		LegalMateAI_Python\app.py = LegalMateAI_Python\app.py
+		LegalMateAI_Python\contract_generator.py = LegalMateAI_Python\contract_generator.py
+		LegalMateAI_Python\document_analyzer.py = LegalMateAI_Python\document_analyzer.py
+		LegalMateAI_Python\model_loader.py = LegalMateAI_Python\model_loader.py
+		LegalMateAI_Python\smart_search.py = LegalMateAI_Python\smart_search.py
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -87,18 +101,6 @@ Global
 		{FA218A13-6343-4111-8E66-D0937F7D77D0}.Release|x64.Build.0 = Release|Any CPU
 		{FA218A13-6343-4111-8E66-D0937F7D77D0}.Release|x86.ActiveCfg = Release|Any CPU
 		{FA218A13-6343-4111-8E66-D0937F7D77D0}.Release|x86.Build.0 = Release|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Debug|x64.Build.0 = Debug|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Debug|x86.Build.0 = Debug|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Release|x64.ActiveCfg = Release|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Release|x64.Build.0 = Release|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Release|x86.ActiveCfg = Release|Any CPU
-		{3BA5B1A0-7D06-42DA-94C8-A1D80A875CD9}.Release|x86.Build.0 = Release|Any CPU
 		{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -111,8 +113,23 @@ Global
 		{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}.Release|x64.Build.0 = Release|Any CPU
 		{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}.Release|x86.ActiveCfg = Release|Any CPU
 		{A285B0F3-2826-40A8-9B7C-0BD05D8B4D6F}.Release|x86.Build.0 = Release|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Debug|x64.Build.0 = Debug|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Debug|x86.Build.0 = Debug|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Release|x64.ActiveCfg = Release|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Release|x64.Build.0 = Release|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Release|x86.ActiveCfg = Release|Any CPU
+		{72A12099-2E62-627F-B8B8-B63AF6009DD7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5228BBEB-351B-481F-8AC0-F3CF4CBBA642}
 	EndGlobalSection
 EndGlobal

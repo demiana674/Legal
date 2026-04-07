@@ -1,0 +1,25 @@
+$kind: http-request
+name: "TC-022: Smart Search"
+url: "{{baseUrl}}/api/legal/smart-search"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "query": "عقد إيجار",
+      "page": 1,
+      "pageSize": 10
+    }
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Status code is 200", function () {
+      pm.response.to.have.status(200); });
+
+      pm.test("Response has results", function () {
+      pm.response.json().data.results !== undefined; });
+    language: text/javascript
+order: 3000

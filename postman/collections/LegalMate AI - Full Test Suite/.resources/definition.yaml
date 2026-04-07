@@ -1,0 +1,10 @@
+$kind: collection
+description: Complete test suite for LegalMate AI Platform
+variables:
+  baseUrl: http://localhost:5000
+  pythonUrl: http://localhost:8000
+  token: ""
+  adminToken: ""
+  userId: ""
+  documentId: ""
+  appointmentId: ""

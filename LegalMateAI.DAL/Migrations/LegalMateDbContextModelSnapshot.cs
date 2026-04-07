@@ -22,82 +22,36 @@ namespace LegalMateAI.DAL.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.AIModels", b =>
-                {
-                    b.Property<int>("ModelID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ModelID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ModelName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("ModelType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TrainedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Version")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("ModelID");
-
-                    b.ToTable("AIModels");
-                });
-
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Admin", b =>
                 {
-                    b.Property<int>("AdminID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdminID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastLogin")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("AdminID");
+                    b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -107,855 +61,2254 @@ namespace LegalMateAI.DAL.Migrations
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.AdminLog", b =>
                 {
-                    b.Property<int>("LogID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogID"));
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ActionType")
-                        .HasColumnType("int");
+                    b.Property<Guid>("AdminId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AdminID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Details")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("EntityID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EntityName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.HasKey("LogID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AdminID");
-
-                    b.HasIndex("Timestamp");
+                    b.HasIndex("AdminId");
 
                     b.ToTable("AdminLogs");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Articles", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.AdminProfile", b =>
                 {
-                    b.Property<int>("ArticleID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Department")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JobTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LastActiveAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalRejectedLawyers")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ArticleID"));
+                    b.Property<int>("TotalVerifiedLawyers")
+                        .HasColumnType("int");
 
-                    b.Property<string>("ArticleNumber")
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminId")
+                        .IsUnique();
+
+                    b.ToTable("AdminProfiles");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Appointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AppointmentNumber")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("LawID")
+                    b.Property<string>("AppointmentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsUrgent")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LawyerProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Text")
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("ArticleID");
+                    b.Property<string>("Time")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("LawID");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.ToTable("Articles");
+                    b.Property<Guid?>("UserID1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LawyerId");
+
+                    b.HasIndex("LawyerProfileId");
+
+                    b.HasIndex("UserID");
+
+                    b.HasIndex("UserID1");
+
+                    b.ToTable("Appointments");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.ChatbotLog", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.AppointmentReschedule", b =>
                 {
-                    b.Property<int>("ChatID")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("InitiatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("NewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NewTime")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OldDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OldTime")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.ToTable("AppointmentReschedules");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ArticleClause", b =>
+                {
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChatID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClauseNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.ToTable("ArticleClauses");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ArticleVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChangeReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModifiedByAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.ToTable("ArticleVersions");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Case", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CaseNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CaseType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Court")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Message")
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("NextHearingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Response")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("SessionID")
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("Id");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.HasIndex("ClientId");
 
-                    b.HasKey("ChatID");
+                    b.HasIndex("LawyerId");
 
-                    b.HasIndex("UserID");
-
-                    b.ToTable("ChatbotLogs");
+                    b.ToTable("Cases");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Clause", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.CaseDocument", b =>
                 {
-                    b.Property<int>("ClauseID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.ToTable("CaseDocuments");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.CaseNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("WrittenBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.ToTable("CaseNotes");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Certificate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IssuingOrganization")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Year")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClauseID"));
+                    b.HasKey("Id");
 
-                    b.Property<int>("ArticleID")
+                    b.HasIndex("LawyerId");
+
+                    b.ToTable("Certificates");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.City", b =>
+                {
+                    b.Property<int>("Id")
                         .HasColumnType("int");
 
-                    b.Property<string>("ClauseNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("GovernorateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GovernorateId");
+
+                    b.ToTable("Cities");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ClauseAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnalysisId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ClauseText")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Explanation")
+                    b.Property<string>("ClauseTitle")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("ClauseID");
+                    b.Property<string>("Interpretation")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("ArticleID");
+                    b.Property<int>("PageNumber")
+                        .HasColumnType("int");
 
-                    b.ToTable("Clauses");
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnalysisId");
+
+                    b.ToTable("ClauseAnalyses");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Consultation", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Contract", b =>
                 {
-                    b.Property<int>("ConsultationID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConsultationID"));
-
-                    b.Property<int?>("AdminID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Answer")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("DateAnswer")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateAsked")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsUrgent")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("LawyerID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Question")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Subject")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
-                    b.HasKey("ConsultationID");
-
-                    b.HasIndex("AdminID");
-
-                    b.HasIndex("LawyerID");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("Consultations");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.ContractsTemplate", b =>
-                {
-                    b.Property<int>("TemplateID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TemplateID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<string>("ContractNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileFormat")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsGeneratedByAI")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("MonetaryValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PartyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProgressPercentage")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("TemplateID");
-
-                    b.ToTable("ContractsTemplates");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRDocuments", b =>
-                {
-                    b.Property<int>("DocumentID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentID"));
-
-                    b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<byte[]>("EmbeddingVector")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
-                    b.HasKey("DocumentID");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("IRDocuments");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRQueries", b =>
-                {
-                    b.Property<int>("QueryID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QueryID"));
-
-                    b.Property<byte[]>("EmbeddingVector")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<string>("MatchedDocuments")
+                    b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("QueriedAt")
-                        .HasColumnType("datetime2");
+                    b.HasKey("Id");
 
-                    b.Property<string>("QueryText")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                    b.HasIndex("LawyerId");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.HasIndex("UserId");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
-                    b.HasKey("QueryID");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("IRQueries");
+                    b.ToTable("Contracts");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRQueryDocument", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ContractClause", b =>
                 {
-                    b.Property<int>("QueryID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DocumentID")
-                        .HasColumnType("int");
-
-                    b.HasKey("QueryID", "DocumentID");
-
-                    b.HasIndex("DocumentID");
-
-                    b.ToTable("IRQueryDocuments");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Law", b =>
-                {
-                    b.Property<int>("LawID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LawID"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("IssuedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("IssuedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("LastUpdate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SourceURL")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.HasKey("LawID");
-
-                    b.HasIndex("Category");
-
-                    b.HasIndex("Title");
-
-                    b.ToTable("Laws");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawUpdates", b =>
-                {
-                    b.Property<int>("UpdateID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UpdateID"));
-
-                    b.Property<int>("ChangeType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LawID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("NewText")
+                    b.Property<string>("ClauseContent")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OldText")
+                    b.Property<string>("ClauseTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.ToTable("ContractClauses");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ContractTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.PrimitiveCollection<string>("Placeholders")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TemplateContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ContractTemplates");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.CourtRuling", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CaseNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CourtId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FullText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LegalPrinciple")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.PrimitiveCollection<string>("RelatedArticleIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.PrimitiveCollection<string>("RelatedLawIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RulingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RulingNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Summary")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("datetime2");
+                    b.HasKey("Id");
 
-                    b.Property<string>("UpdateSource")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.HasIndex("CourtId");
 
-                    b.HasKey("UpdateID");
-
-                    b.HasIndex("LawID");
-
-                    b.HasIndex("UpdateDate");
-
-                    b.ToTable("LawUpdates");
+                    b.ToTable("CourtRulings");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Lawyer", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Document", b =>
                 {
-                    b.Property<int>("LawyerID")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.DocumentAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AnalysisData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExtractedText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Result")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("SuggestedLawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DocumentAnalyses");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.EgyptianCourt", b =>
+                {
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LawyerID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("ExperienceYears")
+                    b.Property<int?>("GovernorateId")
                         .HasColumnType("int");
 
-                    b.Property<string>("FullName")
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GovernorateId");
+
+                    b.ToTable("EgyptianCourt");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.EgyptianLaw", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastAmendedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LawNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ShortTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EgyptianLaws");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Governorate", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Governorates");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawAmendment", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.PrimitiveCollection<string>("AffectedArticles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("AmendmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AmendmentNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LawId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LawId");
+
+                    b.ToTable("LawAmendments");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawArticle", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AmendedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AmendmentDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ArticleNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LawId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LawId");
+
+                    b.ToTable("LawArticles");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawInterpretation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ArticleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedByAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("LawId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceReference")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.HasIndex("LawId");
+
+                    b.ToTable("LawInterpretations");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawKeyword", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Keyword")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LawId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Weight")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LawId");
+
+                    b.ToTable("LawKeywords");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerAvailability", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Day")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LawyerId");
+
+                    b.ToTable("LawyerAvailabilities");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AlternativePhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BarAssociation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int?>("GovernorateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LicenseNumber")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OfficeAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PracticeDegree")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("YearsOfExperience")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GovernorateId");
+
+                    b.HasIndex("LicenseNumber")
+                        .IsUnique()
+                        .HasFilter("[LicenseNumber] IS NOT NULL");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("VerificationStatus");
+
+                    b.ToTable("LawyerProfiles");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfileSpecialty", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SpecialtyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("YearsOfExperience")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SpecialtyId");
+
+                    b.HasIndex("LawyerId", "SpecialtyId")
+                        .IsUnique();
+
+                    b.ToTable("LawyerProfileSpecialties");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("JoinDate")
-                        .HasColumnType("datetime2");
+                    b.Property<Guid>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<double?>("Rating")
-                        .HasColumnType("float");
+                    b.HasKey("Id");
 
-                    b.Property<string>("Specialization")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                    b.HasIndex("AppointmentId");
 
-                    b.Property<bool>("Status")
-                        .HasColumnType("bit");
+                    b.HasIndex("LawyerId");
 
-                    b.HasKey("LawyerID");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("Lawyers");
+                    b.ToTable("LawyerReviews");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.ModelResults", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSpecialization", b =>
                 {
-                    b.Property<int>("ResultID")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CasesCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LawyerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SpecializationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LawyerId");
+
+                    b.HasIndex("SpecializationId");
+
+                    b.ToTable("LawyerSpecializations");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSpecialty", b =>
+                {
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResultID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AIModelModelID")
-                        .HasColumnType("int");
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<double?>("ConfidenceScore")
-                        .HasColumnType("float");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("InputData")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<int>("ModelID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OutputData")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("ProcessedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("ResultID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AIModelModelID");
+                    b.ToTable("LawyerSpecialties");
+                });
 
-                    b.ToTable("ModelResults");
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LegalSpecialization", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LegalSpecializations");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LoginAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AttemptedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSuccess")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("LoginAttempts");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Notification", b =>
                 {
-                    b.Property<int>("NotificationID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationID"));
+                    b.Property<string>("ActionUrl")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Message")
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RedirectURL")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.HasKey("Id");
 
-                    b.HasKey("NotificationID");
-
-                    b.HasIndex("UserID");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.SearchIndex", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.RiskAssessment", b =>
                 {
-                    b.Property<int>("IndexId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnalysisId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RiskType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Suggestion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnalysisId");
+
+                    b.ToTable("RiskAssessments");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.SearchQuery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.PrimitiveCollection<string>("ExtractedConcepts")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProcessedIntent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ResultCount")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IndexId"));
-
-                    b.Property<string>("Content")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<byte[]>("EmbeddingVector")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<int>("EntityId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EntityType")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("IndexedAt")
+                    b.Property<DateTime>("SearchedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Keywords")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("IndexId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("EntityId");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("EntityType");
+                    b.ToTable("SearchQueries");
+                });
 
-                    b.HasIndex("IndexedAt");
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Session", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("Keywords");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.ToTable("SearchIndices");
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastActivityAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SessionToken")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Sessions");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.User", b =>
                 {
-                    b.Property<int>("UserID")
+                    b.Property<Guid>("UserID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserID"));
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("JoinDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime?>("LastLogin")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfilePicture")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Pending");
 
                     b.HasKey("UserID");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("NationalId")
+                        .IsUnique()
+                        .HasFilter("[NationalId] IS NOT NULL");
+
+                    b.HasIndex("Role");
+
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserContracts", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserDocument", b =>
                 {
-                    b.Property<int>("UserContractID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserContractID"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FilledData")
+                    b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("FilledDate")
+                    b.Property<string>("DocumentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UploadedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PdfUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Status")
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("UserDocuments");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserPreferences", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AppointmentReminders")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EmailNotifications")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PushNotifications")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ReminderBeforeHours")
                         .HasColumnType("int");
 
-                    b.Property<int>("TemplateID")
+                    b.Property<bool>("ShowBirthDate")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowPhone")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SmsNotifications")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique();
+
+                    b.ToTable("UserPreferences");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AlternativePhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CityId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserID")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("GovernorateId")
                         .HasColumnType("int");
 
-                    b.HasKey("UserContractID");
+                    b.Property<int?>("GovernorateId1")
+                        .HasColumnType("int");
 
-                    b.HasIndex("TemplateID");
+                    b.Property<bool>("IsProfilePublic")
+                        .HasColumnType("bit");
 
-                    b.HasIndex("UserID");
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("UserContracts");
+                    b.Property<DateTime>("LastProfileUpdate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProfileViews")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Theme")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("GovernorateId");
+
+                    b.HasIndex("GovernorateId1");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserProfiles");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserSocialLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("UserSocialLinks");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.AdminLog", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.Admin", "Admin")
                         .WithMany("AdminLogs")
-                        .HasForeignKey("AdminID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Admin");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Articles", b =>
-                {
-                    b.HasOne("LegalMateAI.Domain.Entities.Law", "Law")
-                        .WithMany("LawArticles")
-                        .HasForeignKey("LawID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Law");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.ChatbotLog", b =>
-                {
-                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany("ChatbotLogs")
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Clause", b =>
-                {
-                    b.HasOne("LegalMateAI.Domain.Entities.Articles", "Article")
-                        .WithMany("Clauses")
-                        .HasForeignKey("ArticleID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Article");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Consultation", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.AdminProfile", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.Admin", "Admin")
-                        .WithMany("AdminConsultations")
-                        .HasForeignKey("AdminID");
-
-                    b.HasOne("LegalMateAI.Domain.Entities.Lawyer", "Lawyer")
-                        .WithMany("LawyerConsultations")
-                        .HasForeignKey("LawyerID");
-
-                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany("UserConsultations")
-                        .HasForeignKey("UserID")
+                        .WithOne("Profile")
+                        .HasForeignKey("LegalMateAI.Domain.Entities.AdminProfile", "AdminId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Admin");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Appointment", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany()
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", null)
+                        .WithMany("Appointments")
+                        .HasForeignKey("LawyerProfileId");
+
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalMateAI.Domain.Entities.User", null)
+                        .WithMany("Appointments")
+                        .HasForeignKey("UserID1");
 
                     b.Navigation("Lawyer");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRDocuments", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.AppointmentReschedule", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Appointment", "Appointment")
+                        .WithMany("Reschedules")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ArticleClause", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawArticle", "Article")
+                        .WithMany("Clauses")
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Article");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ArticleVersion", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawArticle", "Article")
+                        .WithMany("Versions")
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Article");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Case", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany()
+                        .HasForeignKey("LawyerId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Lawyer");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.CaseDocument", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Case", "Case")
+                        .WithMany("Documents")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.CaseNote", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Case", "Case")
+                        .WithMany("Notes")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Certificate", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany("Certificates")
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lawyer");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.City", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
+                        .WithMany("Cities")
+                        .HasForeignKey("GovernorateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Governorate");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ClauseAnalysis", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.DocumentAnalysis", "Analysis")
+                        .WithMany("Clauses")
+                        .HasForeignKey("AnalysisId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Analysis");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Contract", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany("Contracts")
+                        .HasForeignKey("LawyerId");
+
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany("Contracts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lawyer");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.ContractClause", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Contract", "Contract")
+                        .WithMany("Clauses")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.CourtRuling", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.EgyptianCourt", "Court")
+                        .WithMany()
+                        .HasForeignKey("CourtId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Court");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Document", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany("IRDocuments")
-                        .HasForeignKey("UserID")
+                        .WithMany("Documents")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRQueries", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.DocumentAnalysis", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany("IRQueries")
-                        .HasForeignKey("UserID")
+                    b.HasOne("LegalMateAI.Domain.Entities.Document", "Document")
+                        .WithMany("Analyses")
+                        .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRQueryDocument", b =>
-                {
-                    b.HasOne("LegalMateAI.Domain.Entities.IRDocuments", "Document")
-                        .WithMany("DocumentQueries")
-                        .HasForeignKey("DocumentID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("LegalMateAI.Domain.Entities.IRQueries", "Query")
-                        .WithMany("QueryDocuments")
-                        .HasForeignKey("QueryID")
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Document");
 
-                    b.Navigation("Query");
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawUpdates", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.EgyptianCourt", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.Law", "Law")
-                        .WithMany("LawUpdates")
-                        .HasForeignKey("LawID")
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
+                        .WithMany()
+                        .HasForeignKey("GovernorateId");
+
+                    b.Navigation("Governorate");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawAmendment", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.EgyptianLaw", "Law")
+                        .WithMany("Amendments")
+                        .HasForeignKey("LawId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Law");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.ModelResults", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawArticle", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.AIModels", "AIModel")
-                        .WithMany("ModelResults")
-                        .HasForeignKey("AIModelModelID")
+                    b.HasOne("LegalMateAI.Domain.Entities.EgyptianLaw", "Law")
+                        .WithMany("Articles")
+                        .HasForeignKey("LawId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AIModel");
+                    b.Navigation("Law");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawInterpretation", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawArticle", "Article")
+                        .WithMany("Interpretations")
+                        .HasForeignKey("ArticleId");
+
+                    b.HasOne("LegalMateAI.Domain.Entities.EgyptianLaw", "Law")
+                        .WithMany("Interpretations")
+                        .HasForeignKey("LawId");
+
+                    b.Navigation("Article");
+
+                    b.Navigation("Law");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawKeyword", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.EgyptianLaw", "Law")
+                        .WithMany("Keywords")
+                        .HasForeignKey("LawId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Law");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerAvailability", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany("Availabilities")
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lawyer");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfile", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
+                        .WithMany("Lawyers")
+                        .HasForeignKey("GovernorateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithOne("LawyerProfile")
+                        .HasForeignKey("LegalMateAI.Domain.Entities.LawyerProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Governorate");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfileSpecialty", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany("Specialties")
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerSpecialty", "Specialty")
+                        .WithMany("LawyerProfiles")
+                        .HasForeignKey("SpecialtyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Lawyer");
+
+                    b.Navigation("Specialty");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerReview", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId");
+
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany("Reviews")
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Lawyer");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSpecialization", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
+                        .WithMany()
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalMateAI.Domain.Entities.LegalSpecialization", "Specialization")
+                        .WithMany()
+                        .HasForeignKey("SpecializationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lawyer");
+
+                    b.Navigation("Specialization");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LoginAttempt", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany("Notifications")
-                        .HasForeignKey("UserID")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserContracts", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.RiskAssessment", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.ContractsTemplate", "Template")
-                        .WithMany("Templates")
-                        .HasForeignKey("TemplateID")
+                    b.HasOne("LegalMateAI.Domain.Entities.DocumentAnalysis", "Analysis")
+                        .WithMany("Risks")
+                        .HasForeignKey("AnalysisId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Analysis");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.SearchQuery", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Session", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserDocument", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.UserProfile", "UserProfile")
+                        .WithMany("Documents")
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserPreferences", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.UserProfile", "UserProfile")
+                        .WithOne("Preferences")
+                        .HasForeignKey("LegalMateAI.Domain.Entities.UserPreferences", "UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserProfile", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.City", "City")
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
+                        .WithMany()
+                        .HasForeignKey("GovernorateId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", null)
+                        .WithMany("Users")
+                        .HasForeignKey("GovernorateId1");
 
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany("UserContracts")
-                        .HasForeignKey("UserID")
+                        .WithOne("UserProfile")
+                        .HasForeignKey("LegalMateAI.Domain.Entities.UserProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Template");
+                    b.Navigation("City");
+
+                    b.Navigation("Governorate");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.AIModels", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserSocialLink", b =>
                 {
-                    b.Navigation("ModelResults");
+                    b.HasOne("LegalMateAI.Domain.Entities.UserProfile", "UserProfile")
+                        .WithMany("SocialLinks")
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Admin", b =>
                 {
-                    b.Navigation("AdminConsultations");
-
                     b.Navigation("AdminLogs");
+
+                    b.Navigation("Profile");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Articles", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Appointment", b =>
+                {
+                    b.Navigation("Reschedules");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Case", b =>
+                {
+                    b.Navigation("Documents");
+
+                    b.Navigation("Notes");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Contract", b =>
                 {
                     b.Navigation("Clauses");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.ContractsTemplate", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Document", b =>
                 {
-                    b.Navigation("Templates");
+                    b.Navigation("Analyses");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRDocuments", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.DocumentAnalysis", b =>
                 {
-                    b.Navigation("DocumentQueries");
+                    b.Navigation("Clauses");
+
+                    b.Navigation("Risks");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.IRQueries", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.EgyptianLaw", b =>
                 {
-                    b.Navigation("QueryDocuments");
+                    b.Navigation("Amendments");
+
+                    b.Navigation("Articles");
+
+                    b.Navigation("Interpretations");
+
+                    b.Navigation("Keywords");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Law", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Governorate", b =>
                 {
-                    b.Navigation("LawArticles");
+                    b.Navigation("Cities");
 
-                    b.Navigation("LawUpdates");
+                    b.Navigation("Lawyers");
+
+                    b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Lawyer", b =>
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawArticle", b =>
                 {
-                    b.Navigation("LawyerConsultations");
+                    b.Navigation("Clauses");
+
+                    b.Navigation("Interpretations");
+
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfile", b =>
+                {
+                    b.Navigation("Appointments");
+
+                    b.Navigation("Availabilities");
+
+                    b.Navigation("Certificates");
+
+                    b.Navigation("Contracts");
+
+                    b.Navigation("Reviews");
+
+                    b.Navigation("Specialties");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSpecialty", b =>
+                {
+                    b.Navigation("LawyerProfiles");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.User", b =>
                 {
-                    b.Navigation("ChatbotLogs");
+                    b.Navigation("Appointments");
 
-                    b.Navigation("IRDocuments");
+                    b.Navigation("Contracts");
 
-                    b.Navigation("IRQueries");
+                    b.Navigation("Documents");
 
-                    b.Navigation("Notifications");
+                    b.Navigation("LawyerProfile");
 
-                    b.Navigation("UserConsultations");
+                    b.Navigation("UserProfile");
+                });
 
-                    b.Navigation("UserContracts");
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserProfile", b =>
+                {
+                    b.Navigation("Documents");
+
+                    b.Navigation("Preferences");
+
+                    b.Navigation("SocialLinks");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,0 +1,26 @@
+$kind: http-request
+name: "TC-055: Admin Login"
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "admin@legalmate.com",
+      "password": "Admin@123456"
+    }
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Status code is 200", function () {
+      pm.response.to.have.status(200); });
+
+      pm.test("Response has token", function () { pm.response.json().data.token
+      !== undefined; });
+
+      if (pm.response.json().data.token) { pm.environment.set("adminToken",
+      pm.response.json().data.token); }
+    language: text/javascript
+order: 1000

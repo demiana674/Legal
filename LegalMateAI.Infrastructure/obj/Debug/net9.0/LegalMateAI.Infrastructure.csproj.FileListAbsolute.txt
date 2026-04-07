@@ -1,0 +1,13 @@
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\bin\Debug\net9.0\LegalMateAI.Infrastructure.deps.json
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\bin\Debug\net9.0\LegalMateAI.Infrastructure.dll
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\bin\Debug\net9.0\LegalMateAI.Infrastructure.pdb
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.AssemblyInfo.cs
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.sourcelink.json
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.dll
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\refint\LegalMateAI.Infrastructure.dll
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\LegalMateAI.Infrastructure.pdb
+C:\Users\HP\Documents\LegalMate Ai\Legal\LegalMateAI.Infrastructure\obj\Debug\net9.0\ref\LegalMateAI.Infrastructure.dll

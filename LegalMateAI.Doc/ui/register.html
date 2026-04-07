@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة النظام القضائي — إنشاء حساب</title>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C8A84B;
+      --gold-light: #E8C96A;
+      --gold-dim: rgba(200, 168, 75, 0.15);
+      --dark: #0A0C12;
+      --dark-mid: #10141E;
+      --dark-panel: #141824;
+      --dark-border: rgba(200, 168, 75, 0.25);
+      --text: #E8E4D8;
+      --text-dim: #8A8472;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('https://st-takla.org/Gallery/var/albums/Egypt/Modern/www-St-Takla-org--Egyptian-Supreme-Court-01.jpg');
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+      filter: brightness(0.25) saturate(0.6) sepia(0.3);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(10,12,18,0.7) 0%, rgba(10,12,18,0.5) 50%, rgba(10,12,18,0.8) 100%),
+        radial-gradient(ellipse at center, rgba(200,168,75,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 600px;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-panel {
+      flex: 1;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      animation: fadeInRight 0.8s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .emblem { width: 120px; height: 120px; margin-bottom: 28px; }
+    .emblem svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(200,168,75,0.4)); }
+
+    .brand-title {
+      font-family: 'Amiri', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1.3;
+      margin-bottom: 12px;
+      text-shadow: 0 0 40px rgba(200,168,75,0.3);
+    }
+
+    .register-panel {
+      width: 100%;
+      max-width: 600px;
+      animation: fadeInLeft 0.8s ease 0.2s forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .register-card {
+      background: var(--dark-panel);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 36px 36px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .register-card::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .steps-bar { display: flex; align-items: center; margin-bottom: 28px; }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      flex: 1;
+      position: relative;
+    }
+
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid rgba(200,168,75,0.2);
+      background: var(--dark-mid);
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s;
+      z-index: 1;
+    }
+
+    .step-item.active .step-circle { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); box-shadow: 0 0 12px rgba(200,168,75,0.25); }
+    .step-item.done .step-circle { border-color: #4ade80; background: rgba(74,222,128,0.1); color: #4ade80; }
+
+    .step-label { font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; }
+    .step-item.active .step-label { color: var(--gold); }
+    .step-item.done  .step-label  { color: #4ade80; }
+
+    .step-connector { flex: 1; height: 1px; background: rgba(200,168,75,0.15); margin-bottom: 18px; transition: background 0.4s; }
+    .step-connector.done { background: #4ade80; }
+
+    .reg-header { margin-bottom: 22px; }
+    .reg-header h2 { font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--text); margin-bottom: 4px; }
+    .reg-header p { font-size: 0.82rem; color: var(--text-dim); }
+
+    .form-panel { display: none; }
+    .form-panel.active { display: block; }
+
+    .fields-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .field-full { grid-column: 1 / -1; }
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 7px;
+      letter-spacing: 0.03em;
+    }
+
+    .req { color: #ef4444; margin-right: 2px; }
+
+    .input-wrapper { position: relative; }
+
+    .input-icon {
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      pointer-events: none;
+      transition: color 0.3s;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    select {
+      width: 100%;
+      background: var(--dark-mid);
+      border: 1px solid rgba(200,168,75,0.2);
+      border-radius: 8px;
+      padding: 11px 38px 11px 14px;
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      direction: rtl;
+      appearance: none;
+    }
+
+    input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,168,75,0.1); }
+    input:focus + .input-icon { color: var(--gold); }
+    input::placeholder { color: rgba(138,132,114,0.45); }
+    select option { background: var(--dark-mid); }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+      font-size: 0.8rem;
+    }
+
+    .eye-toggle {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      padding: 4px;
+      transition: color 0.3s;
+    }
+    .eye-toggle:hover { color: var(--gold); }
+
+    .strength-bar { display: flex; gap: 3px; margin-top: 7px; }
+    .seg { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.07); transition: background 0.4s; }
+    .seg.weak   { background: #ef4444; }
+    .seg.medium { background: #f59e0b; }
+    .seg.strong { background: #4ade80; }
+    .strength-text { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
+    .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+
+    .role-card {
+      border: 1.5px solid rgba(200,168,75,0.18);
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: rgba(200,168,75,0.02);
+    }
+    .role-card:hover { border-color: rgba(200,168,75,0.4); background: rgba(200,168,75,0.06); }
+    .role-card.selected { border-color: var(--gold); background: var(--gold-dim); box-shadow: 0 0 12px rgba(200,168,75,0.12); }
+    .role-card input { display: none; }
+    .role-icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .role-name { font-size: 0.75rem; color: var(--text); font-weight: 600; line-height: 1.3; }
+
+    .check-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+      margin-bottom: 16px;
+    }
+    .check-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--gold); flex-shrink: 0; margin-top: 3px; padding: 0; border: none; background: none; }
+    .check-label a { color: var(--gold); text-decoration: none; }
+
+    .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .review-item { background: rgba(200,168,75,0.05); border: 1px solid rgba(200,168,75,0.12); border-radius: 7px; padding: 10px 13px; }
+    .review-item.full { grid-column: 1 / -1; }
+    .rv-key { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 3px; }
+    .rv-val { font-size: 0.83rem; color: var(--text); font-weight: 600; }
+
+    /* ===== USER TYPE SELECTOR ===== */
+    .user-type-section {
+      padding-top: 18px;
+      border-top: 1px solid rgba(200,168,75,0.1);
+      margin-bottom: 20px;
+    }
+
+    .user-type-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 11px;
+      display: block;
+      letter-spacing: 0.03em;
+    }
+
+    .user-type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .user-type-card {
+      position: relative;
+      border: 2px solid rgba(200,168,75,0.18);
+      border-radius: 11px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(200,168,75,0.02);
+      overflow: hidden;
+    }
+
+    .user-type-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(200,168,75,0.07) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .user-type-card:hover { border-color: rgba(200,168,75,0.4); transform: translateY(-1px); }
+    .user-type-card:hover::after { opacity: 1; }
+
+    .user-type-card.selected {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+      box-shadow: 0 0 16px rgba(200,168,75,0.13);
+    }
+    .user-type-card.selected::after { opacity: 1; }
+    .user-type-card input { display: none; }
+
+    .type-check {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(200,168,75,0.25);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      font-size: 0.6rem;
+      color: transparent;
+    }
+
+    .user-type-card.selected .type-check {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #0A0C12;
+    }
+
+    .type-icon { font-size: 1.6rem; margin-bottom: 7px; display: block; transition: transform 0.3s; }
+    .user-type-card:hover .type-icon,
+    .user-type-card.selected .type-icon { transform: scale(1.1); }
+
+    .type-title { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .user-type-card.selected .type-title { color: var(--gold); }
+    .type-desc { font-size: 0.7rem; color: var(--text-dim); line-height: 1.5; }
+
+    /* Lawyer extra fields */
+    .lawyer-fields {
+      overflow: hidden;
+      transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, margin-top 0.4s;
+      max-height: 0;
+      opacity: 0;
+      margin-top: 0;
+    }
+    .lawyer-fields.visible {
+      max-height: 600px;
+      opacity: 1;
+      margin-top: 16px;
+    }
+
+    .lawyer-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(200,168,75,0.06);
+      border: 1px solid rgba(200,168,75,0.18);
+      border-radius: 8px;
+      padding: 10px 13px;
+      margin-bottom: 14px;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+    .lawyer-badge span { color: var(--gold); font-size: 1rem; }
+
+    /* Footer */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0;
+      padding-top: 0;
+      gap: 10px;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      padding: 11px 18px;
+      color: var(--text-dim);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-back:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-back:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
+    .step-of { font-size: 0.75rem; color: var(--text-dim); flex-shrink: 0; }
+
+    .btn-next {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold) 0%, #A8882B 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 13px 22px;
+      color: #0A0C12;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .btn-next:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(200,168,75,0.3); }
+    .btn-next:active { transform: translateY(0); }
+
+    .login-link { text-align: center; margin-top: 16px; font-size: 0.82rem; color: var(--text-dim); }
+    .login-link a { color: var(--gold); text-decoration: none; }
+    .login-link a:hover { opacity: 0.75; }
+
+    #successOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,12,18,0.85);
+    }
+
+    .success-box {
+      background: var(--dark-panel);
+      border: 1px solid var(--dark-border);
+      border-radius: 18px;
+      padding: 52px 44px;
+      text-align: center;
+      max-width: 420px;
+      position: relative;
+      animation: fadeInLeft 0.5s ease forwards;
+    }
+    .success-box::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #4ade80, transparent);
+      border-radius: 18px 18px 0 0;
+    }
+    .success-icon { font-size: 3.5rem; margin-bottom: 16px; }
+    .success-title { font-family: 'Amiri', serif; font-size: 1.7rem; color: #4ade80; margin-bottom: 10px; }
+    .success-desc { font-size: 0.84rem; color: var(--text-dim); line-height: 1.9; margin-bottom: 26px; }
+    .success-desc strong { color: var(--gold); }
+
+    .btn-login-redirect {
+      background: linear-gradient(135deg, var(--gold) 0%, #A8882B 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      color: #0A0C12;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-login-redirect:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(200,168,75,0.3); }
+
+    @media (max-width: 768px) {
+      .brand-panel { display: none; }
+      .register-panel { max-width: 100%; }
+      .fields-row { grid-template-columns: 1fr; }
+      .role-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <div class="register-panel">
+
+    <!-- Logo above card -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div class="emblem" style="margin:0 auto 14px;">
+        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M60 8 L100 24 L100 60 C100 82 82 98 60 108 C38 98 20 82 20 60 L20 24 Z"
+                fill="rgba(200,168,75,0.08)" stroke="#C8A84B" stroke-width="2"/>
+          <line x1="60" y1="32" x2="60" y2="80" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+          <line x1="36" y1="46" x2="84" y2="46" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+          <line x1="36" y1="46" x2="30" y2="62" stroke="#C8A84B" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M22 62 Q30 58 38 62 Q30 70 22 62Z" fill="rgba(200,168,75,0.3)" stroke="#C8A84B" stroke-width="1.5"/>
+          <line x1="84" y1="46" x2="90" y2="58" stroke="#C8A84B" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M82 58 Q90 54 98 58 Q90 66 82 58Z" fill="rgba(200,168,75,0.3)" stroke="#C8A84B" stroke-width="1.5"/>
+          <line x1="48" y1="80" x2="72" y2="80" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="60" cy="32" r="4" fill="#C8A84B"/>
+          <circle cx="30" cy="30" r="2" fill="rgba(200,168,75,0.4)"/>
+          <circle cx="90" cy="30" r="2" fill="rgba(200,168,75,0.4)"/>
+        </svg>
+      </div>
+      <div class="brand-title">النظام القضائي الإلكتروني</div>
+      <p style="font-size:0.88rem;color:var(--text-dim);text-align:center;margin-top:8px;">منصة متكاملة لإدارة القضايا والملفات القضائية بكل كفاءة وأمان</p>
+    </div>
+
+    <div class="register-card">
+
+      <!-- Step 1: Personal -->
+      <div class="form-panel active" id="panel1">
+
+        <div class="fields-row">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label>الاسم الأول <span class="req">*</span></label>
+              <div class="input-wrapper">
+                <input type="text" id="firstName" placeholder="محمد">
+                <span class="input-icon">👤</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>الاسم الأخير <span class="req">*</span></label>
+              <div class="input-wrapper">
+                <input type="text" id="lastName" placeholder="أحمد">
+                <span class="input-icon">👤</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>البريد الإلكتروني <span class="req">*</span></label>
+            <div class="input-wrapper">
+              <input type="email" id="email" placeholder="example@email.com">
+              <span class="input-icon">✉</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>كلمة المرور <span class="req">*</span></label>
+            <div class="input-wrapper">
+              <input type="password" id="pass1" placeholder="أدخل كلمة المرور" oninput="checkStrength(this.value)">
+              <span class="input-icon">🔒</span>
+              <button type="button" class="eye-toggle" onclick="toggleP('pass1',this)">👁</button>
+            </div>
+
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف <span class="req">*</span></label>
+            <div class="input-wrapper">
+              <input type="tel" id="phone" placeholder="01xxxxxxxxx">
+              <span class="input-icon">📞</span>
+            </div>
+          </div>
+
+
+        </div>
+
+        <!-- ===== USER TYPE SELECTOR ===== -->
+        <div class="user-type-section">
+          <span class="user-type-label">نوع الحساب <span class="req">*</span></span>
+          <div class="user-type-grid">
+
+            <div class="user-type-card selected" id="typeUser" onclick="selectType('user')">
+              <div class="type-check">✓</div>
+              <input type="radio" name="userType" value="user" checked>
+              <span class="type-icon">👤</span>
+              <div class="type-title">مستخدم عادي</div>
+              <div class="type-desc">مواطن أو موظف يتابع القضايا والمعاملات</div>
+            </div>
+
+            <div class="user-type-card" id="typeLawyer" onclick="selectType('lawyer')">
+              <div class="type-check"></div>
+              <input type="radio" name="userType" value="lawyer">
+              <span class="type-icon">💼</span>
+              <div class="type-title">محامٍ / وكيل</div>
+              <div class="type-desc">محامٍ معتمد أو وكيل قانوني مرخّص</div>
+            </div>
+
+          </div>
+
+          <!-- Lawyer extra fields — slides in on selection -->
+          <div class="lawyer-fields" id="lawyerFields">
+
+            <div class="form-group">
+              <label>الجهة <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select id="barBranch">
+                  <option value="" disabled selected>اختر الجهة</option>
+                  <option>محكمة النقض</option>
+                  <option>محكمة استئناف القاهرة</option>
+                  <option>محكمة استئناف الإسكندرية</option>
+                  <option>المحكمة الابتدائية — القاهرة</option>
+                  <option>المحكمة الابتدائية — الجيزة</option>
+                  <option>المحكمة الإدارية العليا</option>
+                  <option>مجلس الدولة</option>
+                  <option>محكمة الأسرة</option>
+                </select>
+                <span class="input-icon" style="right:13px">🏛</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>صورة بطاقة نقابة المحامين <span class="req">*</span></label>
+              <div style="border:1.5px dashed rgba(200,168,75,0.25);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(200,168,75,0.02)"
+                   onclick="document.getElementById('lawyerCard').click()"
+                   onmouseover="this.style.borderColor='var(--gold)';this.style.background='rgba(200,168,75,0.06)'"
+                   onmouseout="this.style.borderColor='rgba(200,168,75,0.25)';this.style.background='rgba(200,168,75,0.02)'">
+                <input type="file" id="lawyerCard" style="display:none" accept=".pdf,.jpg,.png" onchange="showDoc(this,'lawyerCardName')">
+                <div style="font-size:1.4rem;margin-bottom:5px">📄</div>
+                <div style="font-size:0.8rem;color:var(--text-dim)">اضغط لرفع بطاقة نقابة المحامين</div>
+                <div style="font-size:0.7rem;color:rgba(138,132,114,0.5);margin-top:3px">PDF, JPG, PNG — حتى 5MB</div>
+              </div>
+              <div id="lawyerCardName" style="display:none;margin-top:8px;font-size:0.8rem;color:var(--gold);align-items:center;gap:6px">📎 <span></span></div>
+            </div>
+
+          </div>
+        </div>
+        <!-- END USER TYPE -->
+
+        <!-- Footer inside panel1 -->
+        <div class="card-footer">
+          <button class="btn-next" id="btnNext" onclick="next()">تسجيل دخول</button>
+        </div>
+
+      </div>
+
+      <!-- Step 2: Account -->
+      <div class="form-panel" id="panel2">
+        <div class="reg-header">
+          <h2>بيانات الحساب</h2>
+          <p>اختر بريدك الإلكتروني وكلمة مرور قوية لتأمين حسابك</p>
+        </div>
+        <div class="form-group">
+          <label>البريد الإلكتروني الرسمي <span class="req">*</span></label>
+          <div class="input-wrapper">
+            <input type="email" id="email2" placeholder="name@judiciary.gov.eg">
+            <span class="input-icon">✉</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>اسم المستخدم <span class="req">*</span></label>
+          <div class="input-wrapper">
+            <input type="text" id="username" placeholder="أدخل اسم مستخدم فريد">
+            <span class="input-icon">@</span>
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="form-group">
+            <label>كلمة المرور <span class="req">*</span></label>
+            <div class="input-wrapper">
+              <input type="password" id="pass2a" placeholder="كلمة مرور قوية">
+              <span class="input-icon">🔒</span>
+              <button type="button" class="eye-toggle" onclick="toggleP('pass2a',this)">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>تأكيد كلمة المرور <span class="req">*</span></label>
+            <div class="input-wrapper">
+              <input type="password" id="pass2b" placeholder="أعد الكتابة">
+              <span class="input-icon">🔒</span>
+              <button type="button" class="eye-toggle" onclick="toggleP('pass2b',this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn-next" onclick="next()">التالي</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Role -->
+      <div class="form-panel" id="panel3">
+        <div class="reg-header">
+          <h2>الصلاحية والدور</h2>
+          <p>حدد دورك في النظام وارفع مستند إثبات الهوية</p>
+        </div>
+        <div class="role-grid">
+          <div class="role-card selected" onclick="pickRole(this)">
+            <input type="radio" name="role" value="judge" checked>
+            <div class="role-icon">⚖</div>
+            <div class="role-name">قاضٍ / مستشار</div>
+          </div>
+          <div class="role-card" onclick="pickRole(this)">
+            <input type="radio" name="role" value="lawyer">
+            <div class="role-icon">💼</div>
+            <div class="role-name">محامٍ / وكيل</div>
+          </div>
+          <div class="role-card" onclick="pickRole(this)">
+            <input type="radio" name="role" value="clerk">
+            <div class="role-icon">📋</div>
+            <div class="role-name">موظف إداري</div>
+          </div>
+          <div class="role-card" onclick="pickRole(this)">
+            <input type="radio" name="role" value="prosecutor">
+            <div class="role-icon">🏛</div>
+            <div class="role-name">عضو نيابة</div>
+          </div>
+          <div class="role-card" onclick="pickRole(this)">
+            <input type="radio" name="role" value="researcher">
+            <div class="role-icon">🔍</div>
+            <div class="role-name">باحث قانوني</div>
+          </div>
+          <div class="role-card" onclick="pickRole(this)">
+            <input type="radio" name="role" value="admin">
+            <div class="role-icon">🛡</div>
+            <div class="role-name">مسؤول النظام</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>مستند إثبات الهوية الوظيفية <span class="req">*</span></label>
+          <div style="border:1.5px dashed rgba(200,168,75,0.25);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(200,168,75,0.02)" onclick="document.getElementById('docFile').click()" onmouseover="this.style.borderColor='var(--gold)';this.style.background='rgba(200,168,75,0.06)'" onmouseout="this.style.borderColor='rgba(200,168,75,0.25)';this.style.background='rgba(200,168,75,0.02)'">
+            <input type="file" id="docFile" style="display:none" accept=".pdf,.jpg,.png" onchange="showDoc(this,'docName')">
+            <div style="font-size:1.6rem;margin-bottom:6px">📄</div>
+            <div style="font-size:0.82rem;color:var(--text-dim)">اضغط لرفع بطاقة الهوية الوظيفية أو قرار التعيين</div>
+            <div style="font-size:0.72rem;color:rgba(138,132,114,0.5);margin-top:4px">PDF, JPG, PNG — حتى 5MB</div>
+          </div>
+          <div id="docName" style="display:none;margin-top:8px;font-size:0.8rem;color:var(--gold);align-items:center;gap:6px">📎 <span></span></div>
+        </div>
+        <label class="check-label">
+          <input type="checkbox" id="terms">
+          <span>أوافق على <a href="#">شروط الاستخدام</a> و<a href="#">سياسة الخصوصية</a>، وأُقرّ بصحة البيانات المدخلة</span>
+        </label>
+        <div class="card-footer">
+          <button class="btn-next" onclick="submit()">✓ إرسال الطلب</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="login-link">لديك حساب بالفعل؟ <a href="#">تسجيل الدخول</a></div>
+  </div>
+
+</div>
+
+<!-- Success Overlay -->
+<div id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">تم إرسال الطلب!</div>
+    <p class="success-desc">
+      استُلم طلب تسجيلك بنجاح.<br>
+      ستتم مراجعة بياناتك وإرسال رابط التفعيل إلى بريدك الإلكتروني خلال
+      <strong>24 — 48 ساعة</strong>.
+    </p>
+    <a href="#" class="btn-login-redirect">العودة لتسجيل الدخول</a>
+  </div>
+</div>
+
+<script>
+  let step = 1;
+  let currentType = 'user';
+
+  function selectType(type) {
+    currentType = type;
+    const userCard     = document.getElementById('typeUser');
+    const lawyerCard   = document.getElementById('typeLawyer');
+    const lawyerFields = document.getElementById('lawyerFields');
+
+    userCard.classList.remove('selected');
+    lawyerCard.classList.remove('selected');
+    userCard.querySelector('.type-check').textContent   = '';
+    lawyerCard.querySelector('.type-check').textContent = '';
+
+    if (type === 'user') {
+      userCard.classList.add('selected');
+      userCard.querySelector('.type-check').textContent = '✓';
+      userCard.querySelector('input').checked = true;
+      lawyerFields.classList.remove('visible');
+    } else {
+      lawyerCard.classList.add('selected');
+      lawyerCard.querySelector('.type-check').textContent = '✓';
+      lawyerCard.querySelector('input').checked = true;
+      lawyerFields.classList.add('visible');
+    }
+  }
+
+  function next() {
+    if (step < 3) { step++; renderPanels(); }
+    else submit();
+  }
+
+  function renderPanels() {
+    for (let i = 1; i <= 3; i++) {
+      const pi = document.getElementById('panel' + i);
+      if (pi) pi.className = 'form-panel' + (i === step ? ' active' : '');
+    }
+  }
+
+  function pickRole(el) {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+
+  function toggleP(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  }
+
+  function checkStrength(v) {
+    const segs = [1,2,3,4].map(i => document.getElementById('g' + i));
+    segs.forEach(s => s.className = 'seg');
+    const lbl = document.getElementById('strLabel');
+    if (!v) { lbl.textContent = 'أدخل كلمة المرور'; lbl.style.color = ''; return; }
+    let sc = 0;
+    if (v.length >= 8) sc++;
+    if (/[A-Z]/.test(v)) sc++;
+    if (/[0-9]/.test(v)) sc++;
+    if (/[^A-Za-z0-9]/.test(v)) sc++;
+    const cls = sc <= 1 ? 'weak' : sc <= 2 ? 'medium' : 'strong';
+    const txt = sc <= 1 ? 'ضعيفة' : sc <= 2 ? 'متوسطة' : sc === 3 ? 'جيدة' : 'قوية جداً';
+    const clr = sc <= 1 ? '#ef4444' : sc <= 2 ? '#f59e0b' : '#4ade80';
+    for (let i = 0; i < sc; i++) segs[i].classList.add(cls);
+    lbl.textContent = 'قوة كلمة المرور: ' + txt;
+    lbl.style.color = clr;
+  }
+
+  function showDoc(input, targetId) {
+    if (input.files[0]) {
+      const el = document.getElementById(targetId);
+      el.style.display = 'flex';
+      el.querySelector('span').textContent = input.files[0].name;
+    }
+  }
+
+  function submit() {
+    document.getElementById('successOverlay').style.display = 'flex';
+  }
+
+  // Init
+  selectType('user');
+</script>
+</body>
+</html>

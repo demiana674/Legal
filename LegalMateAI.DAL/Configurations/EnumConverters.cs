@@ -1,0 +1,137 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using LegalMateAI.Domain.Enums;
+using LegalMateAI.Domain.Entities;
+namespace LegalMateAI.DAL.Configurations
+{
+    public static class EnumConverters
+    {
+        // محول عام لتحويل أي Enum إلى String في قاعدة البيانات
+        public static ValueConverter<T, string> GetEnumToStringConverter<T>() where T : struct, Enum
+        {
+            return new ValueConverter<T, string>(
+                v => v.ToString(),              // من Enum لـ String
+                v => (T)Enum.Parse(typeof(T), v) // من String لـ Enum
+            );
+        }
+
+        // تطبيق المحولات على كل الـ Entities
+        public static void ApplyEnumConversions(ModelBuilder modelBuilder)
+        {
+            // ===== User Related =====
+            modelBuilder.Entity<User>()
+                .Property(u => u.Role)
+                .HasConversion(GetEnumToStringConverter<UserRole>());
+           modelBuilder.Entity<AdminLog>()
+               .Property(al => al.Action)
+                .HasConversion(GetEnumToStringConverter<AdminLogAction>());    
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Status)
+                .HasConversion(GetEnumToStringConverter<AccountStatus>());
+
+            // ===== Lawyer Related =====
+            modelBuilder.Entity<LawyerProfile>()
+                .Property(l => l.VerificationStatus)
+                .HasConversion(GetEnumToStringConverter<LawyerVerificationStatus>());
+
+            // ===== Appointment Related =====
+            modelBuilder.Entity<Appointment>()
+                .Property(a => a.Status)
+                .HasConversion(GetEnumToStringConverter<AppointmentStatus>());
+
+            modelBuilder.Entity<AppointmentReschedule>()
+                .Property(ar => ar.InitiatedBy)
+                .HasConversion(GetEnumToStringConverter<RescheduleInitiator>());
+
+            modelBuilder.Entity<AppointmentReschedule>()
+                .Property(ar => ar.Status)
+                .HasConversion(GetEnumToStringConverter<RescheduleStatus>());
+
+            // ===== Contract Related =====
+            modelBuilder.Entity<Contract>()
+                .Property(c => c.Type)
+                .HasConversion(GetEnumToStringConverter<ContractType>());
+
+            modelBuilder.Entity<Contract>()
+                .Property(c => c.Status)
+                .HasConversion(GetEnumToStringConverter<ContractStatus>());
+
+            // ===== Document Related =====
+            modelBuilder.Entity<Document>()
+                .Property(d => d.DocType)
+                .HasConversion(GetEnumToStringConverter<DocumentType>());
+
+            modelBuilder.Entity<Document>()
+                .Property(d => d.Status)
+                .HasConversion(GetEnumToStringConverter<DocumentStatus>());
+
+            modelBuilder.Entity<UserDocument>()
+                .Property(ud => ud.DocumentType)
+                .HasConversion(GetEnumToStringConverter<UserDocumentType>());
+
+            // ===== Analysis Related =====
+            modelBuilder.Entity<DocumentAnalysis>()
+                .Property(da => da.Status)
+                .HasConversion(GetEnumToStringConverter<AnalysisStatus>());
+
+            modelBuilder.Entity<RiskAssessment>()
+                .Property(r => r.Level)
+                .HasConversion(GetEnumToStringConverter<RiskLevel>());
+
+            // ===== Notification Related =====
+            modelBuilder.Entity<Notification>()
+                .Property(n => n.Type)
+                .HasConversion(GetEnumToStringConverter<NotificationType>());
+
+            // ===== Admin Related =====
+            // modelBuilder.Entity<Admin>()
+            //     .Property(a => a.Role)
+            //     .HasConversion(GetEnumToStringConverter<AdminRole>());
+
+            // modelBuilder.Entity<Admin>()
+            //     .Property(a => a.Status)
+            //     .HasConversion(GetEnumToStringConverter<AdminStatus>());
+
+            // modelBuilder.Entity<AdminLog>()
+            //     .Property(al => al.Action)
+            //     .HasConversion(GetEnumToStringConverter<LogAction>());
+
+                // ✅ صح
+modelBuilder.Entity<AdminLog>()
+    .Property(al => al.Action)
+    .HasConversion(GetEnumToStringConverter<AdminLogAction>());
+
+            // ===== Legal Related =====
+            modelBuilder.Entity<EgyptianLaw>()
+                .Property(el => el.Category)
+                .HasConversion(GetEnumToStringConverter<LawCategory>());
+
+            modelBuilder.Entity<EgyptianLaw>()
+                .Property(el => el.Status)
+                .HasConversion(GetEnumToStringConverter<LawStatus>());
+
+            modelBuilder.Entity<LawInterpretation>()
+                .Property(li => li.Source)
+                .HasConversion(GetEnumToStringConverter<InterpretationSource>());
+
+            // modelBuilder.Entity<LawModeration>()
+            //     .Property(lm => lm.Action)
+            //     .HasConversion(GetEnumToStringConverter<ModerationAction>());
+
+            // modelBuilder.Entity<LawModeration>()
+            //     .Property(lm => lm.Status)
+            //     .HasConversion(GetEnumToStringConverter<ModerationStatus>());
+
+            // ===== UserProfile Related =====
+            modelBuilder.Entity<UserSocialLink>()
+                .Property(usl => usl.Platform)
+                .HasConversion(GetEnumToStringConverter<SocialPlatform>());
+
+            // // ===== AdminProfile Related =====
+            // modelBuilder.Entity<AdminNote>()
+            //     .Property(an => an.Type)
+            //     .HasConversion(GetEnumToStringConverter<NoteType>());
+        }
+    }
+}

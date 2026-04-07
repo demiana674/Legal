@@ -1,0 +1,23 @@
+name: New Environment
+values:
+  - key: baseUrl
+    value: ''
+    enabled: true
+  - key: pythonUrl
+    value: ''
+    enabled: true
+  - key: token
+    value: ''
+    enabled: true
+  - key: adminToken
+    value: ''
+    enabled: true
+  - key: userId
+    value: ''
+    enabled: true
+  - key: documentId
+    value: ''
+    enabled: true
+  - key: appointmentId
+    value: ''
+    enabled: true

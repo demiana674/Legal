@@ -1,0 +1,19 @@
+$kind: http-request
+name: "TC-006: Login - User Not Found"
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "notfound@test.com",
+      "password": "Test@123456"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status code is 401", function () {
+      pm.response.to.have.status(401); });
+    language: text/javascript
+order: 6000

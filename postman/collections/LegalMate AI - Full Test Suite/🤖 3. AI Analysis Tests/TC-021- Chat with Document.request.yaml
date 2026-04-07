@@ -1,0 +1,24 @@
+$kind: http-request
+name: "TC-021: Chat with Document"
+url: "{{pythonUrl}}/api/v1/chat"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "text": "هذا عقد إيجار بين طرفين...",
+      "question": "ما هي مدة العقد؟"
+    }
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Status code is 200", function () {
+      pm.response.to.have.status(200); });
+
+      pm.test("Response has answer", function () {
+      pm.response.json().data.answer !== undefined; });
+    language: text/javascript
+order: 2000
