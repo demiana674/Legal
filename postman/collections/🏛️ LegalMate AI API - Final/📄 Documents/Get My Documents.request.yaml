@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/api/Documents?page=1&pageSize=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  page: "1"
+  pageSize: "20"
+order: 2000

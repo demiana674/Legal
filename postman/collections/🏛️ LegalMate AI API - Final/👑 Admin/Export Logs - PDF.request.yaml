@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/api/admin/logs/export?AdminId={{adminId}}&format=pdf"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  AdminId: "{{adminId}}"
+  format: pdf
+order: 13000

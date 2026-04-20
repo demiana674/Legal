@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{base_url}}/api/admin/lawyers/{lawyerId}/suspend"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "reason": "مخالفة شروط الاستخدام"
+    }
+order: 9000

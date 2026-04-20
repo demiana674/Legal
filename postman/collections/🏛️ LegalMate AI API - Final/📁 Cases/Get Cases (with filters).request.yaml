@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/api/Cases?ClientId={{clientId}}&LawyerId={{lawyerId}}&Status\
+  =1&Priority=3&CaseType=مدني&page=1&pageSize=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  ClientId: "{{clientId}}"
+  LawyerId: "{{lawyerId}}"
+  Status: "1"
+  Priority: "3"
+  CaseType: مدني
+  page: "1"
+  pageSize: "20"
+order: 2000

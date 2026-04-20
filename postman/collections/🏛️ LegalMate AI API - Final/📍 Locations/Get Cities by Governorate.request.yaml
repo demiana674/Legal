@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{base_url}}/api/Locations/governorates/1/cities"
+method: GET
+order: 2000

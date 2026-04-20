@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/api/Cases"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "title": "نزاع ملكية عقارية",
+      "description": "خلاف على ملكية عقار في مدينة نصر",
+      "clientId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "court": "محكمة القاهرة الابتدائية",
+      "nextHearingDate": "2024-12-15T10:00:00Z",
+      "status": 1,
+      "priority": 3,
+      "caseType": "مدني"
+    }
+order: 1000

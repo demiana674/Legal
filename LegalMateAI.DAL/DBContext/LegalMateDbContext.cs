@@ -41,25 +41,20 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<SearchQuery> SearchQueries { get; set; }
-        public DbSet<EgyptianLaw> EgyptianLaws { get; set; }
-        public DbSet<LawArticle> LawArticles { get; set; }
-        public DbSet<ArticleClause> ArticleClauses { get; set; }
-        public DbSet<ArticleVersion> ArticleVersions { get; set; }
-        public DbSet<LawAmendment> LawAmendments { get; set; }
-        public DbSet<LawInterpretation> LawInterpretations { get; set; }
-        public DbSet<LawKeyword> LawKeywords { get; set; }
-        public DbSet<CourtRuling> CourtRulings { get; set; }
-
+      
+        public DbSet<Law> Laws { get; set; }
+        public DbSet<LawyerBranch> LawyerBranches { get; set; }
+public DbSet<BranchAvailability> BranchAvailabilities { get; set; }
         public DbSet<LawyerSpecialty> LawyerSpecialties { get; set; }
-public DbSet<LawyerProfileSpecialty> LawyerProfileSpecialties { get; set; }
+        public DbSet<LawyerProfileSpecialty> LawyerProfileSpecialties { get; set; }
 
-        // LegalMateAI.DAL/DBContext/LegalMateDbContext.cs
-// أضف هذه الـ DbSets في الكلاس
+        public DbSet<Case> Cases { get; set; }
+        public DbSet<CaseDocument> CaseDocuments { get; set; }
+        public DbSet<CaseNote> CaseNotes { get; set; }
 
-public DbSet<Case> Cases { get; set; }
-public DbSet<CaseDocument> CaseDocuments { get; set; }
-public DbSet<CaseNote> CaseNotes { get; set; }
-        // public DbSet<LawyerSpecialization> LawyerSpecializations { get; set; }
+        // ===== ✅ الجداول الجديدة للعقود الجاهزة =====
+        public DbSet<PredefinedContractTemplate> PredefinedContractTemplates { get; set; }
+        public DbSet<GeneratedContract> GeneratedContracts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -80,31 +75,20 @@ public DbSet<CaseNote> CaseNotes { get; set; }
                 .ValueGeneratedNever();
 
             // القوانين والمواد والتعديلات
-            modelBuilder.Entity<EgyptianLaw>()
-                .Property(el => el.Id)
-                .ValueGeneratedNever();
-
-            modelBuilder.Entity<LawArticle>()
-                .Property(la => la.Id)
-                .ValueGeneratedNever();
-
-            modelBuilder.Entity<LawAmendment>()
-                .Property(la => la.Id)
-                .ValueGeneratedNever();
+   
                 
-// في OnModelCreating
-// Appointment relationships
-modelBuilder.Entity<Appointment>()
-    .HasOne(a => a.User)
-    .WithMany(u => u.Appointments)
-    .HasForeignKey(a => a.UserID)
-    .OnDelete(DeleteBehavior.Restrict);
+            // Appointment relationships
+            modelBuilder.Entity<Appointment>()
+                .HasOne(a => a.User)
+                .WithMany(u => u.Appointments)
+                .HasForeignKey(a => a.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
 
-modelBuilder.Entity<Appointment>()
-    .HasOne(a => a.Lawyer)
-    .WithMany(l => l.Appointments)
-    .HasForeignKey(a => a.LawyerId)
-    .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Appointment>()
+                .HasOne(a => a.Lawyer)
+                .WithMany(l => l.Appointments)
+                .HasForeignKey(a => a.LawyerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ===== 3. Relationships for Active Tables =====
 
@@ -136,26 +120,53 @@ modelBuilder.Entity<Appointment>()
                 .HasForeignKey(c => c.GovernorateId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Lawyer Profile Specialties
+            modelBuilder.Entity<LawyerProfileSpecialty>()
+                .HasOne(lps => lps.Lawyer)
+                .WithMany(lp => lp.Specialties)
+                .HasForeignKey(lps => lps.LawyerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LawyerProfileSpecialty>()
+                .HasOne(lps => lps.Specialty)
+                .WithMany(ls => ls.LawyerProfiles)
+                .HasForeignKey(lps => lps.SpecialtyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LawyerProfileSpecialty>()
+                .HasIndex(lps => new { lps.LawyerId, lps.SpecialtyId })
+                .IsUnique();
 
 
-                // في LegalMateDbContext.cs - داخل OnModelCreating
-
-// ===== Lawyer Profile Specialties =====
-modelBuilder.Entity<LawyerProfileSpecialty>()
-    .HasOne(lps => lps.Lawyer)
-    .WithMany(lp => lp.Specialties)
-    .HasForeignKey(lps => lps.LawyerId)
-    .OnDelete(DeleteBehavior.Cascade);
-
-modelBuilder.Entity<LawyerProfileSpecialty>()
-    .HasOne(lps => lps.Specialty)
-    .WithMany(ls => ls.LawyerProfiles)
-    .HasForeignKey(lps => lps.SpecialtyId)
+            // Law relationships
+modelBuilder.Entity<Law>()
+    .HasOne(l => l.AddedByAdmin)
+    .WithMany()
+    .HasForeignKey(l => l.AddedByAdminId)
     .OnDelete(DeleteBehavior.Restrict);
 
-modelBuilder.Entity<LawyerProfileSpecialty>()
-    .HasIndex(lps => new { lps.LawyerId, lps.SpecialtyId })
-    .IsUnique();
+modelBuilder.Entity<Law>()
+    .HasIndex(l => l.Category);
+
+modelBuilder.Entity<Law>()
+    .HasIndex(l => l.IsActive);
+
+// LawyerBranch relationships
+modelBuilder.Entity<LawyerBranch>()
+    .HasOne(b => b.Lawyer)
+    .WithMany()
+    .HasForeignKey(b => b.LawyerId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<LawyerBranch>()
+    .HasMany(b => b.Availabilities)
+    .WithOne(a => a.Branch)
+    .HasForeignKey(a => a.BranchId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+// BranchAvailability relationships
+modelBuilder.Entity<BranchAvailability>()
+    .HasIndex(a => new { a.BranchId, a.DayOfWeek });    
 
             // LawyerProfile & Governorate
             modelBuilder.Entity<LawyerProfile>()
@@ -190,28 +201,24 @@ modelBuilder.Entity<LawyerProfileSpecialty>()
                 .HasForeignKey(c => c.AnalysisId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // UserProfile relationships
+            modelBuilder.Entity<UserProfile>()
+                .HasOne(up => up.Governorate)
+                .WithMany()
+                .HasForeignKey(up => up.GovernorateId)
+                .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<UserProfile>()
+                .HasOne(up => up.City)
+                .WithMany()
+                .HasForeignKey(up => up.CityId)
+                .OnDelete(DeleteBehavior.NoAction);
 
-           // ✅ العلاقة بين UserProfile و Governorate
-    modelBuilder.Entity<UserProfile>()
-        .HasOne(up => up.Governorate)
-        .WithMany()
-        .HasForeignKey(up => up.GovernorateId)
-        .OnDelete(DeleteBehavior.NoAction);
-
-    // ✅ العلاقة بين UserProfile و City
-    modelBuilder.Entity<UserProfile>()
-        .HasOne(up => up.City)
-        .WithMany()
-        .HasForeignKey(up => up.CityId)
-        .OnDelete(DeleteBehavior.NoAction);
-
-    // ✅ العلاقة بين UserProfile و User
-    modelBuilder.Entity<UserProfile>()
-        .HasOne(up => up.User)
-        .WithOne(u => u.UserProfile)
-        .HasForeignKey<UserProfile>(up => up.UserId)
-        .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserProfile>()
+                .HasOne(up => up.User)
+                .WithOne(u => u.UserProfile)
+                .HasForeignKey<UserProfile>(up => up.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<DocumentAnalysis>()
                 .HasMany(da => da.Risks)
@@ -239,6 +246,36 @@ modelBuilder.Entity<LawyerProfileSpecialty>()
                 .HasForeignKey(lr => lr.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ===== العلاقات الجديدة للعقود الجاهزة =====
+            
+            // PredefinedContractTemplate -> Admin
+            modelBuilder.Entity<PredefinedContractTemplate>()
+                .HasOne(t => t.CreatedByAdmin)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            // PredefinedContractTemplate -> GeneratedContract
+            modelBuilder.Entity<PredefinedContractTemplate>()
+                .HasMany(t => t.GeneratedContracts)
+                .WithOne(g => g.Template)
+                .HasForeignKey(g => g.TemplateId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            // GeneratedContract -> User
+            modelBuilder.Entity<GeneratedContract>()
+                .HasOne(g => g.User)
+                .WithMany()
+                .HasForeignKey(g => g.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            // GeneratedContract -> LawyerProfile
+            modelBuilder.Entity<GeneratedContract>()
+                .HasOne(g => g.Lawyer)
+                .WithMany()
+                .HasForeignKey(g => g.LawyerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // ===== 4. Indexes =====
             
             modelBuilder.Entity<User>()
@@ -258,28 +295,40 @@ modelBuilder.Entity<LawyerProfileSpecialty>()
             modelBuilder.Entity<Governorate>()
                 .HasIndex(g => g.Name);
 
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+            
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.NationalId)
+                .IsUnique();
+            
+            modelBuilder.Entity<LawyerProfile>()
+                .HasIndex(l => l.LicenseNumber)
+                .IsUnique();
+            
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Role);
+            
+            modelBuilder.Entity<LawyerProfile>()
+                .HasIndex(l => l.VerificationStatus);
 
-                // ✅ Index لتسريع البحث بالبريد الإلكتروني
-    modelBuilder.Entity<User>()
-        .HasIndex(u => u.Email)
-        .IsUnique();
-    
-    // ✅ Index لتسريع البحث بالرقم القومي ومنع التكرار
-    modelBuilder.Entity<User>()
-        .HasIndex(u => u.NationalId)
-        .IsUnique();
-    
-    // ✅ Index لتسريع البحث برقم رخصة المحاماة ومنع التكرار
-    modelBuilder.Entity<LawyerProfile>()
-        .HasIndex(l => l.LicenseNumber)
-        .IsUnique();
-    
-    // Index للحالة
-    modelBuilder.Entity<User>()
-        .HasIndex(u => u.Role);
-    
-    modelBuilder.Entity<LawyerProfile>()
-        .HasIndex(l => l.VerificationStatus);
+            // Indexes للجداول الجديدة
+            modelBuilder.Entity<PredefinedContractTemplate>()
+                .HasIndex(t => t.ContractType);
+                
+            modelBuilder.Entity<PredefinedContractTemplate>()
+                .HasIndex(t => t.IsActive);
+                
+            modelBuilder.Entity<GeneratedContract>()
+                .HasIndex(g => g.ContractNumber)
+                .IsUnique();
+                
+            modelBuilder.Entity<GeneratedContract>()
+                .HasIndex(g => g.UserId);
+                
+            modelBuilder.Entity<GeneratedContract>()
+                .HasIndex(g => g.CreatedAt);
 
             // ===== 5. Default Values =====
             
@@ -314,6 +363,22 @@ modelBuilder.Entity<LawyerProfileSpecialty>()
             modelBuilder.Entity<LoginAttempt>()
                 .Property(la => la.AttemptedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+                
+            modelBuilder.Entity<PredefinedContractTemplate>()
+                .Property(t => t.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+                
+            modelBuilder.Entity<PredefinedContractTemplate>()
+                .Property(t => t.IsActive)
+                .HasDefaultValue(true);
+                
+            modelBuilder.Entity<GeneratedContract>()
+                .Property(g => g.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+                
+            modelBuilder.Entity<GeneratedContract>()
+                .Property(g => g.Status)
+                .HasDefaultValue(ContractStatus.Draft);
         }
     }
 }

@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/api/Cases/{caseId}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "title": "قضية محدثة",
+      "status": 3,
+      "priority": 4
+    }
+order: 4000

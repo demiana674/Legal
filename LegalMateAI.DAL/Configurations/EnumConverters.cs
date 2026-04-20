@@ -102,26 +102,7 @@ modelBuilder.Entity<AdminLog>()
     .Property(al => al.Action)
     .HasConversion(GetEnumToStringConverter<AdminLogAction>());
 
-            // ===== Legal Related =====
-            modelBuilder.Entity<EgyptianLaw>()
-                .Property(el => el.Category)
-                .HasConversion(GetEnumToStringConverter<LawCategory>());
 
-            modelBuilder.Entity<EgyptianLaw>()
-                .Property(el => el.Status)
-                .HasConversion(GetEnumToStringConverter<LawStatus>());
-
-            modelBuilder.Entity<LawInterpretation>()
-                .Property(li => li.Source)
-                .HasConversion(GetEnumToStringConverter<InterpretationSource>());
-
-            // modelBuilder.Entity<LawModeration>()
-            //     .Property(lm => lm.Action)
-            //     .HasConversion(GetEnumToStringConverter<ModerationAction>());
-
-            // modelBuilder.Entity<LawModeration>()
-            //     .Property(lm => lm.Status)
-            //     .HasConversion(GetEnumToStringConverter<ModerationStatus>());
 
             // ===== UserProfile Related =====
             modelBuilder.Entity<UserSocialLink>()

@@ -1,0 +1,11 @@
+$kind: http-request
+description: لوجات الأدمن اللي بمعرف معين
+url: "{{base_url}}/api/admin/logs?AdminId={{adminId}}&page=1&pageSize=50"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  AdminId: "{{adminId}}"
+  page: "1"
+  pageSize: "50"
+order: 11000

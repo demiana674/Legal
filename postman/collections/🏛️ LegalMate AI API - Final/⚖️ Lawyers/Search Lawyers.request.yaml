@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/api/Lawyer/search?specialization=مدني&location=القاهرة"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  specialization: مدني
+  location: القاهرة
+order: 1000

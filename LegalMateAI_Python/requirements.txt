@@ -13,3 +13,5 @@ pydantic
 python-dotenv
 httpx
 slowapi
+accelerate
+bitsandbytes

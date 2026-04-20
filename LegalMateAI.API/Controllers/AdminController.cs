@@ -25,27 +25,17 @@ namespace LegalMateAI.API.Controllers
         private Guid GetAdminId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (claim == null)
-            {
-                claim = User.FindFirst("id");
-            }
-            if (claim == null)
-            {
-                claim = User.FindFirst("sub");
-            }
+            if (claim == null) claim = User.FindFirst("id");
+            if (claim == null) claim = User.FindFirst("sub");
             
             if (claim == null)
-            {
-                _logger.LogWarning("No admin ID claim found");
                 throw new UnauthorizedAccessException("Admin not authenticated");
-            }
             
             return Guid.Parse(claim.Value);
         }
 
         // ========== Dashboard ==========
         [HttpGet("dashboard")]
-        [ProducesResponseType(typeof(AdminDashboardDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDashboard()
         {
             var adminId = GetAdminId();
@@ -54,104 +44,130 @@ namespace LegalMateAI.API.Controllers
         }
 
         // ========== User Management ==========
-        
-        // GET: api/admin/users
         [HttpGet("users")]
-        [ProducesResponseType(typeof(List<UserResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsers([FromQuery] UserFilterDto? filter)
         {
-            filter ??= new UserFilterDto();
-            var users = await _adminService.GetAllUsersAsync(filter);
+            var users = await _adminService.GetAllUsersAsync(filter ?? new UserFilterDto());
             return Ok(users);
         }
 
-        // GET: api/admin/users/{id}
         [HttpGet("users/{id}")]
-        [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUserDetails(Guid id)
         {
             var user = await _adminService.GetUserDetailsAsync(id);
-
-            if (user == null)
-                return NotFound(new { message = "المستخدم غير موجود" });
-
-            return Ok(user);
+            return user == null ? NotFound(new { message = "المستخدم غير موجود" }) : Ok(user);
         }
 
-        // PATCH: api/admin/users/{id}/status
         [HttpPatch("users/{id}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] AdminUpdateUserStatusDto request)
         {
-            var adminId = GetAdminId();
-            _logger.LogInformation($"Admin {adminId} updating status of user {id} to {request.Status}");
-            
-            var result = await _adminService.UpdateUserStatusAsync(adminId, id, request.Status, request.Reason);
-
-            if (!result)
-                return NotFound(new { message = "المستخدم غير موجود" });
-
-            _logger.LogInformation($"User {id} status updated to {request.Status}");
-            return Ok(new { message = "تم تحديث حالة المستخدم بنجاح" });
+            var result = await _adminService.UpdateUserStatusAsync(GetAdminId(), id, request.Status, request.Reason);
+            return !result ? NotFound(new { message = "المستخدم غير موجود" }) : Ok(new { message = "تم تحديث حالة المستخدم بنجاح" });
         }
 
-        // DELETE: api/admin/users/{id}
         [HttpDelete("users/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
-            var adminId = GetAdminId();
-            var result = await _adminService.DeleteUserAsync(adminId, id);
+            var result = await _adminService.DeleteUserAsync(GetAdminId(), id);
+            return !result ? NotFound(new { message = "المستخدم غير موجود" }) : Ok(new { message = "تم حذف المستخدم بنجاح" });
+        }
 
-            if (!result)
-                return NotFound(new { message = "المستخدم غير موجود" });
+        // ========== Lawyer Management ==========
+        [HttpGet("lawyers")]
+        public async Task<IActionResult> GetAllLawyers([FromQuery] LawyerFilterDto? filter)
+        {
+            var lawyers = await _adminService.GetAllLawyersAsync(filter ?? new LawyerFilterDto());
+            return Ok(lawyers);
+        }
 
-            return Ok(new { message = "تم حذف المستخدم بنجاح" });
+        [HttpGet("lawyers/pending")]
+        public async Task<IActionResult> GetPendingLawyers()
+        {
+            var lawyers = await _adminService.GetPendingLawyersAsync();
+            return Ok(lawyers);
+        }
+
+        [HttpGet("lawyers/{id}")]
+        public async Task<IActionResult> GetLawyerById(Guid id)
+        {
+            var lawyer = await _adminService.GetLawyerDetailsAsync(id);
+            return lawyer == null ? NotFound(new { message = "المحامي غير موجود" }) : Ok(lawyer);
+        }
+
+        [HttpPost("lawyers/{id}/approve")]
+        public async Task<IActionResult> ApproveLawyer(Guid id)
+        {
+            var result = await _adminService.ApproveLawyerAsync(id);
+            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تمت الموافقة على المحامي بنجاح" });
+        }
+
+        [HttpPost("lawyers/{id}/reject")]
+        public async Task<IActionResult> RejectLawyer(Guid id, [FromBody] RejectLawyerRequest request)
+        {
+            var result = await _adminService.RejectLawyerAsync(id, request.Reason);
+            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم رفض المحامي" });
+        }
+
+        [HttpPost("lawyers/{id}/suspend")]
+        public async Task<IActionResult> SuspendLawyer(Guid id, [FromBody] SuspendLawyerRequest request)
+        {
+            var result = await _adminService.SuspendLawyerAsync(id, request.Reason);
+            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم تعليق المحامي" });
+        }
+
+        [HttpPost("lawyers/{id}/activate")]
+        public async Task<IActionResult> ActivateLawyer(Guid id)
+        {
+            var result = await _adminService.ActivateLawyerAsync(id);
+            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم تنشيط المحامي" });
+        }
+
+        [HttpDelete("lawyers/{id}")]
+        public async Task<IActionResult> DeleteLawyer(Guid id)
+        {
+            var result = await _adminService.DeleteLawyerAsync(id);
+            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم حذف المحامي" });
         }
 
         // ========== Log Management ==========
-        
-        // GET: api/admin/logs
         [HttpGet("logs")]
-        [ProducesResponseType(typeof(List<AdminLogDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAdminLogs([FromQuery] LogFilterDto? filter)
         {
-            filter ??= new LogFilterDto();
-            var logs = await _adminService.GetAdminLogsAsync(filter);
+            var logs = await _adminService.GetAdminLogsAsync(filter ?? new LogFilterDto());
             return Ok(logs);
         }
 
-        // GET: api/admin/logs/export
         [HttpGet("logs/export")]
-        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ExportLogs([FromQuery] LogFilterDto? filter)
+        public async Task<IActionResult> ExportLogs([FromQuery] LogFilterDto? filter, [FromQuery] string format = "csv")
         {
-            var file = await _adminService.ExportLogsAsync(filter);
-            return File(file, "text/csv", $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            var file = await _adminService.ExportLogsAsync(filter, format);
+            var contentType = format.ToLower() == "pdf" ? "application/pdf" : "text/csv; charset=utf-8";
+            return File(file, contentType, $"admin_logs_{DateTime.Now:yyyyMMdd_HHmmss}.{format}");
         }
 
         // ========== System Stats ==========
-        
-        // GET: api/admin/stats
         [HttpGet("stats")]
-        [ProducesResponseType(typeof(SystemStatsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSystemStats()
         {
             var stats = await _adminService.GetSystemStatsAsync();
             return Ok(stats);
         }
 
-        // POST: api/admin/clear-cache
         [HttpPost("clear-cache")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ClearCache()
         {
-            var adminId = GetAdminId();
-            await _adminService.ClearCacheAsync(adminId);
+            await _adminService.ClearCacheAsync(GetAdminId());
             return Ok(new { message = "تم مسح الذاكرة المؤقتة بنجاح" });
         }
+    }
+
+    public class RejectLawyerRequest
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class SuspendLawyerRequest
+    {
+        public string? Reason { get; set; }
     }
 }

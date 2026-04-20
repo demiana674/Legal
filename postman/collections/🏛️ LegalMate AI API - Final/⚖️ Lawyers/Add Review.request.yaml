@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/api/Lawyer/{lawyerId}/review"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "rating": 5,
+      "comment": "محامي ممتاز ومتعاون"
+    }
+order: 4000

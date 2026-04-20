@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/api/Appointments"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "lawyerId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "appointmentType": "استشارة قانونية",
+      "date": "2024-12-20",
+      "time": "10:00 AM",
+      "durationMinutes": 60,
+      "location": "المكتب الرئيسي - وسط البلد",
+      "notes": "مراجعة عقد إيجار",
+      "isUrgent": false
+    }
+order: 1000

@@ -1,0 +1,30 @@
+$kind: http-request
+url: "{{base_url}}/api/contracts/predefined/admin/templates/upload"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: File
+      src: []
+    - type: text
+      key: Name
+      value: عقد إيجار سكني
+    - type: text
+      key: Description
+      value: عقد إيجار موحد للوحدات السكنية
+    - type: text
+      key: ContractType
+      value: "1"
+    - type: text
+      key: RequiredFields
+      value: '["FullName", "NationalId", "Address", "RentAmount", "Duration"]'
+    - type: text
+      key: SearchKeywords
+      value: إيجار,شقة,سكن,تمليك
+    - type: text
+      key: IsFeatured
+      value: "true"
+order: 7000

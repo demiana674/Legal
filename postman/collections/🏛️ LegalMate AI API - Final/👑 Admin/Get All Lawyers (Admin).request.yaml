@@ -1,0 +1,13 @@
+$kind: http-request
+description: "فلترة حسب: Status, GovernorateId, SpecializationId, City"
+url: "{{base_url}}/api/admin/lawyers?Status=Active&GovernorateId=1&Specializati\
+  onId=1&City=القاهرة"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  Status: Active
+  GovernorateId: "1"
+  SpecializationId: "1"
+  City: القاهرة
+order: 5000

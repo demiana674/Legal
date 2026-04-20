@@ -1,49 +1,85 @@
 // LegalMateAI.BLL/Services/IService/IContractService.cs
-using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.Domain.Enums;
+
 namespace LegalMateAI.BLL.Services.IService
 {
     public interface IContractService
     {
-        // إنشاء عقد جديد
-        Task<ContractResponseDto?> CreateContractAsync(Guid userId, CreateContractDto request);
+        // ========== القوالب (للقراءة فقط) ==========
         
-        // إنشاء عقد من قالب
-        Task<ContractResponseDto?> CreateContractFromTemplateAsync(Guid userId, Guid templateId, Dictionary<string, string> customFields);
+        /// <summary>
+        /// جلب القوالب المتاحة
+        /// </summary>
+        Task<List<ContractTemplateResponseDto>> GetContractTemplatesAsync(ContractType? type = null, string? search = null);
         
-        // جلب عقود المستخدم
-        Task<List<ContractResponseDto>> GetUserContractsAsync(Guid userId, string? status = null);
+        /// <summary>
+        /// جلب قالب محدد
+        /// </summary>
+        Task<ContractTemplateResponseDto?> GetTemplateByIdAsync(Guid templateId);
         
-        // جلب عقود المحامي (للمحامي)
-        Task<List<ContractResponseDto>> GetLawyerContractsAsync(Guid lawyerId, string? status = null);
+        /// <summary>
+        /// تحميل ملف القالب
+        /// </summary>
+        Task<byte[]?> DownloadTemplateAsync(Guid templateId);
         
-        // جلب عقد محدد
+        // ========== عقود المستخدم ==========
+        
+        /// <summary>
+        /// توليد عقد من قالب
+        /// </summary>
+        Task<ContractResponseDto?> GenerateContractFromTemplateAsync(Guid userId, GenerateContractRequest request);
+        
+        /// <summary>
+        /// جلب عقود المستخدم
+        /// </summary>
+        Task<List<ContractResponseDto>> GetUserContractsAsync(Guid userId, string? status = null, string? search = null);
+        
+        /// <summary>
+        /// جلب عقود المحامي
+        /// </summary>
+        Task<List<ContractResponseDto>> GetLawyerContractsAsync(Guid lawyerId, string? status = null, string? search = null);
+        
+        /// <summary>
+        /// البحث في العقود
+        /// </summary>
+        Task<List<ContractResponseDto>> SearchContractsAsync(Guid userId, string searchTerm, bool isLawyer);
+        
+        /// <summary>
+        /// جلب عقد محدد
+        /// </summary>
         Task<ContractResponseDto?> GetContractByIdAsync(Guid userId, Guid contractId, bool isLawyer = false);
         
-        // تحديث عقد
+        /// <summary>
+        /// تحديث بيانات العقد
+        /// </summary>
         Task<ContractResponseDto?> UpdateContractAsync(Guid userId, Guid contractId, UpdateContractDto request);
         
-        // تحديث حالة العقد
+        /// <summary>
+        /// تحديث حالة العقد
+        /// </summary>
         Task<bool> UpdateContractStatusAsync(Guid userId, Guid contractId, UpdateContractStatusDto request, bool isLawyer = false);
         
-        // حذف عقد
+        /// <summary>
+        /// حذف عقد
+        /// </summary>
         Task<bool> DeleteContractAsync(Guid userId, Guid contractId);
         
-        // تحميل العقد
-        Task<byte[]?> DownloadContractAsync(Guid userId, Guid contractId, string format = "pdf");
-        
-        // الحصول على قوالب العقود
-        Task<List<ContractTemplateResponseDto>> GetContractTemplatesAsync(ContractType? type = null);
-        
-        // إنشاء قالب عقد جديد (للمدير)
-        Task<ContractTemplateResponseDto?> CreateContractTemplateAsync(Guid adminId, CreateContractTemplateDto request);
-        
-        // تحديث قالب عقد
-        Task<ContractTemplateResponseDto?> UpdateContractTemplateAsync(Guid adminId, Guid templateId, UpdateContractTemplateDto request);
-        
-        // حذف قالب عقد
-        Task<bool> DeleteContractTemplateAsync(Guid adminId, Guid templateId);
+        /// <summary>
+        /// تحميل ملف العقد
+        /// </summary>
+        Task<byte[]?> DownloadContractAsync(Guid userId, Guid contractId);
+    }
+
+    /// <summary>
+    /// نموذج طلب توليد عقد من قالب
+    /// </summary>
+    public class GenerateContractRequest
+    {
+        public Guid TemplateId { get; set; }
+        public Dictionary<string, string> FilledData { get; set; } = new();
+        public string? ContractTitle { get; set; }
+        public Guid? LawyerId { get; set; }
     }
 }

@@ -1,0 +1,13 @@
+$kind: collection
+name: 🏛️ LegalMate AI API - Final
+description: |
+  # LegalMate AI API Collection
+
+  ## 🔐 حسابات تجريبية
+
+  | الدور | البريد الإلكتروني | كلمة المرور |
+  |-------|-------------------|-------------|
+  | **Admin** | `admin@legalmate.com` | `Admin@123` |
+variables:
+  base_url: ""
+  access_token: ""

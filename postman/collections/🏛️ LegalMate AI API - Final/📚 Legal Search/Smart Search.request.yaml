@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/api/Legal/smart-search"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "query": "شروط فسخ عقد الإيجار",
+      "page": 1,
+      "pageSize": 10
+    }
+order: 2000

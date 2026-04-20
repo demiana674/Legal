@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LegalMateAI.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4b187f93480426dbf345ea6deb968e6cc660fa8a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+761055b0edf519570ce4f14f148d8459c4658456")]
 [assembly: System.Reflection.AssemblyProductAttribute("LegalMateAI.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LegalMateAI.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

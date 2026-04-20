@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/Contracts/{contractId}/download?format=pdf"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  format: pdf
+order: 3000

@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/api/admin/users/{userId}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "status": 2,
+      "reason": "تم التحقق من الحساب"
+    }
+order: 3000

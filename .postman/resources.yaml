@@ -5,6 +5,9 @@ workspace:
 localResources:
   specs:
     - ..\LegalMateAI.API\obj\Debug\net9.0\EndpointInfo\LegalMateAI.API.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
 cloudResources:
   collections:
     ..\postman\collections\LegalMate AI - Full Test Suite: fd601fcf-7829-4454-b35c-735404b8c627
+    ..\postman\collections\🏛️ LegalMate AI API - Final: 529621a2-8a73-426a-9f55-536388ac40fa

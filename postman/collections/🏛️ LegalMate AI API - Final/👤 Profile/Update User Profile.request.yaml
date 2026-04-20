@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{base_url}}/api/user/profile"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "phoneNumber": "01012345678",
+      "governorateId": 1,
+      "cityId": 101,
+      "address": "مدينة نصر، القاهرة"
+    }
+order: 2000

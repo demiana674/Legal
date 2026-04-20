@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{base_url}}/api/lawyer/profile"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "licenseNumber": "LAW-67890",
+      "barAssociation": "نقابة المحامين",
+      "yearsOfExperience": 12,
+      "specialtyIds": [1, 3, 6],
+      "governorateId": 1,
+      "city": "وسط البلد",
+      "officeAddress": "شارع رمسيس، القاهرة"
+    }
+order: 4000

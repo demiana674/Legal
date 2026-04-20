@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/api/Appointments/{appointmentId}"
+method: DELETE
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: '"ظروف طارئة"'
+order: 4000

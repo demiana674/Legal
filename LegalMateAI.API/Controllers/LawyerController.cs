@@ -1,146 +1,96 @@
-// LegalMateAI.API/Controllers/LawyerController.cs
+// LegalMateAI.API/Controllers/LawyerBranchController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
-using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.ReadDTO;
+using LegalMateAI.DTOs.CreateDTO;
+using LegalMateAI.DTOs.UpdateDTO;
 using System.Security.Claims;
 
 namespace LegalMateAI.API.Controllers
 {
+    [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
-    public class LawyerController : ControllerBase
+    [Route("api/lawyer/branches")]
+    public class LawyerBranchController : ControllerBase
     {
-        private readonly ILawyerService _lawyerService;
+        private readonly ILawyerBranchService _branchService;
+        private readonly ILogger<LawyerBranchController> _logger;
 
-        public LawyerController(ILawyerService lawyerService)
+        public LawyerBranchController(ILawyerBranchService branchService, ILogger<LawyerBranchController> logger)
         {
-            _lawyerService = lawyerService;
+            _branchService = branchService;
+            _logger = logger;
         }
 
         private Guid GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            return claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
+            return Guid.Parse(claim!.Value);
         }
 
-        // GET: api/lawyer/search
-        [HttpGet("search")]
+        // ========== للجميع ==========
+        
         [AllowAnonymous]
-        [ProducesResponseType(typeof(List<LawyerResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SearchLawyers([FromQuery] LawyerSearchDto searchCriteria)
+        [HttpGet("lawyer/{lawyerId}")]
+        public async Task<IActionResult> GetLawyerBranches(Guid lawyerId)
         {
-            var lawyers = await _lawyerService.SearchLawyersAsync(searchCriteria);
-            return Ok(lawyers);
+            var branches = await _branchService.GetLawyerBranchesAsync(lawyerId);
+            return Ok(branches);
         }
 
-        // GET: api/lawyer/{id}
-        [HttpGet("{id}")]
         [AllowAnonymous]
-        [ProducesResponseType(typeof(LawyerResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetLawyerById(Guid id)
+        [HttpGet("{branchId}/availability")]
+        public async Task<IActionResult> GetBranchAvailability(Guid branchId)
         {
-            var lawyer = await _lawyerService.GetLawyerByIdAsync(id);
-
-            if (lawyer == null)
-                return NotFound(new { message = "المحامي غير موجود" });
-
-            return Ok(lawyer);
-        }
-
-        // GET: api/lawyer/{id}/availability
-        [HttpGet("{id}/availability")]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(List<AvailabilityDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetLawyerAvailability(Guid id)
-        {
-            var availability = await _lawyerService.GetLawyerAvailabilityAsync(id);
+            var availability = await _branchService.GetBranchAvailabilityAsync(branchId);
             return Ok(availability);
         }
 
-        // PUT: api/lawyer/availability
+        [AllowAnonymous]
+        [HttpGet("{branchId}/available-slots")]
+        public async Task<IActionResult> GetAvailableSlots(Guid branchId, [FromQuery] DateTime date)
+        {
+            var slots = await _branchService.GetAvailableTimeSlotsAsync(branchId, date);
+            return Ok(slots);
+        }
+
+        // ========== للمحامي فقط ==========
+        
         [Authorize(Roles = "Lawyer")]
-        [HttpPut("availability")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateAvailability([FromBody] List<CreateLawyerAvailabilityDto> availabilities)
+        [HttpPost]
+        public async Task<IActionResult> CreateBranch([FromBody] CreateLawyerBranchDto request)
         {
             var lawyerId = GetUserId();
-            var result = await _lawyerService.UpdateAvailabilityAsync(lawyerId, availabilities);
+            var result = await _branchService.CreateBranchAsync(lawyerId, request);
+            return Ok(result);
+        }
 
-            if (!result)
-                return BadRequest(new { message = "فشل تحديث أوقات التوفر" });
+        [Authorize(Roles = "Lawyer")]
+        [HttpPut("{branchId}")]
+        public async Task<IActionResult> UpdateBranch(Guid branchId, [FromBody] UpdateLawyerBranchDto request)
+        {
+            var lawyerId = GetUserId();
+            var result = await _branchService.UpdateBranchAsync(lawyerId, branchId, request);
+            return Ok(result);
+        }
 
+        [Authorize(Roles = "Lawyer")]
+        [HttpDelete("{branchId}")]
+        public async Task<IActionResult> DeleteBranch(Guid branchId)
+        {
+            var lawyerId = GetUserId();
+            var result = await _branchService.DeleteBranchAsync(lawyerId, branchId);
+            return Ok(new { message = "تم حذف الفرع بنجاح" });
+        }
+
+        [Authorize(Roles = "Lawyer")]
+        [HttpPut("{branchId}/availability")]
+        public async Task<IActionResult> UpdateAvailability(Guid branchId, [FromBody] List<CreateBranchAvailabilityDto> availabilities)
+        {
+            var lawyerId = GetUserId();
+            var result = await _branchService.UpdateBranchAvailabilityAsync(lawyerId, branchId, availabilities);
             return Ok(new { message = "تم تحديث أوقات التوفر بنجاح" });
         }
-
-        // // GET: api/lawyer/specializations
-        // [HttpGet("specializations")]
-        // [AllowAnonymous]
-        // [ProducesResponseType(typeof(List<LegalSpecializationDto>), StatusCodes.Status200OK)]
-        // public async Task<IActionResult> GetSpecializations()
-        // {
-        //     var specializations = await _lawyerService.GetSpecializationsAsync();
-        //     return Ok(specializations);
-        // }
-
-        // GET: api/lawyer/by-specialization
-        [HttpGet("by-specialization")]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(List<LawyerResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetLawyersBySpecialization([FromQuery] string specialization, [FromQuery] int limit = 5)
-        {
-            var lawyers = await _lawyerService.GetLawyersBySpecializationAsync(specialization, limit);
-            return Ok(lawyers);
-        }
-
-
-        [HttpGet("specialties")]
-[AllowAnonymous]
-[ProducesResponseType(typeof(List<LawyerSpecialtyResponseDto>), StatusCodes.Status200OK)]
-public async Task<IActionResult> GetSpecialties()
-{
-    var specialties = await _lawyerService.GetSpecialtiesAsync();
-    return Ok(specialties);
-}
-
-        // GET: api/lawyer/{id}/reviews
-        [HttpGet("{id}/reviews")]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(List<ReviewDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetLawyerReviews(Guid id)
-        {
-            var reviews = await _lawyerService.GetLawyerReviewsAsync(id);
-            return Ok(reviews);
-        }
-
-        // POST: api/lawyer/{id}/review
-        [Authorize(Roles = "User")]
-        [HttpPost("{id}/review")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> AddReview(Guid id, [FromBody] AddReviewRequest request)
-        {
-            var userId = GetUserId();
-
-            if (request.Rating < 1 || request.Rating > 5)
-                return BadRequest(new { message = "التقييم يجب أن يكون بين 1 و 5" });
-
-            var result = await _lawyerService.AddReviewAsync(userId, id, request.Rating, request.Comment, request.AppointmentId);
-
-            if (!result)
-                return BadRequest(new { message = "لا يمكن إضافة تقييم. تأكد من وجود موعد مكتمل مع هذا المحامي" });
-
-            return Ok(new { message = "تم إضافة التقييم بنجاح" });
-        }
-    }
-
-    public class AddReviewRequest
-    {
-        public int Rating { get; set; }
-        public string? Comment { get; set; }
-        public Guid? AppointmentId { get; set; }
     }
 }

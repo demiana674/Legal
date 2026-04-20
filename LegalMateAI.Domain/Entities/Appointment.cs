@@ -10,7 +10,11 @@ namespace LegalMateAI.Domain.Entities
         public string AppointmentNumber { get; set; } = string.Empty;
         public Guid UserID { get; set; }
         public Guid LawyerId { get; set; }
-        
+        /// <summary>
+/// معرف الفرع (اختياري)
+/// </summary>
+public Guid? BranchId { get; set; }
+public LawyerBranch? Branch { get; set; }
         public string AppointmentType { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         public string Time { get; set; } = string.Empty;

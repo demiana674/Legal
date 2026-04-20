@@ -16,11 +16,19 @@ using LegalMateAI.Domain.Entities;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using QuestPDF.Infrastructure;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ===== Add services =====
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 
 // ===== Swagger with JWT support =====
@@ -28,9 +36,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo 
     { 
-        Title = "LegalMateAI API", 
+        Title = "🏛️ LegalMate AI", 
         Version = "v1.0",
-        Description = "AI-Powered Legal Assistance Platform",
+        Description = "منصة المساعدة القانونية الذكية",
         Contact = new OpenApiContact
         {
             Name = "LegalMate Team",
@@ -41,10 +49,11 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "Please enter JWT with Bearer into field",
+        Description = "أدخل JWT Token مع كلمة Bearer: 'Bearer {token}'",
         Name = "Authorization",
         Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
     });
     
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -58,16 +67,18 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
+    
+    c.OrderActionsBy((apiDesc) => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.HttpMethod}");
 });
 
 // ===== HTTP Client with API Key =====
 builder.Services.AddHttpClient("PythonAI", client =>
 {
     var apiKey = builder.Configuration["PythonAI:ApiKey"] ?? "legalmate-ai-secret-key-2024";
-    client.BaseAddress = new Uri(builder.Configuration["PythonAI:Url"] ?? "http://192.168.1.14:8000/api/v1");
+    client.BaseAddress = new Uri(builder.Configuration["PythonAI:Url"] ?? "http://localhost:8000/api/v1");
     client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("PythonAI:TimeoutSeconds", 90));
     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 });
@@ -95,11 +106,12 @@ builder.Services.AddAuthentication(options =>
 
     options.Events = new JwtBearerEvents
     {
-        OnAuthenticationFailed = context =>
+        OnChallenge = context =>
         {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogError("Authentication failed: {Exception}", context.Exception.Message);
-            return Task.CompletedTask;
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"success\":false,\"message\":\"غير مصرح لك بالدخول. الرجاء تسجيل الدخول.\"}");
         }
     };
 });
@@ -118,13 +130,14 @@ builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 // ===== Services =====
+builder.Services.AddScoped<ILawService, LawService>();
+builder.Services.AddScoped<ILawyerBranchService, LawyerBranchService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
-builder.Services.AddScoped<ILegalService, LegalService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<ILawyerService, LawyerService>();
@@ -134,9 +147,8 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ILawyerProfileService, LawyerProfileService>();
 builder.Services.AddScoped<IAdminProfileService, AdminProfileService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
-builder.Services.AddScoped<IAdminLawyerService, AdminLawyerService>();
-
-// ===== AI Service =====
+builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
+builder.Services.AddScoped<ICaseService, CaseService>();
 builder.Services.AddScoped<IAIService, PythonAIService>();
 builder.Services.AddScoped<PdfGenerationService>();
 
@@ -157,6 +169,14 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 QuestPDF.Settings.License = LicenseType.Community;
 
+// ===== Static Files =====
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.WebRootPath ?? "wwwroot", "uploads")),
+    RequestPath = "/uploads"
+});
+
 // ===== Seed Data =====
 using (var scope = app.Services.CreateScope())
 {
@@ -164,75 +184,62 @@ using (var scope = app.Services.CreateScope())
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var encryption = scope.ServiceProvider.GetRequiredService<IEncryptionService>();
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
     
     try
     {
+        // تأكد من إنشاء قاعدة البيانات
         await context.Database.EnsureCreatedAsync();
 
-        // ===== Seed Governorates and Cities =====
+        // Seed Governorates
         var governorates = EgyptData.GetGovernoratesWithCities();
         foreach (var governorate in governorates)
         {
             var existingGovernorate = await context.Governorates
-                .Include(g => g.Cities)
                 .FirstOrDefaultAsync(g => g.Id == governorate.Id);
-
             if (existingGovernorate == null)
                 await context.Governorates.AddAsync(governorate);
-            else
-            {
-                bool needsUpdate = false;
-                if (existingGovernorate.Name != governorate.Name) { existingGovernorate.Name = governorate.Name; needsUpdate = true; }
-                foreach (var seedCity in governorate.Cities)
-                {
-                    var existingCity = existingGovernorate.Cities.FirstOrDefault(c => c.Id == seedCity.Id);
-                    if (existingCity == null) { seedCity.GovernorateId = existingGovernorate.Id; existingGovernorate.Cities.Add(seedCity); needsUpdate = true; }
-                    else if (existingCity.Name != seedCity.Name) { existingCity.Name = seedCity.Name; needsUpdate = true; }
-                }
-                if (needsUpdate) context.Governorates.Update(existingGovernorate);
-            }
         }
         await context.SaveChangesAsync();
+        logger.LogInformation($"✅ Seeded governorates");
 
-        // ===== Seed Egyptian Laws =====
-        var laws = EgyptianLawSeedData.GetInitialLaws();
-        foreach (var law in laws)
-        {
-            var existingLaw = await context.EgyptianLaws.FirstOrDefaultAsync(l => l.Id == law.Id);
-            if (existingLaw == null) await context.EgyptianLaws.AddAsync(law);
-            else
-            {
-                bool needsUpdate = false;
-                if (existingLaw.Title != law.Title) { existingLaw.Title = law.Title; needsUpdate = true; }
-                if (existingLaw.TitleAr != law.TitleAr) { existingLaw.TitleAr = law.TitleAr; needsUpdate = true; }
-                if (existingLaw.Description != law.Description) { existingLaw.Description = law.Description; needsUpdate = true; }
-                if (existingLaw.Category != law.Category) { existingLaw.Category = law.Category; needsUpdate = true; }
-                if (existingLaw.Status != law.Status) { existingLaw.Status = law.Status; needsUpdate = true; }
-                if (needsUpdate) context.EgyptianLaws.Update(existingLaw);
-            }
-        }
-        await context.SaveChangesAsync();
+ 
+    
 
-        // ===== Seed Admins =====
+        // Seed Admins
         var admins = AdminSeedData.GetDefaultAdmins(configuration, encryption);
         foreach (var admin in admins)
         {
             var existingAdmin = await context.Admins.FirstOrDefaultAsync(a => a.Email == admin.Email);
-            if (existingAdmin == null) await context.Admins.AddAsync(admin);
-            else
-            {
-                bool needsUpdate = false;
-                if (existingAdmin.FullName != admin.FullName) { existingAdmin.FullName = admin.FullName; needsUpdate = true; }
-                if (existingAdmin.PhoneNumber != admin.PhoneNumber) { existingAdmin.PhoneNumber = admin.PhoneNumber; needsUpdate = true; }
-                if (existingAdmin.PasswordHash != admin.PasswordHash) { existingAdmin.PasswordHash = admin.PasswordHash; needsUpdate = true; }
-                if (needsUpdate) context.Admins.Update(existingAdmin);
-            }
-        }
+            if (existingAdmin == null) 
+                await context.Admins.AddAsync(admin);
+        }                                                                               
         await context.SaveChangesAsync();
+        logger.LogInformation($"✅ Seeded admins");
+        
+        // Seed Lawyer Specialties - بدون تحديد Id
+        if (!await context.LawyerSpecialties.AnyAsync())
+        {
+            var specialties = LawyerSpecialty.EgyptianLawyerSpecialties();
+            await context.LawyerSpecialties.AddRangeAsync(specialties);
+            await context.SaveChangesAsync();
+            logger.LogInformation($"✅ Added {specialties.Count} lawyer specialties");
+        }
+        else
+        {
+            logger.LogInformation($"⏭️ Lawyer specialties already exist");
+        }
+
+        // Seed Contract Templates
+        var webRootPath = env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        await ContractTemplateSeeder.SeedTemplatesAsync(context, webRootPath, logger);
+        
+        logger.LogInformation("✅ Database seeded successfully");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error seeding database");
+        logger.LogError(ex, "❌ Error seeding database");
+        // مش هتوقف البرنامج - هيكمل عادي
     }
 }
 
@@ -240,15 +247,22 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "🏛️ LegalMate AI v1.0");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "LegalMate AI";
+        c.DisplayRequestDuration();
+        c.EnableDeepLinking();
+        c.EnableFilter();
+        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Global Exception Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapControllers();
@@ -260,5 +274,8 @@ app.MapGet("/api/health", () => new
     timestamp = DateTime.UtcNow,
     version = "1.0.0"
 });
+
+// Root endpoint
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
