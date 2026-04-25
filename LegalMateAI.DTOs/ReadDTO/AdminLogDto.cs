@@ -18,6 +18,11 @@ namespace LegalMateAI.DTOs.ReadDTO
             AdminLogAction.UpdateProfile => "تحديث الملف الشخصي",
             AdminLogAction.Suspend => "تعليق",
             AdminLogAction.Activate => "تنشيط",
+            AdminLogAction.Create => "إنشاء",
+            AdminLogAction.Delete => "حذف",
+            AdminLogAction.Update => "تعديل",
+            AdminLogAction.Export => "تصدير",
+            AdminLogAction.ClearCache => "مسح الذاكرة",
             _ => Action.ToString()
         };
         
@@ -29,6 +34,11 @@ namespace LegalMateAI.DTOs.ReadDTO
             AdminLogAction.UpdateProfile => "✏️",
             AdminLogAction.Suspend => "⏸️",
             AdminLogAction.Activate => "▶️",
+            AdminLogAction.Create => "➕",
+            AdminLogAction.Delete => "🗑️",
+            AdminLogAction.Update => "📝",
+            AdminLogAction.Export => "📤",
+            AdminLogAction.ClearCache => "🧹",
             _ => "📌"
         };
         
@@ -40,6 +50,7 @@ namespace LegalMateAI.DTOs.ReadDTO
             "User" => "مستخدم",
             "Admin" => "أدمن",
             "System" => "نظام",
+            "PredefinedContractTemplate" => "قالب عقد",
             _ => "نظام"
         };
         
@@ -48,7 +59,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string TimestampFormatted => Timestamp.ToString("dd MMM yyyy HH:mm");
         public string TimeAgo => GetRelativeTime(Timestamp);
 
-        private string GetRelativeTime(DateTime dateTime)
+        private static string GetRelativeTime(DateTime dateTime)
         {
             var diff = DateTime.UtcNow - dateTime;
             if (diff.TotalMinutes < 1) return "الآن";

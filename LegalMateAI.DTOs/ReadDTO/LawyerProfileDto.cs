@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/ReadDTO/LawyerProfileDto.cs
 using System;
 using System.Collections.Generic;
 
@@ -21,6 +20,8 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string LicenseNumber { get; set; } = string.Empty;
         public string BarAssociation { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
+        public DateTime? LicenseIssueDate { get; set; }
+        public string? PracticeDegree { get; set; }
         
         // الموقع
         public int? GovernorateId { get; set; }
@@ -40,7 +41,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public int TotalClients { get; set; }
         public DateTime CreatedAt { get; set; }
         
-        // ✅ تخصصات المحامي
+        // تخصصات المحامي
         public List<SpecializationDto> Specializations { get; set; } = new List<SpecializationDto>();
     }
 }

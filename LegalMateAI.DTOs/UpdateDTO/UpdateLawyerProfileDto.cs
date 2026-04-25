@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/UpdateDTO/UpdateLawyerProfileDto.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace LegalMateAI.DTOs.UpdateDTO
@@ -18,7 +17,7 @@ namespace LegalMateAI.DTOs.UpdateDTO
         public string? BarAssociation { get; set; }
         public int? YearsOfExperience { get; set; }
         
-        // ✅ تخصصات المحامي (قائمة IDs)
+        // تخصصات المحامي (قائمة IDs)
         public List<int>? SpecialtyIds { get; set; }
         
         // الموقع

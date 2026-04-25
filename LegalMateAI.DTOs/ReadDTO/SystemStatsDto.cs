@@ -1,3 +1,5 @@
+using System;
+
 namespace LegalMateAI.DTOs.ReadDTO
 {
     public class SystemStatsDto

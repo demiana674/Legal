@@ -9,19 +9,9 @@ namespace LegalMateAI.BLL.Services.IService
     public interface IAIService
     {
         /// <summary>
-        /// تحليل مستند قانوني باستخدام الذكاء الاصطناعي
+        /// تحليل مستند قانوني
         /// </summary>
         Task<AIAnalysisResult> AnalyzeDocumentAsync(Document document, byte[] fileContent);
-        
-        /// <summary>
-        /// الدردشة مع المستند (RAG)
-        /// </summary>
-        Task<ChatWithDocumentResponse> ChatWithDocumentAsync(string text, string question);
-        
-        /// <summary>
-        /// بحث ذكي في المستندات القانونية
-        /// </summary>
-        Task<List<DTOs.ReadDTO.SearchResultDto>> SmartSearchAsync(string query, int limit = 10);
         
         /// <summary>
         /// تحليل سريع (ملخص + مخاطر فقط)
@@ -29,14 +19,19 @@ namespace LegalMateAI.BLL.Services.IService
         Task<QuickAnalysisResult> QuickAnalysisAsync(string text);
         
         /// <summary>
-        /// إنشاء عقد باستخدام AI
+        /// إنشاء عقد
         /// </summary>
         Task<string> GenerateContractAsync(ContractTemplate template, Dictionary<string, string> data);
         
         /// <summary>
-        /// اقتراح محامين مناسبين بناءً على محتوى المستند
+        /// اقتراح محامين
         /// </summary>
-        Task<List<DTOs.ReadDTO.LawyerSuggestionDto>> SuggestLawyersAsync(string documentContent, string specialization);
+        Task<List<LegalMateAI.DTOs.ReadDTO.LawyerSuggestionDto>> SuggestLawyersAsync(string documentContent, string specialization);
+        
+        /// <summary>
+        /// بحث ذكي
+        /// </summary>
+        Task<List<LegalMateAI.DTOs.ReadDTO.SearchResultDto>> SmartSearchAsync(string query, int limit = 10);
         
         /// <summary>
         /// التحقق من صحة الخدمة
@@ -54,7 +49,7 @@ namespace LegalMateAI.BLL.Services.IService
         public string Result { get; set; } = string.Empty;
         public List<AIClause> Clauses { get; set; } = new();
         public List<AIRisk> Risks { get; set; } = new();
-        public List<DTOs.ReadDTO.LawyerSuggestionDto> SuggestedLawyers { get; set; } = new();
+        public List<LegalMateAI.DTOs.ReadDTO.LawyerSuggestionDto> SuggestedLawyers { get; set; } = new();
         public Dictionary<string, object> Metadata { get; set; } = new();
         public bool IsFallback { get; set; }
     }
@@ -80,19 +75,6 @@ namespace LegalMateAI.BLL.Services.IService
         public string Description { get; set; } = string.Empty;
         public RiskLevel Level { get; set; }
         public string Suggestion { get; set; } = string.Empty;
-    }
-    
-    /// <summary>
-    /// رد الدردشة مع المستند
-    /// </summary>
-    public class ChatWithDocumentResponse
-    {
-        public string Answer { get; set; } = string.Empty;
-        public string Confidence { get; set; } = string.Empty;
-        public string RelevantContext { get; set; } = string.Empty;
-        public int RetrievedChunksCount { get; set; }
-        public double TopScore { get; set; }
-        public bool IsFallback { get; set; }
     }
     
     /// <summary>

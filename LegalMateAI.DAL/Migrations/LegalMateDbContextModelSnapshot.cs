@@ -97,17 +97,59 @@ namespace LegalMateAI.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AccessLevel")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("AdminId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AlternativePhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Department")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("District")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Gender")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Governorate")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("JobTitle")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("JoinDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("LastActiveAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nationality")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("nvarchar(max)");
@@ -635,6 +677,43 @@ namespace LegalMateAI.DAL.Migrations
                     b.ToTable("ContractTemplates");
                 });
 
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Conversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssistantResponse")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModelUsed")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TokensUsed")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserMessage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Conversations");
+                });
+
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Document", b =>
                 {
                     b.Property<Guid>("Id")
@@ -844,8 +923,7 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PdfFilePath")
-                        .IsRequired()
+                    b.Property<string>("PdfFileUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RejectionReason")
@@ -976,6 +1054,9 @@ namespace LegalMateAI.DAL.Migrations
 
                     b.Property<int?>("GovernorateId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("LicenseIssueDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("LicenseNumber")
                         .HasColumnType("nvarchar(450)");
@@ -1423,6 +1504,9 @@ namespace LegalMateAI.DAL.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -1451,6 +1535,9 @@ namespace LegalMateAI.DAL.Migrations
 
                     b.Property<string>("NationalId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Nationality")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -1586,6 +1673,9 @@ namespace LegalMateAI.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
@@ -1610,6 +1700,9 @@ namespace LegalMateAI.DAL.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NationalId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nationality")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
@@ -1849,6 +1942,15 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Contract");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.Conversation", b =>
+                {
+                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Document", b =>

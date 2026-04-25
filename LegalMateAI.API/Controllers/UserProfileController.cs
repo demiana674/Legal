@@ -39,16 +39,13 @@ namespace LegalMateAI.API.Controllers
             return Ok(dashboard);
         }
 
-[HttpPut]
-public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto request)
-{
-    var result = await _profileService.UpdateProfileAsync(GetUserId(), request);
-    
-    if (!result) 
-        return BadRequest(new { message = "الملف الشخصي غير موجود أو فشل تحديث البيانات" });
-    
-    return Ok(new { message = "تم تحديث البيانات بنجاح" });
-}
+        [HttpPut]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto request)
+        {
+            var result = await _profileService.UpdateProfileAsync(GetUserId(), request);
+            if (!result) return BadRequest(new { message = "الملف الشخصي غير موجود أو فشل تحديث البيانات" });
+            return Ok(new { message = "تم تحديث البيانات بنجاح" });
+        }
 
         [HttpPost("picture")]
         public async Task<IActionResult> UploadPicture([FromForm] UploadProfilePictureDto request)

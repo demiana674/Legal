@@ -8,7 +8,7 @@ namespace LegalMateAI.Domain.Entities
         public Guid Id { get; set; }
         public Guid AdminId { get; set; }
         public AdminLogAction Action { get; set; }
-        public string TargetType { get; set; } = string.Empty; // "Lawyer", "User", "System"
+        public string TargetType { get; set; } = string.Empty;
         public Guid TargetId { get; set; }
         public DateTime Timestamp { get; set; }
         

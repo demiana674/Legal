@@ -156,60 +156,60 @@ namespace LegalMateAI.BLL.Services.Service
         /// <summary>
         /// الدردشة مع المستند (RAG)
         /// </summary>
-        public async Task<ChatWithDocumentResponse> ChatWithDocumentAsync(string text, string question)
-        {
-            if (!await HealthCheckAsync())
-            {
-                return new ChatWithDocumentResponse
-                {
-                    Answer = "عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.",
-                    Confidence = "منخفضة",
-                    IsFallback = true
-                };
-            }
+        // public async Task<ChatWithDocumentResponse> ChatWithDocumentAsync(string text, string question)
+        // {
+        //     if (!await HealthCheckAsync())
+        //     {
+        //         return new ChatWithDocumentResponse
+        //         {
+        //             Answer = "عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.",
+        //             Confidence = "منخفضة",
+        //             IsFallback = true
+        //         };
+        //     }
 
-            try
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_timeoutSeconds));
-                var response = await _httpClient.PostAsJsonAsync(
-                    $"{_baseUrl}/chat",
-                    new { text, question },
-                    _jsonOptions,
-                    cts.Token);
+        //     try
+        //     {
+        //         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_timeoutSeconds));
+        //         var response = await _httpClient.PostAsJsonAsync(
+        //             $"{_baseUrl}/chat",
+        //             new { text, question },
+        //             _jsonOptions,
+        //             cts.Token);
                 
-                if (!response.IsSuccessStatusCode)
-                {
-                    return new ChatWithDocumentResponse
-                    {
-                        Answer = "عذراً، حدث خطأ في خدمة المحادثة.",
-                        Confidence = "منخفضة",
-                        IsFallback = true
-                    };
-                }
+        //         if (!response.IsSuccessStatusCode)
+        //         {
+        //             return new ChatWithDocumentResponse
+        //             {
+        //                 Answer = "عذراً، حدث خطأ في خدمة المحادثة.",
+        //                 Confidence = "منخفضة",
+        //                 IsFallback = true
+        //             };
+        //         }
                 
-                var result = await response.Content.ReadFromJsonAsync<PythonChatResponse>(_jsonOptions, cts.Token);
+        //         var result = await response.Content.ReadFromJsonAsync<PythonChatResponse>(_jsonOptions, cts.Token);
                 
-                return new ChatWithDocumentResponse
-                {
-                    Answer = result?.Answer ?? "لم أتمكن من العثور على إجابة مناسبة.",
-                    Confidence = result?.Confidence ?? "متوسطة",
-                    RelevantContext = result?.RelevantContext ?? "",
-                    RetrievedChunksCount = result?.RetrievedChunksCount ?? 0,
-                    TopScore = result?.TopScore ?? 0,
-                    IsFallback = false
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in chat with document");
-                return new ChatWithDocumentResponse
-                {
-                    Answer = "عذراً، حدث خطأ في خدمة المحادثة.",
-                    Confidence = "منخفضة",
-                    IsFallback = true
-                };
-            }
-        }
+        //         return new ChatWithDocumentResponse
+        //         {
+        //             Answer = result?.Answer ?? "لم أتمكن من العثور على إجابة مناسبة.",
+        //             Confidence = result?.Confidence ?? "متوسطة",
+        //             RelevantContext = result?.RelevantContext ?? "",
+        //             RetrievedChunksCount = result?.RetrievedChunksCount ?? 0,
+        //             TopScore = result?.TopScore ?? 0,
+        //             IsFallback = false
+        //         };
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "Error in chat with document");
+        //         return new ChatWithDocumentResponse
+        //         {
+        //             Answer = "عذراً، حدث خطأ في خدمة المحادثة.",
+        //             Confidence = "منخفضة",
+        //             IsFallback = true
+        //         };
+        //     }
+        // }
 
         /// <summary>
         /// بحث ذكي

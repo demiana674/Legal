@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Hpis11d+Co8=",
+  "dgSpecHash": "/wULPEuQcxc=",
   "success": true,
-  "projectFilePath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj",
+  "projectFilePath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\HP\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

@@ -2753,11 +2753,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj",
+      "projectUniqueName": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj",
       "projectName": "LegalMateAI.Domain",
-      "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj",
       "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Domain\\obj\\",
+      "outputPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Domain\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -32,7 +32,7 @@
               "RelativeDocumentMoniker": "LegalMateAI.Domain\\Entities\\UserProfile.cs",
               "ToolTip": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Domain\\Entities\\UserProfile.cs",
               "RelativeToolTip": "LegalMateAI.Domain\\Entities\\UserProfile.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAA+wB4AAAAsAAAAAAAAAA==",
+              "ViewState": "AgIAABcAAAAAAAAAAAA8wB4AAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-19T21:28:56.626Z",
               "EditorCaption": ""
@@ -47,8 +47,7 @@
               "RelativeToolTip": "LegalMateAI.Infrastructure\\Services\\Service\\EncryptionService.cs",
               "ViewState": "AgIAACAAAAAAAAAAAIBJwCMAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-19T01:23:47.436Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-19T01:23:47.436Z"
             },
             {
               "$type": "Document",
@@ -60,8 +59,7 @@
               "RelativeToolTip": "LegalMateAI.BLL\\Services\\Service\\UserProfileService.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAwwCMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-19T01:10:14.535Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-19T01:10:14.535Z"
             }
           ]
         }

@@ -12,8 +12,6 @@ namespace LegalMateAI.Domain.Entities
         public string? PhoneNumber { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
-        // public DateTime? UpdatedAt { get; set; }  // Add this property
-        // public bool IsActive { get; set; } = true;
         
         // العلاقات
         public AdminProfile? Profile { get; set; }

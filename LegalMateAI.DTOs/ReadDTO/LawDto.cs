@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/ReadDTO/LawDto.cs
 using System;
 using System.Collections.Generic;
 using LegalMateAI.Domain.Enums;
@@ -12,9 +11,12 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? LawNumber { get; set; }
         public int? Year { get; set; }
         public LawCategory Category { get; set; }
-        public string CategoryName => GetCategoryName(Category);
+        
+        // تم التغيير: خاصية قابلة للقراءة والكتابة مع تعيين افتراضي فارغ
+        public string CategoryName { get; set; } = string.Empty;
+        
         public string? Description { get; set; }
-        public string PdfFileUrl { get; set; } = string.Empty;
+        public string? PdfFileUrl { get; set; }
         public string? SourceUrl { get; set; }
         public List<string> SearchKeywords { get; set; } = new();
         public int DownloadCount { get; set; }
@@ -28,29 +30,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? RejectionReason { get; set; }
         public DateTime? ApprovedAt { get; set; }
         
-        private static string GetCategoryName(LawCategory category)
-        {
-            return category switch
-            {
-                LawCategory.Constitutional => "دستوري",
-                LawCategory.Civil => "مدني",
-                LawCategory.Commercial => "تجاري",
-                LawCategory.Criminal => "جنائي",
-                LawCategory.Family => "أحوال شخصية",
-                LawCategory.Labor => "عمل",
-                LawCategory.Tax => "ضريبي",
-                LawCategory.Administrative => "إداري",
-                LawCategory.RealEstate => "عقاري",
-                LawCategory.Investment => "استثمار",
-                LawCategory.Maritime => "بحري",
-                LawCategory.Procedure => "إجراءات",
-                LawCategory.Financial => "مالي",
-                LawCategory.Social => "اجتماعي",
-                LawCategory.Educational => "تعليم",
-                LawCategory.Economic => "اقتصادي",
-                LawCategory.Other => "أخرى",
-                _ => category.ToString()
-            };
-        }
+        public bool HasPdfLink => !string.IsNullOrEmpty(PdfFileUrl);
+        public bool HasSourceLink => !string.IsNullOrEmpty(SourceUrl);
     }
 }

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "HtQV6eaaAxU=",
+  "dgSpecHash": "CKCLWAi9BEM=",
   "success": true,
-  "projectFilePath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+  "projectFilePath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\HP\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\automapper.extensions.microsoft.dependencyinjection\\12.0.1\\automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
@@ -27,7 +27,7 @@
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.aspnetcore.http.features\\2.3.0\\microsoft.aspnetcore.http.features.2.3.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.aspnetcore.mvc.testing\\9.0.9\\microsoft.aspnetcore.mvc.testing.9.0.9.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.aspnetcore.testhost\\9.0.9\\microsoft.aspnetcore.testhost.9.0.9.nupkg.sha512",
-    "C:\\Users\\HP\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
+    "C:\\Users\\HP\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.codecoverage\\17.12.0\\microsoft.codecoverage.17.12.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.data.sqlclient\\5.1.6\\microsoft.data.sqlclient.5.1.6.nupkg.sha512",
@@ -82,6 +82,7 @@
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.1\\microsoft.netcore.platforms.1.1.1.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.netcore.targets\\1.1.3\\microsoft.netcore.targets.1.1.3.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.openapi\\1.6.14\\microsoft.openapi.1.6.14.nupkg.sha512",
+    "C:\\Users\\HP\\.nuget\\packages\\microsoft.playwright\\1.59.0\\microsoft.playwright.1.59.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.testplatform.objectmodel\\17.12.0\\microsoft.testplatform.objectmodel.17.12.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.testplatform.testhost\\17.12.0\\microsoft.testplatform.testhost.17.12.0.nupkg.sha512",
@@ -121,6 +122,7 @@
     "C:\\Users\\HP\\.nuget\\packages\\system.collections.concurrent\\4.3.0\\system.collections.concurrent.4.3.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\system.collections.immutable\\10.0.0\\system.collections.immutable.10.0.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\system.collections.nongeneric\\4.3.0\\system.collections.nongeneric.4.3.0.nupkg.sha512",
+    "C:\\Users\\HP\\.nuget\\packages\\system.componentmodel.annotations\\5.0.0\\system.componentmodel.annotations.5.0.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\system.configuration.configurationmanager\\6.0.1\\system.configuration.configurationmanager.6.0.1.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\system.console\\4.0.0\\system.console.4.0.0.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\system.diagnostics.debug\\4.3.0\\system.diagnostics.debug.4.3.0.nupkg.sha512",
@@ -215,9 +217,9 @@
       "code": "NU1603",
       "level": "Warning",
       "message": "LegalMateAI.API depends on Swashbuckle.AspNetCore (>= 6.6.0) but Swashbuckle.AspNetCore 6.6.0 was not found. Swashbuckle.AspNetCore 6.6.1 was resolved instead.",
-      "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "filePath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "libraryId": "Swashbuckle.AspNetCore",
       "targetGraphs": [
         "net9.0"
@@ -227,9 +229,9 @@
       "code": "NU1701",
       "level": "Warning",
       "message": "Package 'HtmlRenderer.Core 1.5.2' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0'. This package may not be fully compatible with your project.",
-      "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "filePath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "libraryId": "HtmlRenderer.Core",
       "targetGraphs": [
         "net9.0"
@@ -239,9 +241,9 @@
       "code": "NU1701",
       "level": "Warning",
       "message": "Package 'HtmlRenderer.PdfSharp 1.5.2' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0'. This package may not be fully compatible with your project.",
-      "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "filePath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "libraryId": "HtmlRenderer.PdfSharp",
       "targetGraphs": [
         "net9.0"
@@ -251,9 +253,9 @@
       "code": "NU1701",
       "level": "Warning",
       "message": "Package 'PDFsharp 1.50.5147' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net9.0'. This package may not be fully compatible with your project.",
-      "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
+      "filePath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Tests\\LegalMateAI.Tests.csproj",
       "libraryId": "PDFsharp",
       "targetGraphs": [
         "net9.0"

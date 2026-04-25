@@ -24,17 +24,17 @@ namespace LegalMateAI.API.Controllers
 
         private Guid GetAdminId()
         {
-            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (claim == null) claim = User.FindFirst("id");
-            if (claim == null) claim = User.FindFirst("sub");
-            
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)
+                ?? User.FindFirst("id")
+                ?? User.FindFirst("sub");
+
             if (claim == null)
                 throw new UnauthorizedAccessException("Admin not authenticated");
-            
+
             return Guid.Parse(claim.Value);
         }
 
-        // ========== Dashboard ==========
+        // ==================== Dashboard ====================
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetDashboard()
         {
@@ -43,7 +43,7 @@ namespace LegalMateAI.API.Controllers
             return Ok(dashboard);
         }
 
-        // ========== User Management ==========
+        // ==================== User Management ====================
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers([FromQuery] UserFilterDto? filter)
         {
@@ -59,20 +59,24 @@ namespace LegalMateAI.API.Controllers
         }
 
         [HttpPatch("users/{id}/status")]
-        public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] AdminUpdateUserStatusDto request)
+        public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] LegalMateAI.DTOs.UpdateDTO.AdminUpdateUserStatusDto request)
         {
             var result = await _adminService.UpdateUserStatusAsync(GetAdminId(), id, request.Status, request.Reason);
-            return !result ? NotFound(new { message = "المستخدم غير موجود" }) : Ok(new { message = "تم تحديث حالة المستخدم بنجاح" });
+            return !result
+                ? NotFound(new { message = "المستخدم غير موجود" })
+                : Ok(new { message = "تم تحديث حالة المستخدم بنجاح" });
         }
 
         [HttpDelete("users/{id}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var result = await _adminService.DeleteUserAsync(GetAdminId(), id);
-            return !result ? NotFound(new { message = "المستخدم غير موجود" }) : Ok(new { message = "تم حذف المستخدم بنجاح" });
+            return !result
+                ? NotFound(new { message = "المستخدم غير موجود" })
+                : Ok(new { message = "تم حذف المستخدم بنجاح" });
         }
 
-        // ========== Lawyer Management ==========
+        // ==================== Lawyer Management ====================
         [HttpGet("lawyers")]
         public async Task<IActionResult> GetAllLawyers([FromQuery] LawyerFilterDto? filter)
         {
@@ -98,38 +102,48 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> ApproveLawyer(Guid id)
         {
             var result = await _adminService.ApproveLawyerAsync(id);
-            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تمت الموافقة على المحامي بنجاح" });
+            return !result
+                ? NotFound(new { message = "المحامي غير موجود" })
+                : Ok(new { message = "تمت الموافقة على المحامي بنجاح" });
         }
 
         [HttpPost("lawyers/{id}/reject")]
         public async Task<IActionResult> RejectLawyer(Guid id, [FromBody] RejectLawyerRequest request)
         {
             var result = await _adminService.RejectLawyerAsync(id, request.Reason);
-            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم رفض المحامي" });
+            return !result
+                ? NotFound(new { message = "المحامي غير موجود" })
+                : Ok(new { message = "تم رفض المحامي" });
         }
 
         [HttpPost("lawyers/{id}/suspend")]
         public async Task<IActionResult> SuspendLawyer(Guid id, [FromBody] SuspendLawyerRequest request)
         {
             var result = await _adminService.SuspendLawyerAsync(id, request.Reason);
-            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم تعليق المحامي" });
+            return !result
+                ? NotFound(new { message = "المحامي غير موجود" })
+                : Ok(new { message = "تم تعليق المحامي" });
         }
 
         [HttpPost("lawyers/{id}/activate")]
         public async Task<IActionResult> ActivateLawyer(Guid id)
         {
             var result = await _adminService.ActivateLawyerAsync(id);
-            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم تنشيط المحامي" });
+            return !result
+                ? NotFound(new { message = "المحامي غير موجود" })
+                : Ok(new { message = "تم تنشيط المحامي" });
         }
 
         [HttpDelete("lawyers/{id}")]
         public async Task<IActionResult> DeleteLawyer(Guid id)
         {
             var result = await _adminService.DeleteLawyerAsync(id);
-            return !result ? NotFound(new { message = "المحامي غير موجود" }) : Ok(new { message = "تم حذف المحامي" });
+            return !result
+                ? NotFound(new { message = "المحامي غير موجود" })
+                : Ok(new { message = "تم حذف المحامي" });
         }
 
-        // ========== Log Management ==========
+        // ==================== Admin Logs ====================
         [HttpGet("logs")]
         public async Task<IActionResult> GetAdminLogs([FromQuery] LogFilterDto? filter)
         {
@@ -145,7 +159,46 @@ namespace LegalMateAI.API.Controllers
             return File(file, contentType, $"admin_logs_{DateTime.Now:yyyyMMdd_HHmmss}.{format}");
         }
 
-        // ========== System Stats ==========
+        // ==================== All User Logs ====================
+        [HttpGet("logs/users")]
+        public async Task<IActionResult> GetAllUserLogs([FromQuery] LogFilterDto? filter)
+        {
+            var logs = await _adminService.GetAllUserLogsAsync(filter ?? new LogFilterDto());
+            return Ok(logs);
+        }
+
+        [HttpGet("logs/users/{userId}")]
+        public async Task<IActionResult> GetUserLogs(Guid userId, [FromQuery] LogFilterDto? filter)
+        {
+            var logs = await _adminService.GetUserLogsAsync(userId, filter ?? new LogFilterDto());
+            return Ok(logs);
+        }
+
+        [HttpGet("logs/search")]
+        public async Task<IActionResult> SearchLogs([FromQuery] string q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return BadRequest(new { message = "يرجى إدخال كلمة البحث" });
+
+            // Since there is no SearchLogsAsync in the service, we do a basic search here
+            var filter = new LogFilterDto();
+            var allLogs = await _adminService.GetAllUserLogsAsync(filter);
+            var filtered = allLogs
+                .Where(l => l.AdminName.Contains(q) || l.TargetTypeAr.Contains(q) || l.ActionName.Contains(q))
+                .Take(100)
+                .ToList();
+
+            return Ok(filtered);
+        }
+
+        [HttpGet("logs/stats")]
+        public async Task<IActionResult> GetLogsStats()
+        {
+            var stats = await _adminService.GetLogsStatsAsync();
+            return Ok(stats);
+        }
+
+        // ==================== System ====================
         [HttpGet("stats")]
         public async Task<IActionResult> GetSystemStats()
         {

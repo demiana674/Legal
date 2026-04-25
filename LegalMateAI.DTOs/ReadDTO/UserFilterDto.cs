@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/ReadDTO/UserFilterDto.cs
 using System;
 
 namespace LegalMateAI.DTOs.ReadDTO

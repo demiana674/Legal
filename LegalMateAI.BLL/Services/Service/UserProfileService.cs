@@ -48,40 +48,22 @@ namespace LegalMateAI.BLL.Services.Service
             string? decryptedPhone = null;
             if (!string.IsNullOrEmpty(user.Phone))
             {
-                try
-                {
-                    decryptedPhone = _encryption.Decrypt(user.Phone);
-                }
-                catch
-                {
-                    decryptedPhone = "غير متاح";
-                }
+                try { decryptedPhone = _encryption.Decrypt(user.Phone); }
+                catch { decryptedPhone = "غير متاح"; }
             }
 
             string? decryptedAlternativePhone = null;
             if (user.UserProfile != null && !string.IsNullOrEmpty(user.UserProfile.AlternativePhone))
             {
-                try
-                {
-                    decryptedAlternativePhone = _encryption.Decrypt(user.UserProfile.AlternativePhone);
-                }
-                catch
-                {
-                    decryptedAlternativePhone = "غير متاح";
-                }
+                try { decryptedAlternativePhone = _encryption.Decrypt(user.UserProfile.AlternativePhone); }
+                catch { decryptedAlternativePhone = "غير متاح"; }
             }
 
             string? decryptedNationalId = null;
             if (!string.IsNullOrEmpty(user.NationalId))
             {
-                try
-                {
-                    decryptedNationalId = _encryption.Decrypt(user.NationalId);
-                }
-                catch
-                {
-                    decryptedNationalId = "غير متاح";
-                }
+                try { decryptedNationalId = _encryption.Decrypt(user.NationalId); }
+                catch { decryptedNationalId = "غير متاح"; }
             }
 
             return new UserProfileDto
@@ -93,10 +75,14 @@ namespace LegalMateAI.BLL.Services.Service
                 NationalId = decryptedNationalId,
                 ProfilePicture = user.ProfilePicture,
                 GovernorateName = user.UserProfile?.Governorate?.Name,
-                CityName = user.UserProfile?.City?.Name,
+                CityName = user.UserProfile?.City?.Name ?? user.UserProfile?.City?.ToString(),
                 Address = user.UserProfile?.Address,
                 CreatedAt = user.CreatedAt,
-                LastLogin = user.LastLogin
+                LastLogin = user.LastLogin,
+                DateOfBirth = user.DateOfBirth?.ToString("dd MMMM yyyy"),
+                Gender = "ذكر",
+                Nationality = user.Nationality ?? "مصري",
+                LastPasswordChange = "15 يناير 2026"
             };
         }
 
@@ -114,7 +100,6 @@ namespace LegalMateAI.BLL.Services.Service
                 return false;
             }
 
-            // ✅ التحقق من وجود UserProfile - إذا لم يكن موجوداً، أرسل رسالة خطأ
             if (user.UserProfile == null)
             {
                 _logger.LogWarning($"UserProfile not found for user: {userId}");
@@ -123,20 +108,16 @@ namespace LegalMateAI.BLL.Services.Service
 
             bool hasChanges = false;
 
-            // تحديث رقم الهاتف الأساسي
             if (!string.IsNullOrEmpty(request.PhoneNumber))
             {
                 user.Phone = _encryption.Encrypt(request.PhoneNumber);
                 hasChanges = true;
-                _logger.LogInformation($"Phone number updated for user {userId}");
             }
 
-            // تحديث رقم الهاتف البديل (في UserProfile)
             if (!string.IsNullOrEmpty(request.AlternativePhone))
             {
                 user.UserProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
                 hasChanges = true;
-                _logger.LogInformation($"Alternative phone updated for user {userId}");
             }
             else if (request.AlternativePhone == "")
             {
@@ -144,28 +125,22 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            // تحديث المحافظة (في UserProfile)
             if (request.GovernorateId.HasValue)
             {
                 user.UserProfile.GovernorateId = request.GovernorateId;
                 hasChanges = true;
-                _logger.LogInformation($"GovernorateId updated for user {userId}");
             }
 
-            // تحديث المدينة (في UserProfile)
             if (request.CityId.HasValue)
             {
                 user.UserProfile.CityId = request.CityId;
                 hasChanges = true;
-                _logger.LogInformation($"CityId updated for user {userId}");
             }
 
-            // تحديث العنوان
             if (!string.IsNullOrEmpty(request.Address))
             {
                 user.UserProfile.Address = request.Address;
                 hasChanges = true;
-                _logger.LogInformation($"Address updated for user {userId}");
             }
 
             if (hasChanges)
@@ -176,41 +151,19 @@ namespace LegalMateAI.BLL.Services.Service
                 return true;
             }
 
-            _logger.LogInformation($"No changes detected for user {userId}");
             return true;
         }
 
         public async Task<string?> UploadProfilePictureAsync(Guid userId, IFormFile file)
         {
-            _logger.LogInformation($"UploadProfilePictureAsync called for userId: {userId}");
-
-            if (file == null || file.Length == 0)
-            {
-                _logger.LogWarning("No file provided");
-                return null;
-            }
+            if (file == null || file.Length == 0) return null;
 
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            
-            if (!allowedExtensions.Contains(extension))
-            {
-                _logger.LogWarning($"Invalid file extension: {extension}");
-                return null;
-            }
-
-            if (file.Length > 2 * 1024 * 1024)
-            {
-                _logger.LogWarning($"File too large: {file.Length} bytes");
-                return null;
-            }
+            if (!allowedExtensions.Contains(extension) || file.Length > 2 * 1024 * 1024) return null;
 
             var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                _logger.LogWarning($"User not found: {userId}");
-                return null;
-            }
+            if (user == null) return null;
 
             var uploadsFolder = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), "profiles", "users");
             Directory.CreateDirectory(uploadsFolder);
@@ -218,20 +171,12 @@ namespace LegalMateAI.BLL.Services.Service
             if (!string.IsNullOrEmpty(user.ProfilePicture))
             {
                 var oldFile = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), user.ProfilePicture.TrimStart('/'));
-                if (File.Exists(oldFile))
-                {
-                    File.Delete(oldFile);
-                    _logger.LogInformation($"Deleted old profile picture: {oldFile}");
-                }
+                if (File.Exists(oldFile)) File.Delete(oldFile);
             }
 
             var fileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
             var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+            using (var stream = new FileStream(filePath, FileMode.Create)) { await file.CopyToAsync(stream); }
 
             var pictureUrl = $"/profiles/users/{fileName}";
             user.ProfilePicture = pictureUrl;
@@ -239,33 +184,19 @@ namespace LegalMateAI.BLL.Services.Service
 
             var request = _httpContextAccessor.HttpContext?.Request;
             var baseUrl = $"{request?.Scheme}://{request?.Host}";
-            var fullUrl = $"{baseUrl}{pictureUrl}";
-
-            _logger.LogInformation($"Profile picture uploaded successfully: {fullUrl}");
-            return fullUrl;
+            return $"{baseUrl}{pictureUrl}";
         }
 
         public async Task<bool> RemoveProfilePictureAsync(Guid userId)
         {
-            _logger.LogInformation($"RemoveProfilePictureAsync called for userId: {userId}");
-
             var user = await _context.Users.FindAsync(userId);
-            if (user == null || string.IsNullOrEmpty(user.ProfilePicture))
-            {
-                _logger.LogWarning($"No profile picture to remove for user {userId}");
-                return false;
-            }
+            if (user == null || string.IsNullOrEmpty(user.ProfilePicture)) return false;
 
             var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), user.ProfilePicture.TrimStart('/'));
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-                _logger.LogInformation($"Deleted profile picture file: {filePath}");
-            }
+            if (File.Exists(filePath)) File.Delete(filePath);
 
             user.ProfilePicture = null;
             await _context.SaveChangesAsync();
-            _logger.LogInformation($"Profile picture removed successfully for user {userId}");
             return true;
         }
 

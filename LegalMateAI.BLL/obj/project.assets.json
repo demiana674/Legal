@@ -9103,11 +9103,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.BLL\\LegalMateAI.BLL.csproj",
+      "projectUniqueName": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.BLL\\LegalMateAI.BLL.csproj",
       "projectName": "LegalMateAI.BLL",
-      "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.BLL\\LegalMateAI.BLL.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.BLL\\LegalMateAI.BLL.csproj",
       "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.BLL\\obj\\",
+      "outputPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.BLL\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -9129,17 +9129,17 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj": {
-              "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj"
+            "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj": {
+              "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.DAL\\LegalMateAI.DAL.csproj"
             },
-            "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj": {
-              "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj"
+            "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj": {
+              "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Domain\\LegalMateAI.Domain.csproj"
             },
-            "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj": {
-              "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj"
+            "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj": {
+              "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.DTOs\\LegalMateAI.DTOs.csproj"
             },
-            "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Infrastructure\\LegalMateAI.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\HP\\Documents\\LegalMate Ai\\Legal\\LegalMateAI.Infrastructure\\LegalMateAI.Infrastructure.csproj"
+            "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Infrastructure\\LegalMateAI.Infrastructure.csproj": {
+              "projectPath": "C:\\Users\\HP\\source\\repos\\Legal_v2\\LegalMateAI.Infrastructure\\LegalMateAI.Infrastructure.csproj"
             }
           }
         }

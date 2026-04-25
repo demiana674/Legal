@@ -49,27 +49,15 @@ namespace LegalMateAI.BLL.Services.Service
             string? decryptedPhone = null;
             if (!string.IsNullOrEmpty(user.Phone))
             {
-                try
-                {
-                    decryptedPhone = _encryption.Decrypt(user.Phone);
-                }
-                catch
-                {
-                    decryptedPhone = null;
-                }
+                try { decryptedPhone = _encryption.Decrypt(user.Phone); }
+                catch { decryptedPhone = null; }
             }
 
             string? decryptedAlternativePhone = null;
             if (!string.IsNullOrEmpty(lawyerProfile.AlternativePhone))
             {
-                try
-                {
-                    decryptedAlternativePhone = _encryption.Decrypt(lawyerProfile.AlternativePhone);
-                }
-                catch
-                {
-                    decryptedAlternativePhone = null;
-                }
+                try { decryptedAlternativePhone = _encryption.Decrypt(lawyerProfile.AlternativePhone); }
+                catch { decryptedAlternativePhone = null; }
             }
 
             return new LawyerProfileDto
@@ -86,6 +74,8 @@ namespace LegalMateAI.BLL.Services.Service
                 LicenseNumber = lawyerProfile.LicenseNumber ?? "",
                 BarAssociation = lawyerProfile.BarAssociation ?? "",
                 YearsOfExperience = lawyerProfile.YearsOfExperience ?? 0,
+                LicenseIssueDate = lawyerProfile.LicenseIssueDate,
+                PracticeDegree = lawyerProfile.PracticeDegree,
                 GovernorateId = lawyerProfile.GovernorateId,
                 GovernorateName = lawyerProfile.Governorate?.Name,
                 City = lawyerProfile.City,
@@ -123,67 +113,20 @@ namespace LegalMateAI.BLL.Services.Service
             var lawyerProfile = user.LawyerProfile;
             bool hasChanges = false;
 
-            if (!string.IsNullOrEmpty(request.FirstName))
-            {
-                user.FirstName = request.FirstName;
-                hasChanges = true;
-            }
+            if (!string.IsNullOrEmpty(request.FirstName)) { user.FirstName = request.FirstName; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.LastName)) { user.LastName = request.LastName; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.Email)) { user.Email = request.Email; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.Phone)) { user.Phone = _encryption.Encrypt(request.Phone); hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.AlternativePhone)) { lawyerProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone); hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.NationalId)) { user.NationalId = _encryption.Encrypt(request.NationalId); hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.LicenseNumber)) { lawyerProfile.LicenseNumber = request.LicenseNumber; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.BarAssociation)) { lawyerProfile.BarAssociation = request.BarAssociation; hasChanges = true; }
+            if (request.YearsOfExperience.HasValue) { lawyerProfile.YearsOfExperience = request.YearsOfExperience; hasChanges = true; }
 
-            if (!string.IsNullOrEmpty(request.LastName))
-            {
-                user.LastName = request.LastName;
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.Email))
-            {
-                user.Email = request.Email;
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.Phone))
-            {
-                user.Phone = _encryption.Encrypt(request.Phone);
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.AlternativePhone))
-            {
-                lawyerProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.NationalId))
-            {
-                user.NationalId = _encryption.Encrypt(request.NationalId);
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.LicenseNumber))
-            {
-                lawyerProfile.LicenseNumber = request.LicenseNumber;
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.BarAssociation))
-            {
-                lawyerProfile.BarAssociation = request.BarAssociation;
-                hasChanges = true;
-            }
-
-            if (request.YearsOfExperience.HasValue)
-            {
-                lawyerProfile.YearsOfExperience = request.YearsOfExperience;
-                hasChanges = true;
-            }
-
-            // ✅ تحديث تخصصات المحامي
             if (request.SpecialtyIds != null)
             {
                 if (lawyerProfile.Specialties.Any())
-                {
                     _context.LawyerProfileSpecialties.RemoveRange(lawyerProfile.Specialties);
-                }
 
                 var isFirst = true;
                 foreach (var specId in request.SpecialtyIds)
@@ -205,29 +148,14 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            if (request.GovernorateId.HasValue)
-            {
-                lawyerProfile.GovernorateId = request.GovernorateId;
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.City))
-            {
-                lawyerProfile.City = request.City;
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.OfficeAddress))
-            {
-                lawyerProfile.OfficeAddress = request.OfficeAddress;
-                hasChanges = true;
-            }
+            if (request.GovernorateId.HasValue) { lawyerProfile.GovernorateId = request.GovernorateId; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.City)) { lawyerProfile.City = request.City; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.OfficeAddress)) { lawyerProfile.OfficeAddress = request.OfficeAddress; hasChanges = true; }
 
             if (hasChanges)
             {
                 lawyerProfile.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"Profile updated successfully for lawyer: {userId}");
                 return true;
             }
 
@@ -237,12 +165,9 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<string?> UploadProfilePictureAsync(Guid userId, IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
-
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            
-            if (!allowedExtensions.Contains(extension)) return null;
-            if (file.Length > 2 * 1024 * 1024) return null;
+            if (!allowedExtensions.Contains(extension) || file.Length > 2 * 1024 * 1024) return null;
 
             var user = await _context.Users.FindAsync(userId);
             if (user == null || user.Role != UserRole.Lawyer) return null;
@@ -258,16 +183,11 @@ namespace LegalMateAI.BLL.Services.Service
 
             var fileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
             var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+            using (var stream = new FileStream(filePath, FileMode.Create)) { await file.CopyToAsync(stream); }
 
             var pictureUrl = $"/profiles/lawyers/{fileName}";
             user.ProfilePicture = pictureUrl;
             await _context.SaveChangesAsync();
-
             return pictureUrl;
         }
 

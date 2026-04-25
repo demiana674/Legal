@@ -27,9 +27,14 @@ namespace LegalMateAI.BLL.Services.IService
         Task<LawDto?> GetLawByIdAsync(Guid id);
         
         /// <summary>
-        /// تحميل ملف القانون (يزيد عداد التحميل)
+        /// تحميل ملف القانون (يرجع بايتات الملف)
         /// </summary>
         Task<byte[]?> DownloadLawAsync(Guid id);
+        
+        /// <summary>
+        /// جلب رابط تحميل القانون (يرجع الرابط الخارجي)
+        /// </summary>
+        Task<string?> GetLawDownloadUrlAsync(Guid id);
         
         /// <summary>
         /// جلب تصنيفات القوانين المتاحة
@@ -37,6 +42,11 @@ namespace LegalMateAI.BLL.Services.IService
         Task<List<LawCategoryDto>> GetLawCategoriesAsync();
         
         // ========== للمستخدمين المسجلين ==========
+        
+        /// <summary>
+        /// رفع قانون جديد مع بارسر آلي من الرابط
+        /// </summary>
+        Task<LawDto?> UploadLawByUserWithParserAsync(Guid userId, CreateLawRequestDto request);
         
         /// <summary>
         /// رفع قانون جديد من قبل المستخدم (ينتظر موافقة الأدمن)
@@ -78,13 +88,28 @@ namespace LegalMateAI.BLL.Services.IService
         Task<List<LawDto>> GetPendingLawsAsync();
         
         /// <summary>
+        /// جلب القوانين المنتظرة للموافقة من المستخدمين (Admin)
+        /// </summary>
+        Task<List<LawDto>> GetPendingLawsForAdminAsync();
+        
+        /// <summary>
         /// الموافقة على قانون (Admin)
         /// </summary>
         Task<bool> ApproveLawAsync(Guid adminId, Guid lawId);
         
         /// <summary>
+        /// الموافقة على قانون من مستخدم (Admin)
+        /// </summary>
+        Task<bool> ApproveUserLawAsync(Guid adminId, Guid lawId);
+        
+        /// <summary>
         /// رفض قانون (Admin)
         /// </summary>
         Task<bool> RejectLawAsync(Guid adminId, Guid lawId, string reason);
+        
+        /// <summary>
+        /// رفض قانون من مستخدم (Admin)
+        /// </summary>
+        Task<bool> RejectUserLawAsync(Guid adminId, Guid lawId, string reason);
     }
 }

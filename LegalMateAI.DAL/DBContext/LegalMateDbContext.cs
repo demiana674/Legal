@@ -51,6 +51,7 @@ public DbSet<BranchAvailability> BranchAvailabilities { get; set; }
         public DbSet<Case> Cases { get; set; }
         public DbSet<CaseDocument> CaseDocuments { get; set; }
         public DbSet<CaseNote> CaseNotes { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
 
         // ===== ✅ الجداول الجديدة للعقود الجاهزة =====
         public DbSet<PredefinedContractTemplate> PredefinedContractTemplates { get; set; }
@@ -126,6 +127,10 @@ public DbSet<BranchAvailability> BranchAvailabilities { get; set; }
                 .WithMany(lp => lp.Specialties)
                 .HasForeignKey(lps => lps.LawyerId)
                 .OnDelete(DeleteBehavior.Cascade);
+                // LegalSpecialization - Id auto-increment
+modelBuilder.Entity<LegalSpecialization>()
+    .Property(l => l.Id)
+    .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<LawyerProfileSpecialty>()
                 .HasOne(lps => lps.Specialty)

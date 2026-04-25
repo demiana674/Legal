@@ -6,6 +6,8 @@ namespace LegalMateAI.DTOs
 {
     public class RegisterRequest
     {
+        // ========== البيانات الأساسية (للمستخدم والمحامي) ==========
+        
         [Required(ErrorMessage = "الاسم الأول مطلوب")]
         [StringLength(50, MinimumLength = 2, ErrorMessage = "الاسم الأول بين 2 و 50 حرف")]
         public string FirstName { get; set; } = string.Empty;
@@ -28,55 +30,83 @@ namespace LegalMateAI.DTOs
         [Compare("Password", ErrorMessage = "كلمة المرور وتأكيدها غير متطابقين")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "رقم الهاتف مطلوب")]
         [Phone(ErrorMessage = "رقم الهاتف غير صحيح")]
-        public string? Phone { get; set; }
+        public string Phone { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "الرقم القومي مطلوب")]
         [StringLength(14, MinimumLength = 14, ErrorMessage = "الرقم القومي يجب أن يكون 14 رقم")]
         [RegularExpression(@"^\d{14}$", ErrorMessage = "الرقم القومي يجب أن يتكون من 14 رقم فقط")]
         public string NationalId { get; set; } = string.Empty;
 
+        // ========== بيانات شخصية إضافية ==========
+        
+        [Required(ErrorMessage = "تاريخ الميلاد مطلوب")]
+        public DateTime DateOfBirth { get; set; }
+
+        [Required(ErrorMessage = "الجنسية مطلوبة")]
+        public string Nationality { get; set; } = "مصري";
+
+        // ========== الموقع ==========
+        
+        public int? GovernorateId { get; set; }
+        
+        [StringLength(100)]
+        public string? City { get; set; }
+        
+        [StringLength(300)]
+        public string? Address { get; set; }
+
+        // ========== نوع المستخدم ==========
+        
         [Required(ErrorMessage = "نوع المستخدم مطلوب")]
         public UserRole Role { get; set; } = UserRole.User;
 
-        // حقول المحامي فقط
-        [RequiredIf("Role", UserRole.Lawyer, ErrorMessage = "رقم رخصة المحاماة مطلوب للمحامي")]
+        // ========== حقول المحامي فقط ==========
+        
+        [RequiredIfRole(UserRole.Lawyer, ErrorMessage = "رقم رخصة المحاماة مطلوب للمحامي")]
         [RegularExpression(@"^[A-Z]{2,3}-\d{4,8}$", 
             ErrorMessage = "صيغة رخصة المحاماة غير صحيحة. مثال: LAW-12345 أو BAR-67890")]
         public string? LicenseNumber { get; set; }
 
-        [RequiredIf("Role", UserRole.Lawyer, ErrorMessage = "جهة النقابة مطلوبة للمحامي")]
+        [RequiredIfRole(UserRole.Lawyer, ErrorMessage = "جهة النقابة مطلوبة للمحامي")]
         public string? BarAssociation { get; set; }
+
+        [RequiredIfRole(UserRole.Lawyer, ErrorMessage = "تاريخ القيد مطلوب للمحامي")]
+        public DateTime? LicenseIssueDate { get; set; }
+
+        [RequiredIfRole(UserRole.Lawyer, ErrorMessage = "درجة المزاولة مطلوبة للمحامي")]
+        public string? PracticeDegree { get; set; }
 
         [Range(0, 70, ErrorMessage = "سنوات الخبرة بين 0 و 70")]
         public int? YearsOfExperience { get; set; }
     }
 
-    // ✅ Attribute مخصص للتحقق من الشرط
-    public class RequiredIfAttribute : ValidationAttribute
+    /// <summary>
+    /// Attribute مخصص للتحقق من شرط الدور
+    /// </summary>
+    public class RequiredIfRoleAttribute : ValidationAttribute
     {
-        private readonly string _propertyName;
-        private readonly object _targetValue;
+        private readonly UserRole _requiredRole;
 
-        public RequiredIfAttribute(string propertyName, object targetValue)
+        public RequiredIfRoleAttribute(UserRole requiredRole)
         {
-            _propertyName = propertyName;
-            _targetValue = targetValue;
+            _requiredRole = requiredRole;
         }
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
-            var property = validationContext.ObjectType.GetProperty(_propertyName);
-            if (property == null)
-                return new ValidationResult($"الخاصية {_propertyName} غير موجودة");
+            var roleProperty = validationContext.ObjectType.GetProperty("Role");
+            if (roleProperty == null)
+                return new ValidationResult($"خاصية Role غير موجودة");
 
-            var propertyValue = property.GetValue(validationContext.ObjectInstance);
-
-            if (propertyValue != null && propertyValue.Equals(_targetValue))
+            var roleValue = roleProperty.GetValue(validationContext.ObjectInstance);
+            
+            if (roleValue is UserRole role && role == _requiredRole)
             {
-                if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                if (value == null || (value is string str && string.IsNullOrWhiteSpace(str)))
                 {
-                    return new ValidationResult(ErrorMessage ?? $"الحقل مطلوب");
+                    return new ValidationResult(ErrorMessage ?? "هذا الحقل مطلوب");
                 }
             }
 

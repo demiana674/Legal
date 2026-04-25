@@ -30,7 +30,6 @@ namespace LegalMateAI.BLL.Services.Service
         {
             try
             {
-                // ✅ التحقق من البريد الإلكتروني وكلمة المرور
                 if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 {
                     return new RegistrationResult 
@@ -40,7 +39,6 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
 
-                // ✅ التحقق من تطابق كلمة المرور
                 if (request.Password != request.ConfirmPassword)
                 {
                     return new RegistrationResult 
@@ -50,7 +48,6 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
 
-                // ✅ التحقق من قوة كلمة المرور
                 if (!IsStrongPassword(request.Password))
                 {
                     return new RegistrationResult 
@@ -60,7 +57,6 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
 
-                // ✅ التحقق من تكرار البريد الإلكتروني
                 if (await _repo.UserExistsAsync(request.Email))
                 {
                     _logger.LogWarning("Registration failed - email exists: {Email}", request.Email);
@@ -71,7 +67,6 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
 
-                // ✅ التحقق من تكرار الرقم القومي
                 if (await _repo.NationalIdExistsAsync(request.NationalId))
                 {
                     _logger.LogWarning("Registration failed - national ID exists: {NationalId}", request.NationalId);
@@ -82,7 +77,6 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
 
-                // تشفير البيانات
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
                 var encryptedPhone = string.IsNullOrEmpty(request.Phone) ? null : _encryption.Encrypt(request.Phone);
                 var encryptedNationalId = _encryption.Encrypt(request.NationalId);
@@ -96,6 +90,8 @@ namespace LegalMateAI.BLL.Services.Service
                     PasswordHash = passwordHash,
                     Phone = encryptedPhone,
                     NationalId = encryptedNationalId,
+                    Nationality = request.Nationality,
+                    DateOfBirth = request.DateOfBirth,
                     Role = request.Role,
                     IsActive = request.Role == UserRole.User,
                     Status = AccountStatus.Pending,
@@ -116,7 +112,14 @@ namespace LegalMateAI.BLL.Services.Service
                         Email = request.Email,
                         PhoneNumber = request.Phone,
                         NationalId = request.NationalId,
-                        CreatedAt = DateTime.UtcNow
+                        Nationality = request.Nationality,
+                        DateOfBirth = request.DateOfBirth,
+                        GovernorateId = request.GovernorateId,
+                        
+                        City = null,
+                        Address = request.Address,
+                        CreatedAt = DateTime.UtcNow,
+                        LastProfileUpdate = DateTime.UtcNow
                     };
                     
                     await _repo.AddUserWithProfileAsync(user, userProfile);
@@ -133,10 +136,9 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
                 
-                // ✅ تسجيل محامي مع التحقق من LicenseNumber
+                // ✅ تسجيل محامي
                 else if (request.Role == UserRole.Lawyer)
                 {
-                    // ✅ التحقق من وجود LicenseNumber
                     if (string.IsNullOrEmpty(request.LicenseNumber))
                     {
                         return new RegistrationResult
@@ -146,7 +148,6 @@ namespace LegalMateAI.BLL.Services.Service
                         };
                     }
 
-                    // ✅ التحقق من صحة صيغة LicenseNumber
                     if (!IsValidLicenseNumber(request.LicenseNumber))
                     {
                         return new RegistrationResult
@@ -156,7 +157,6 @@ namespace LegalMateAI.BLL.Services.Service
                         };
                     }
 
-                    // ✅ التحقق من عدم تكرار LicenseNumber
                     if (await _repo.LicenseNumberExistsAsync(request.LicenseNumber))
                     {
                         _logger.LogWarning("Registration failed - license number exists: {LicenseNumber}", request.LicenseNumber);
@@ -176,7 +176,12 @@ namespace LegalMateAI.BLL.Services.Service
                         UserId = user.UserID,
                         LicenseNumber = request.LicenseNumber,
                         BarAssociation = request.BarAssociation ?? "",
+                        LicenseIssueDate = request.LicenseIssueDate,      // ✅ تاريخ القيد
+                        PracticeDegree = request.PracticeDegree,           // ✅ درجة المزاولة
                         YearsOfExperience = request.YearsOfExperience ?? 0,
+                        GovernorateId = request.GovernorateId,
+                        City = request.City,
+                        OfficeAddress = request.Address,
                         VerificationStatus = LawyerVerificationStatus.Pending,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -219,7 +224,6 @@ namespace LegalMateAI.BLL.Services.Service
             return await RegisterAsync(request);
         }
 
-        // ✅ التحقق من قوة كلمة المرور
         private bool IsStrongPassword(string password)
         {
             if (string.IsNullOrEmpty(password) || password.Length < 8)
@@ -241,14 +245,11 @@ namespace LegalMateAI.BLL.Services.Service
             return hasUpper && hasLower && hasDigit && hasSpecial;
         }
 
-        // ✅ التحقق من صيغة رقم رخصة المحاماة
         private bool IsValidLicenseNumber(string licenseNumber)
         {
             if (string.IsNullOrEmpty(licenseNumber))
                 return false;
             
-            // الصيغة: حرفين أو ثلاثة كبار، ثم شرطة، ثم 4-8 أرقام
-            // أمثلة: LAW-12345, BAR-67890, EGY-123456
             var regex = new System.Text.RegularExpressions.Regex(@"^[A-Z]{2,3}-\d{4,8}$");
             return regex.IsMatch(licenseNumber);
         }

@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/ReadDTO/LogFilterDto.cs
 using System;
 using LegalMateAI.Domain.Enums;
 
@@ -7,10 +6,13 @@ namespace LegalMateAI.DTOs.ReadDTO
     public class LogFilterDto
     {
         public string? AdminId { get; set; }
+        public Guid? UserId { get; set; }              // ✅ جديد: فلترة حسب المستخدم
+        public string? UserType { get; set; }          // ✅ جديد: "User", "Lawyer", "Admin"
         public AdminLogAction? Action { get; set; }
         public string? TargetType { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public string? Status { get; set; }            // ✅ جديد: "success", "failed", "warning"
         
         private int _page = 1;
         public int Page 

@@ -14,9 +14,10 @@ namespace LegalMateAI.Domain.Entities
         // Professional Information
         public string? LicenseNumber { get; set; }
         public string? BarAssociation { get; set; }
+        public DateTime? LicenseIssueDate { get; set; }       // ✅ تاريخ القيد
+        public string? PracticeDegree { get; set; }            // ✅ درجة المزاولة
         public int? YearsOfExperience { get; set; }
         public string? AlternativePhone { get; set; }
-        public string? PracticeDegree { get; set; }
         
         // Location
         public int? GovernorateId { get; set; }
@@ -39,8 +40,6 @@ namespace LegalMateAI.Domain.Entities
         public ICollection<LawyerAvailability> Availabilities { get; set; } = new List<LawyerAvailability>();
         public ICollection<LawyerReview> Reviews { get; set; } = new List<LawyerReview>();
         public ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
-        
-        // ✅ تخصصات المحامي
         public ICollection<LawyerProfileSpecialty> Specialties { get; set; } = new List<LawyerProfileSpecialty>();
     }
 }

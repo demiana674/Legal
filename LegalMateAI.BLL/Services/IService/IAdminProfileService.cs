@@ -1,6 +1,7 @@
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using Microsoft.AspNetCore.Http;
+
 namespace LegalMateAI.BLL.Services.IService
 {
     public interface IAdminProfileService
