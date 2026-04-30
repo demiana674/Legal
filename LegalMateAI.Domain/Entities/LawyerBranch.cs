@@ -1,4 +1,3 @@
-// LegalMateAI.Domain/Entities/LawyerBranch.cs
 using System;
 using System.Collections.Generic;
 
@@ -29,9 +28,10 @@ namespace LegalMateAI.Domain.Entities
         public Governorate? Governorate { get; set; }
         
         /// <summary>
-        /// المدينة
+        /// معرف المدينة
         /// </summary>
-        public string? City { get; set; }
+        public int? CityId { get; set; }
+        public City? City { get; set; }
         
         /// <summary>
         /// العنوان التفصيلي

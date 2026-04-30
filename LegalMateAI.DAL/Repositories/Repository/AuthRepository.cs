@@ -44,12 +44,13 @@ namespace LegalMateAI.DAL.Repositories.Repository
             await _context.Admins.AddAsync(admin);
         }
 
-        public async Task LogLoginAttemptAsync(Guid? userId, string email, bool isSuccess)
+        public async Task LogLoginAttemptAsync(Guid? userId, Guid? adminId, string email, bool isSuccess)
         {
             var attempt = new LoginAttempt
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
+                AdminId = adminId,
                 Email = email,
                 IsSuccess = isSuccess,
                 AttemptedAt = DateTime.UtcNow
@@ -70,6 +71,24 @@ namespace LegalMateAI.DAL.Repositories.Repository
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+        
+        public async Task AddSessionAsync(Session session)
+        {
+            await _context.Sessions.AddAsync(session);
+        }
+        
+        public async Task UpdateSessionAsync(Session session)
+        {
+            _context.Sessions.Update(session);
+            await Task.CompletedTask;
+        }
+        
+        public async Task<Session?> GetSessionByTokenAsync(string token)
+        {
+            return await _context.Sessions
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.SessionToken == token && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
         }
     }
 }

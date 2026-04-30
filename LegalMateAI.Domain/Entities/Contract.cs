@@ -30,6 +30,6 @@ namespace LegalMateAI.Domain.Entities
         public DateTime? SignedAt { get; set; }
         public bool IsGeneratedByAI { get; set; }
         
-        public ICollection<ContractClause> Clauses { get; set; } = new List<ContractClause>();
+       
     }
 }

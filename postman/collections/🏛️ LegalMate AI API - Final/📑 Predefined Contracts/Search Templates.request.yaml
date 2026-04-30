@@ -1,9 +1,0 @@
-$kind: http-request
-url: "{{base_url}}/api/contracts/predefined/templates/search?q=إيجار&type=1"
-method: GET
-headers:
-  Authorization: Bearer {{access_token}}
-queryParams:
-  q: إيجار
-  type: "1"
-order: 2000

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LegalMateAI.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreate1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -105,7 +105,7 @@ namespace LegalMateAI.DAL.Migrations
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Role = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Pending"),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     EmailVerified = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     LastLogin = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -137,44 +137,6 @@ namespace LegalMateAI.DAL.Migrations
                         principalTable: "Admins",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AdminProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    JobTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Department = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NationalId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Nationality = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Governorate = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    City = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    District = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    EmployeeId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AccessLevel = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    JoinDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TotalVerifiedLawyers = table.Column<int>(type: "int", nullable: false),
-                    TotalRejectedLawyers = table.Column<int>(type: "int", nullable: false),
-                    LastActiveAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AdminProfiles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AdminProfiles_Admins_AdminId",
-                        column: x => x.AdminId,
-                        principalTable: "Admins",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -326,49 +288,12 @@ namespace LegalMateAI.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "LawyerProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    LicenseNumber = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    BarAssociation = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LicenseIssueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PracticeDegree = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    YearsOfExperience = table.Column<int>(type: "int", nullable: true),
-                    AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    GovernorateId = table.Column<int>(type: "int", nullable: true),
-                    City = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    OfficeAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    VerificationStatus = table.Column<string>(type: "nvarchar(450)", nullable: false, defaultValue: "Pending"),
-                    VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_LawyerProfiles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_LawyerProfiles_Governorates_GovernorateId",
-                        column: x => x.GovernorateId,
-                        principalTable: "Governorates",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_LawyerProfiles_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "LoginAttempts",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AttemptedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     IsSuccess = table.Column<bool>(type: "bit", nullable: false)
@@ -377,36 +302,17 @@ namespace LegalMateAI.DAL.Migrations
                 {
                     table.PrimaryKey("PK_LoginAttempts", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_LoginAttempts_Admins_AdminId",
+                        column: x => x.AdminId,
+                        principalTable: "Admins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
                         name: "FK_LoginAttempts_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "UserID",
                         onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActionUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -438,8 +344,8 @@ namespace LegalMateAI.DAL.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SessionToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SessionToken = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastActivityAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -451,6 +357,93 @@ namespace LegalMateAI.DAL.Migrations
                     table.PrimaryKey("PK_Sessions", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Sessions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AdminProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    JobTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Department = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NationalId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Nationality = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GovernorateId = table.Column<int>(type: "int", nullable: true),
+                    CityId = table.Column<int>(type: "int", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    JoinDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TotalVerifiedLawyers = table.Column<int>(type: "int", nullable: false),
+                    TotalRejectedLawyers = table.Column<int>(type: "int", nullable: false),
+                    LastActiveAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AdminProfiles_Admins_AdminId",
+                        column: x => x.AdminId,
+                        principalTable: "Admins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AdminProfiles_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AdminProfiles_Governorates_GovernorateId",
+                        column: x => x.GovernorateId,
+                        principalTable: "Governorates",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LawyerProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LicenseNumber = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    BarAssociation = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LicenseIssueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PracticeDegree = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    YearsOfExperience = table.Column<int>(type: "int", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GovernorateId = table.Column<int>(type: "int", nullable: true),
+                    CityId = table.Column<int>(type: "int", nullable: true),
+                    OfficeAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    VerificationStatus = table.Column<string>(type: "nvarchar(450)", nullable: false, defaultValue: "Pending"),
+                    VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LawyerProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LawyerProfiles_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_LawyerProfiles_Governorates_GovernorateId",
+                        column: x => x.GovernorateId,
+                        principalTable: "Governorates",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_LawyerProfiles_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "UserID",
@@ -475,13 +468,9 @@ namespace LegalMateAI.DAL.Migrations
                     NationalId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Nationality = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Theme = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsProfilePublic = table.Column<bool>(type: "bit", nullable: false),
-                    ProfileViews = table.Column<int>(type: "int", nullable: false),
                     LastProfileUpdate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    GovernorateId1 = table.Column<int>(type: "int", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -494,11 +483,6 @@ namespace LegalMateAI.DAL.Migrations
                     table.ForeignKey(
                         name: "FK_UserProfiles_Governorates_GovernorateId",
                         column: x => x.GovernorateId,
-                        principalTable: "Governorates",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_Governorates_GovernorateId1",
-                        column: x => x.GovernorateId1,
                         principalTable: "Governorates",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -568,13 +552,14 @@ namespace LegalMateAI.DAL.Migrations
                         name: "FK_Cases_LawyerProfiles_LawyerId",
                         column: x => x.LawyerId,
                         principalTable: "LawyerProfiles",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Cases_Users_ClientId",
                         column: x => x.ClientId,
                         principalTable: "Users",
                         principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -710,7 +695,7 @@ namespace LegalMateAI.DAL.Migrations
                     LawyerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BranchName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     GovernorateId = table.Column<int>(type: "int", nullable: true),
-                    City = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CityId = table.Column<int>(type: "int", nullable: true),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -719,6 +704,11 @@ namespace LegalMateAI.DAL.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LawyerBranches", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LawyerBranches_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_LawyerBranches_Governorates_GovernorateId",
                         column: x => x.GovernorateId,
@@ -804,55 +794,6 @@ namespace LegalMateAI.DAL.Migrations
                     table.PrimaryKey("PK_UserDocuments", x => x.Id);
                     table.ForeignKey(
                         name: "FK_UserDocuments_UserProfiles_UserProfileId",
-                        column: x => x.UserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserPreferences",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    EmailNotifications = table.Column<bool>(type: "bit", nullable: false),
-                    SmsNotifications = table.Column<bool>(type: "bit", nullable: false),
-                    PushNotifications = table.Column<bool>(type: "bit", nullable: false),
-                    AppointmentReminders = table.Column<bool>(type: "bit", nullable: false),
-                    ReminderBeforeHours = table.Column<int>(type: "int", nullable: false),
-                    ShowEmail = table.Column<bool>(type: "bit", nullable: false),
-                    ShowPhone = table.Column<bool>(type: "bit", nullable: false),
-                    ShowBirthDate = table.Column<bool>(type: "bit", nullable: false),
-                    Language = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserPreferences", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserPreferences_UserProfiles_UserProfileId",
-                        column: x => x.UserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserSocialLinks",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Platform = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Username = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsPublic = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserSocialLinks", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserSocialLinks_UserProfiles_UserProfileId",
                         column: x => x.UserProfileId,
                         principalTable: "UserProfiles",
                         principalColumn: "Id",
@@ -953,27 +894,6 @@ namespace LegalMateAI.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ContractClauses",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ContractId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClauseTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ClauseContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Order = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ContractClauses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ContractClauses_Contracts_ContractId",
-                        column: x => x.ContractId,
-                        principalTable: "Contracts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Appointments",
                 columns: table => new
                 {
@@ -994,8 +914,7 @@ namespace LegalMateAI.DAL.Migrations
                     CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CancellationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsUrgent = table.Column<bool>(type: "bit", nullable: false),
-                    LawyerProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserID1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    LawyerProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1004,13 +923,14 @@ namespace LegalMateAI.DAL.Migrations
                         name: "FK_Appointments_LawyerBranches_BranchId",
                         column: x => x.BranchId,
                         principalTable: "LawyerBranches",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Appointments_LawyerProfiles_LawyerId",
                         column: x => x.LawyerId,
                         principalTable: "LawyerProfiles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Appointments_LawyerProfiles_LawyerProfileId",
                         column: x => x.LawyerProfileId,
@@ -1021,12 +941,7 @@ namespace LegalMateAI.DAL.Migrations
                         column: x => x.UserID,
                         principalTable: "Users",
                         principalColumn: "UserID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Appointments_Users_UserID1",
-                        column: x => x.UserID1,
-                        principalTable: "Users",
-                        principalColumn: "UserID");
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1126,6 +1041,16 @@ namespace LegalMateAI.DAL.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_AdminProfiles_CityId",
+                table: "AdminProfiles",
+                column: "CityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminProfiles_GovernorateId",
+                table: "AdminProfiles",
+                column: "GovernorateId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Admins_Email",
                 table: "Admins",
                 column: "Email",
@@ -1155,11 +1080,6 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_Appointments_UserID",
                 table: "Appointments",
                 column: "UserID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Appointments_UserID1",
-                table: "Appointments",
-                column: "UserID1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BranchAvailabilities_BranchId_DayOfWeek",
@@ -1200,11 +1120,6 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_ClauseAnalyses_AnalysisId",
                 table: "ClauseAnalyses",
                 column: "AnalysisId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ContractClauses_ContractId",
-                table: "ContractClauses",
-                column: "ContractId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_LawyerId",
@@ -1298,6 +1213,11 @@ namespace LegalMateAI.DAL.Migrations
                 column: "LawyerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LawyerBranches_CityId",
+                table: "LawyerBranches",
+                column: "CityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LawyerBranches_GovernorateId",
                 table: "LawyerBranches",
                 column: "GovernorateId");
@@ -1306,6 +1226,11 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_LawyerBranches_LawyerId",
                 table: "LawyerBranches",
                 column: "LawyerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LawyerProfiles_CityId",
+                table: "LawyerProfiles",
+                column: "CityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LawyerProfiles_GovernorateId",
@@ -1331,10 +1256,9 @@ namespace LegalMateAI.DAL.Migrations
                 column: "VerificationStatus");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LawyerProfileSpecialties_LawyerId_SpecialtyId",
+                name: "IX_LawyerProfileSpecialties_LawyerId",
                 table: "LawyerProfileSpecialties",
-                columns: new[] { "LawyerId", "SpecialtyId" },
-                unique: true);
+                column: "LawyerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LawyerProfileSpecialties_SpecialtyId",
@@ -1367,13 +1291,13 @@ namespace LegalMateAI.DAL.Migrations
                 column: "SpecializationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LoginAttempts_UserId",
+                name: "IX_LoginAttempts_AdminId",
                 table: "LoginAttempts",
-                column: "UserId");
+                column: "AdminId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_UserId",
-                table: "Notifications",
+                name: "IX_LoginAttempts_UserId",
+                table: "LoginAttempts",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -1402,6 +1326,12 @@ namespace LegalMateAI.DAL.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Sessions_SessionToken",
+                table: "Sessions",
+                column: "SessionToken",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sessions_UserId",
                 table: "Sessions",
                 column: "UserId");
@@ -1412,12 +1342,6 @@ namespace LegalMateAI.DAL.Migrations
                 column: "UserProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserPreferences_UserProfileId",
-                table: "UserPreferences",
-                column: "UserProfileId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_CityId",
                 table: "UserProfiles",
                 column: "CityId");
@@ -1426,11 +1350,6 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_UserProfiles_GovernorateId",
                 table: "UserProfiles",
                 column: "GovernorateId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_GovernorateId1",
-                table: "UserProfiles",
-                column: "GovernorateId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_UserId",
@@ -1455,11 +1374,6 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_Users_Role",
                 table: "Users",
                 column: "Role");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserSocialLinks_UserProfileId",
-                table: "UserSocialLinks",
-                column: "UserProfileId");
         }
 
         /// <inheritdoc />
@@ -1490,7 +1404,7 @@ namespace LegalMateAI.DAL.Migrations
                 name: "ClauseAnalyses");
 
             migrationBuilder.DropTable(
-                name: "ContractClauses");
+                name: "Contracts");
 
             migrationBuilder.DropTable(
                 name: "ContractTemplates");
@@ -1520,9 +1434,6 @@ namespace LegalMateAI.DAL.Migrations
                 name: "LoginAttempts");
 
             migrationBuilder.DropTable(
-                name: "Notifications");
-
-            migrationBuilder.DropTable(
                 name: "RiskAssessments");
 
             migrationBuilder.DropTable(
@@ -1535,16 +1446,7 @@ namespace LegalMateAI.DAL.Migrations
                 name: "UserDocuments");
 
             migrationBuilder.DropTable(
-                name: "UserPreferences");
-
-            migrationBuilder.DropTable(
-                name: "UserSocialLinks");
-
-            migrationBuilder.DropTable(
                 name: "Cases");
-
-            migrationBuilder.DropTable(
-                name: "Contracts");
 
             migrationBuilder.DropTable(
                 name: "PredefinedContractTemplates");
@@ -1574,16 +1476,16 @@ namespace LegalMateAI.DAL.Migrations
                 name: "Documents");
 
             migrationBuilder.DropTable(
-                name: "Cities");
-
-            migrationBuilder.DropTable(
                 name: "LawyerProfiles");
 
             migrationBuilder.DropTable(
-                name: "Governorates");
+                name: "Cities");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Governorates");
         }
     }
 }

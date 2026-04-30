@@ -5,9 +5,9 @@ using LegalMateAI.Domain.Entities;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.BLL.Services.IService;
+using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.Extensions.Logging;
 
 namespace LegalMateAI.BLL.Services.Service
@@ -38,32 +38,20 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var user = await _context.Users
                 .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.Governorate)
-                .Include(u => u.UserProfile)
                     .ThenInclude(up => up!.City)
+                        .ThenInclude(c => c!.Governorate)
                 .FirstOrDefaultAsync(u => u.UserID == userId);
 
             if (user == null) return null;
 
-            string? decryptedPhone = null;
-            if (!string.IsNullOrEmpty(user.Phone))
+            // فك تشفير البيانات الحساسة
+            string? decryptedPhone = Decrypt(user.Phone);
+            string? decryptedNationalId = Decrypt(user.NationalId);
+            string? decryptedAltPhone = null;
+            
+            if (user.UserProfile != null)
             {
-                try { decryptedPhone = _encryption.Decrypt(user.Phone); }
-                catch { decryptedPhone = "غير متاح"; }
-            }
-
-            string? decryptedAlternativePhone = null;
-            if (user.UserProfile != null && !string.IsNullOrEmpty(user.UserProfile.AlternativePhone))
-            {
-                try { decryptedAlternativePhone = _encryption.Decrypt(user.UserProfile.AlternativePhone); }
-                catch { decryptedAlternativePhone = "غير متاح"; }
-            }
-
-            string? decryptedNationalId = null;
-            if (!string.IsNullOrEmpty(user.NationalId))
-            {
-                try { decryptedNationalId = _encryption.Decrypt(user.NationalId); }
-                catch { decryptedNationalId = "غير متاح"; }
+                decryptedAltPhone = Decrypt(user.UserProfile.AlternativePhone);
             }
 
             return new UserProfileDto
@@ -71,18 +59,18 @@ namespace LegalMateAI.BLL.Services.Service
                 FullName = user.FullName,
                 Email = user.Email,
                 Phone = decryptedPhone,
-                AlternativePhone = decryptedAlternativePhone,
                 NationalId = decryptedNationalId,
+                Nationality = user.Nationality ?? "مصري",
+                DateOfBirth = user.DateOfBirth?.ToString("dd MMMM yyyy"),
+                Gender = "ذكر",
+                AlternativePhone = decryptedAltPhone,
                 ProfilePicture = user.ProfilePicture,
-                GovernorateName = user.UserProfile?.Governorate?.Name,
-                CityName = user.UserProfile?.City?.Name ?? user.UserProfile?.City?.ToString(),
+                GovernorateName = user.UserProfile?.City?.Governorate?.Name,
+                CityName = user.UserProfile?.City?.Name,
                 Address = user.UserProfile?.Address,
                 CreatedAt = user.CreatedAt,
                 LastLogin = user.LastLogin,
-                DateOfBirth = user.DateOfBirth?.ToString("dd MMMM yyyy"),
-                Gender = "ذكر",
-                Nationality = user.Nationality ?? "مصري",
-                LastPasswordChange = "15 يناير 2026"
+                LastPasswordChange = "غير متاح"
             };
         }
 
@@ -94,58 +82,64 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == userId);
 
-            if (user == null)
-            {
-                _logger.LogWarning($"User not found: {userId}");
-                return false;
-            }
+            if (user == null) return false;
 
             if (user.UserProfile == null)
             {
-                _logger.LogWarning($"UserProfile not found for user: {userId}");
-                return false;
+                user.UserProfile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.UserID,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.UserProfiles.Add(user.UserProfile);
             }
 
+            var profile = user.UserProfile;
             bool hasChanges = false;
 
+            // تشفير رقم الهاتف
             if (!string.IsNullOrEmpty(request.PhoneNumber))
             {
                 user.Phone = _encryption.Encrypt(request.PhoneNumber);
+                profile.PhoneNumber = _encryption.Encrypt(request.PhoneNumber);
                 hasChanges = true;
             }
 
-            if (!string.IsNullOrEmpty(request.AlternativePhone))
+            // تشفير الهاتف البديل
+            if (request.AlternativePhone != null)
             {
-                user.UserProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
-                hasChanges = true;
-            }
-            else if (request.AlternativePhone == "")
-            {
-                user.UserProfile.AlternativePhone = null;
+                if (string.IsNullOrEmpty(request.AlternativePhone))
+                    profile.AlternativePhone = null;
+                else
+                    profile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
                 hasChanges = true;
             }
 
             if (request.GovernorateId.HasValue)
             {
-                user.UserProfile.GovernorateId = request.GovernorateId;
                 hasChanges = true;
             }
 
             if (request.CityId.HasValue)
             {
-                user.UserProfile.CityId = request.CityId;
+                profile.CityId = request.CityId;
                 hasChanges = true;
             }
 
             if (!string.IsNullOrEmpty(request.Address))
             {
-                user.UserProfile.Address = request.Address;
+                profile.Address = request.Address;
                 hasChanges = true;
             }
 
             if (hasChanges)
             {
-                user.UserProfile.UpdatedAt = DateTime.UtcNow;
+                profile.UpdatedAt = DateTime.UtcNow;
+                profile.LastProfileUpdate = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
                 _logger.LogInformation($"Profile updated successfully for user {userId}");
                 return true;
@@ -203,6 +197,13 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<UserProfileDto?> GetDashboardAsync(Guid userId)
         {
             return await GetProfileAsync(userId);
+        }
+
+        private string? Decrypt(string? encrypted)
+        {
+            if (string.IsNullOrEmpty(encrypted)) return null;
+            try { return _encryption.Decrypt(encrypted); }
+            catch { return encrypted; }
         }
     }
 }

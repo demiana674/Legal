@@ -17,7 +17,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public List<AppointmentResponseDto> UpcomingAppointments { get; set; } = new();
         public List<ContractResponseDto> RecentContracts { get; set; } = new();
         public List<DocumentResponseDto> RecentDocuments { get; set; } = new();
-        public List<NotificationResponseDto> UnreadNotifications { get; set; } = new();
+     
     }
 }
 

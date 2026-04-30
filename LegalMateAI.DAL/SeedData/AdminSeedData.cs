@@ -42,7 +42,6 @@ namespace LegalMateAI.DAL.SeedData
             var defaultAdminSection = config.GetSection("AdminAccounts:DefaultAdmin");
             var verifierSection = config.GetSection("AdminAccounts:Verifier");
 
-            // Profile 1: سامي عبدالعزيز محمود
             var mainAdmin = admins.FirstOrDefault(a => a.Email == (defaultAdminSection["Email"] ?? "admin@legalmate.com"));
             if (mainAdmin != null)
             {
@@ -54,25 +53,20 @@ namespace LegalMateAI.DAL.SeedData
                     Department = defaultAdminSection["Department"] ?? "إدارة النظام",
                     FirstName = defaultAdminSection["FirstName"] ?? "سامي",
                     LastName = defaultAdminSection["LastName"] ?? "عبدالعزيز محمود",
-                    NationalId = defaultAdminSection["NationalId"] ?? "27806224112345",
+                    NationalId = encryption.Encrypt(defaultAdminSection["NationalId"] ?? "27806224112345"),
                     DateOfBirth = DateTime.TryParse(defaultAdminSection["DateOfBirth"], out var dob1) ? dob1 : new DateTime(1978, 6, 22),
-                    Gender = defaultAdminSection["Gender"] ?? "ذكر",
                     Nationality = defaultAdminSection["Nationality"] ?? "مصري",
-                    Governorate = defaultAdminSection["Governorate"] ?? "القاهرة",
-                    City = defaultAdminSection["City"] ?? "القاهرة",
-                    District = defaultAdminSection["District"] ?? "وسط البلد",
+                    GovernorateId = 1, // القاهرة
+                    CityId = 106, // وسط البلد
                     Address = defaultAdminSection["Address"] ?? "شارع قصر العيني، مبنى وزارة العدل، الدور الرابع",
-                    EmployeeId = defaultAdminSection["EmployeeId"] ?? "EMP-0001",
-                    AccessLevel = defaultAdminSection["AccessLevel"] ?? "Super Admin",
                     JoinDate = DateTime.TryParse(defaultAdminSection["JoinDate"], out var jd1) ? jd1 : new DateTime(2022, 3, 1),
-                    AlternativePhone = defaultAdminSection["AlternativePhone"] ?? "+20 2 2794 1234",
+                    AlternativePhone = encryption.Encrypt(defaultAdminSection["AlternativePhone"] ?? "+20 2 2794 1234"),
                     TotalVerifiedLawyers = 15,
                     TotalRejectedLawyers = 3,
                     LastActiveAt = DateTime.UtcNow
                 });
             }
 
-            // Profile 2: أحمد رضا الشافعي
             var verifierAdmin = admins.FirstOrDefault(a => a.Email == (verifierSection["Email"] ?? "verifier@legalmate.com"));
             if (verifierAdmin != null)
             {
@@ -84,18 +78,14 @@ namespace LegalMateAI.DAL.SeedData
                     Department = verifierSection["Department"] ?? "قسم التوثيق والمراجعة",
                     FirstName = verifierSection["FirstName"] ?? "أحمد",
                     LastName = verifierSection["LastName"] ?? "رضا الشافعي",
-                    NationalId = verifierSection["NationalId"] ?? "28503151234567",
+                    NationalId = encryption.Encrypt(verifierSection["NationalId"] ?? "28503151234567"),
                     DateOfBirth = DateTime.TryParse(verifierSection["DateOfBirth"], out var dob2) ? dob2 : new DateTime(1985, 3, 15),
-                    Gender = verifierSection["Gender"] ?? "ذكر",
                     Nationality = verifierSection["Nationality"] ?? "مصري",
-                    Governorate = verifierSection["Governorate"] ?? "القاهرة",
-                    City = verifierSection["City"] ?? "القاهرة",
-                    District = verifierSection["District"] ?? "مدينة نصر",
+                    GovernorateId = 1, // القاهرة
+                    CityId = 101, // مدينة نصر
                     Address = verifierSection["Address"] ?? "شارع عباس العقاد، برج النيل، الدور السابع",
-                    EmployeeId = verifierSection["EmployeeId"] ?? "EMP-0002",
-                    AccessLevel = verifierSection["AccessLevel"] ?? "Verifier Admin",
                     JoinDate = DateTime.TryParse(verifierSection["JoinDate"], out var jd2) ? jd2 : new DateTime(2023, 6, 15),
-                    AlternativePhone = verifierSection["AlternativePhone"] ?? "+20 2 2794 5678",
+                    AlternativePhone = encryption.Encrypt(verifierSection["AlternativePhone"] ?? "+20 2 2794 5678"),
                     TotalVerifiedLawyers = 38,
                     TotalRejectedLawyers = 7,
                     LastActiveAt = DateTime.UtcNow

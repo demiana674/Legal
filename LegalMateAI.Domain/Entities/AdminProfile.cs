@@ -12,29 +12,40 @@ namespace LegalMateAI.Domain.Entities
         public string? JobTitle { get; set; }
         public string? Department { get; set; }
         
-        // 🆕 بيانات شخصية
+        // بيانات شخصية
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
+        
+        // ✅ مشفر في قاعدة البيانات
         public string? NationalId { get; set; }
+        
         public DateTime? DateOfBirth { get; set; }
-        public string? Gender { get; set; }
         public string? Nationality { get; set; }
         
-        // 🆕 موقع
-        public string? Governorate { get; set; }
-        public string? City { get; set; }
-        public string? District { get; set; }
-        public string? Address { get; set; }
+        // ❌ تم حذف Gender
+        // ❌ تم حذف District
+        // ❌ تم حذف EmployeeId
+        // ❌ تم حذف AccessLevel
         
-        // 🆕 توظيف
-        public string? EmployeeId { get; set; }
-        public string? AccessLevel { get; set; }
+        // ✅ معرف المحافظة بدل الاسم
+        public int? GovernorateId { get; set; }
+        public Governorate? Governorate { get; set; }
+        
+        // ✅ معرف المدينة بدل الاسم
+        public int? CityId { get; set; }
+        public City? City { get; set; }
+        
+        public string? Address { get; set; }
         public DateTime? JoinDate { get; set; }
+        
+        // ✅ مشفر
         public string? AlternativePhone { get; set; }
         
-        // إحصائيات
+        // ✅ الإحصائيات بتتحدث تلقائياً
         public int TotalVerifiedLawyers { get; set; }
         public int TotalRejectedLawyers { get; set; }
-        public DateTime LastActiveAt { get; set; }
+        
+        // ✅ آخر نشاط - بيتحدث مع كل إجراء
+        public DateTime LastActiveAt { get; set; } = DateTime.UtcNow;
     }
 }

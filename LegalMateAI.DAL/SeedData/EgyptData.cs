@@ -1,238 +1,419 @@
 using LegalMateAI.Domain.Entities;
-public static class EgyptData
+
+namespace LegalMateAI.DAL.SeedData
 {
-    public static List<Governorate> GetGovernoratesWithCities()
+    public static class EgyptData
     {
-        return new List<Governorate>
+        public static List<Governorate> GetGovernorates()
         {
-            // القاهرة
-            new Governorate 
-            { 
-                Id = 1, 
-                Name = "القاهرة",
-                Cities = new List<City>
-                {
-                    new City { Id = 101, Name = "مدينة نصر", GovernorateId = 1 },
-                    new City { Id = 102, Name = "مصر الجديدة", GovernorateId = 1 },
-                    new City { Id = 103, Name = "المعادي", GovernorateId = 1 },
-                    new City { Id = 104, Name = "المقطم", GovernorateId = 1 },
-                    new City { Id = 105, Name = "الزمالك", GovernorateId = 1 },
-                    new City { Id = 106, Name = "وسط البلد", GovernorateId = 1 },
-                    new City { Id = 107, Name = "شبرا", GovernorateId = 1 },
-                    new City { Id = 108, Name = "العباسية", GovernorateId = 1 },
-                    new City { Id = 109, Name = "المهندسين", GovernorateId = 1 },
-                    new City { Id = 110, Name = "الدقي", GovernorateId = 1 },
-                    new City { Id = 111, Name = "حلوان", GovernorateId = 1 },
-                    new City { Id = 112, Name = "التجمع الخامس", GovernorateId = 1 },
-                    new City { Id = 113, Name = "الشروق", GovernorateId = 1 },
-                    new City { Id = 114, Name = "الرحاب", GovernorateId = 1 }
-                }
-            },
-            
-            // الجيزة
-            new Governorate 
-            { 
-                Id = 2, 
-                Name = "الجيزة",
-                Cities = new List<City>
-                {
-                    new City { Id = 201, Name = "الدقي", GovernorateId = 2 },
-                    new City { Id = 202, Name = "المهندسين", GovernorateId = 2 },
-                    new City { Id = 203, Name = "العجوزة", GovernorateId = 2 },
-                    new City { Id = 204, Name = "الهرم", GovernorateId = 2 },
-                    new City { Id = 205, Name = "فيصل", GovernorateId = 2 },
-                    new City { Id = 206, Name = "أكتوبر", GovernorateId = 2 },
-                    new City { Id = 207, Name = "الشيخ زايد", GovernorateId = 2 },
-                    new City { Id = 208, Name = "حدائق الأهرام", GovernorateId = 2 },
-                    new City { Id = 209, Name = "إمبابة", GovernorateId = 2 },
-                    new City { Id = 210, Name = "بولاق الدكرور", GovernorateId = 2 }
-                }
-            },
-            
-            // الإسكندرية
-            new Governorate 
-            { 
-                Id = 3, 
-                Name = "الإسكندرية",
-                Cities = new List<City>
-                {
-                    new City { Id = 301, Name = "سموحة", GovernorateId = 3 },
-                    new City { Id = 302, Name = "محطة الرمل", GovernorateId = 3 },
-                    new City { Id = 303, Name = "سيوف", GovernorateId = 3 },
-                    new City { Id = 304, Name = "كامب شيزار", GovernorateId = 3 },
-                    new City { Id = 305, Name = "لوران", GovernorateId = 3 },
-                    new City { Id = 306, Name = "فيكتوريا", GovernorateId = 3 },
-                    new City { Id = 307, Name = "سبورتنج", GovernorateId = 3 },
-                    new City { Id = 308, Name = "العصافرة", GovernorateId = 3 },
-                    new City { Id = 309, Name = "المندرة", GovernorateId = 3 },
-                    new City { Id = 310, Name = "أبو قير", GovernorateId = 3 },
-                    new City { Id = 311, Name = "برج العرب", GovernorateId = 3 }
-                }
-            },
-            
-            // الدقهلية
-            new Governorate 
-            { 
-                Id = 4, 
-                Name = "الدقهلية",
-                Cities = new List<City>
-                {
-                    new City { Id = 401, Name = "المنصورة", GovernorateId = 4 },
-                    new City { Id = 402, Name = "طلخا", GovernorateId = 4 },
-                    new City { Id = 403, Name = "ميت غمر", GovernorateId = 4 },
-                    new City { Id = 404, Name = "دكرنس", GovernorateId = 4 },
-                    new City { Id = 405, Name = "السنبلاوين", GovernorateId = 4 },
-                    new City { Id = 406, Name = "نبروه", GovernorateId = 4 },
-                    new City { Id = 407, Name = "تمي الأمديد", GovernorateId = 4 }
-                }
-            },
-            
-            // الشرقية
-            new Governorate 
-            { 
-                Id = 5, 
-                Name = "الشرقية",
-                Cities = new List<City>
-                {
-                    new City { Id = 501, Name = "الزقازيق", GovernorateId = 5 },
-                    new City { Id = 502, Name = "العاشر من رمضان", GovernorateId = 5 },
-                    new City { Id = 503, Name = "بلبيس", GovernorateId = 5 },
-                    new City { Id = 504, Name = "منيا القمح", GovernorateId = 5 },
-                    new City { Id = 505, Name = "أبو حماد", GovernorateId = 5 },
-                    new City { Id = 506, Name = "ههيا", GovernorateId = 5 },
-                    new City { Id = 507, Name = "فاقوس", GovernorateId = 5 }
-                }
-            },
-            
-            // القليوبية
-            new Governorate 
-            { 
-                Id = 6, 
-                Name = "القليوبية",
-                Cities = new List<City>
-                {
-                    new City { Id = 601, Name = "بنها", GovernorateId = 6 },
-                    new City { Id = 602, Name = "شبرا الخيمة", GovernorateId = 6 },
-                    new City { Id = 603, Name = "قليوب", GovernorateId = 6 },
-                    new City { Id = 604, Name = "الخانكة", GovernorateId = 6 },
-                    new City { Id = 605, Name = "طوخ", GovernorateId = 6 },
-                    new City { Id = 606, Name = "القناطر الخيرية", GovernorateId = 6 }
-                }
-            },
-            
-            // المنوفية
-            new Governorate 
-            { 
-                Id = 7, 
-                Name = "المنوفية",
-                Cities = new List<City>
-                {
-                    new City { Id = 701, Name = "شبين الكوم", GovernorateId = 7 },
-                    new City { Id = 702, Name = "منوف", GovernorateId = 7 },
-                    new City { Id = 703, Name = "الباجور", GovernorateId = 7 },
-                    new City { Id = 704, Name = "أشمون", GovernorateId = 7 },
-                    new City { Id = 705, Name = "تلا", GovernorateId = 7 }
-                }
-            },
-            
-            // الغربية
-            new Governorate 
-            { 
-                Id = 8, 
-                Name = "الغربية",
-                Cities = new List<City>
-                {
-                    new City { Id = 801, Name = "طنطا", GovernorateId = 8 },
-                    new City { Id = 802, Name = "المحلة الكبرى", GovernorateId = 8 },
-                    new City { Id = 803, Name = "كفر الزيات", GovernorateId = 8 },
-                    new City { Id = 804, Name = "زفتى", GovernorateId = 8 },
-                    new City { Id = 805, Name = "السنطة", GovernorateId = 8 }
-                }
-            },
-            
-            // كفر الشيخ
-            new Governorate 
-            { 
-                Id = 9, 
-                Name = "كفر الشيخ",
-                Cities = new List<City>
-                {
-                    new City { Id = 901, Name = "كفر الشيخ", GovernorateId = 9 },
-                    new City { Id = 902, Name = "دسوق", GovernorateId = 9 },
-                    new City { Id = 903, Name = "فوة", GovernorateId = 9 },
-                    new City { Id = 904, Name = "مطوبس", GovernorateId = 9 },
-                    new City { Id = 905, Name = "بيلا", GovernorateId = 9 }
-                }
-            },
-            
-            // البحيرة
-            new Governorate 
-            { 
-                Id = 10, 
-                Name = "البحيرة",
-                Cities = new List<City>
-                {
-                    new City { Id = 1001, Name = "دمنهور", GovernorateId = 10 },
-                    new City { Id = 1002, Name = "كفر الدوار", GovernorateId = 10 },
-                    new City { Id = 1003, Name = "رشيد", GovernorateId = 10 },
-                    new City { Id = 1004, Name = "إدكو", GovernorateId = 10 },
-                    new City { Id = 1005, Name = "أبو المطامير", GovernorateId = 10 }
-                }
-            },
-            
-            // الإسماعيلية
-            new Governorate 
-            { 
-                Id = 11, 
-                Name = "الإسماعيلية",
-                Cities = new List<City>
-                {
-                    new City { Id = 1101, Name = "الإسماعيلية", GovernorateId = 11 },
-                    new City { Id = 1102, Name = "فايد", GovernorateId = 11 },
-                    new City { Id = 1103, Name = "القنطرة شرق", GovernorateId = 11 },
-                    new City { Id = 1104, Name = "القنطرة غرب", GovernorateId = 11 }
-                }
-            },
-            
-            // بورسعيد
-            new Governorate 
-            { 
-                Id = 12, 
-                Name = "بورسعيد",
-                Cities = new List<City>
-                {
-                    new City { Id = 1201, Name = "بورسعيد", GovernorateId = 12 },
-                    new City { Id = 1202, Name = "بورفؤاد", GovernorateId = 12 }
-                }
-            },
-            
-            // السويس
-            new Governorate 
-            { 
-                Id = 13, 
-                Name = "السويس",
-                Cities = new List<City>
-                {
-                    new City { Id = 1301, Name = "السويس", GovernorateId = 13 },
-                    new City { Id = 1302, Name = "عتاقة", GovernorateId = 13 }
-                }
-            },
-            
-            // باقي المحافظات بشكل مختصر...
-            new Governorate { Id = 14, Name = "دمياط", Cities = new List<City> { new City { Id = 1401, Name = "دمياط", GovernorateId = 14 } } },
-            new Governorate { Id = 15, Name = "بني سويف", Cities = new List<City> { new City { Id = 1501, Name = "بني سويف", GovernorateId = 15 } } },
-            new Governorate { Id = 16, Name = "الفيوم", Cities = new List<City> { new City { Id = 1601, Name = "الفيوم", GovernorateId = 16 } } },
-            new Governorate { Id = 17, Name = "المنيا", Cities = new List<City> { new City { Id = 1701, Name = "المنيا", GovernorateId = 17 } } },
-            new Governorate { Id = 18, Name = "أسيوط", Cities = new List<City> { new City { Id = 1801, Name = "أسيوط", GovernorateId = 18 } } },
-            new Governorate { Id = 19, Name = "سوهاج", Cities = new List<City> { new City { Id = 1901, Name = "سوهاج", GovernorateId = 19 } } },
-            new Governorate { Id = 20, Name = "قنا", Cities = new List<City> { new City { Id = 2001, Name = "قنا", GovernorateId = 20 } } },
-            new Governorate { Id = 21, Name = "الأقصر", Cities = new List<City> { new City { Id = 2101, Name = "الأقصر", GovernorateId = 21 } } },
-            new Governorate { Id = 22, Name = "أسوان", Cities = new List<City> { new City { Id = 2201, Name = "أسوان", GovernorateId = 22 } } },
-            new Governorate { Id = 23, Name = "البحر الأحمر", Cities = new List<City> { new City { Id = 2301, Name = "الغردقة", GovernorateId = 23 } } },
-            new Governorate { Id = 24, Name = "الوادي الجديد", Cities = new List<City> { new City { Id = 2401, Name = "الخارجة", GovernorateId = 24 } } },
-            new Governorate { Id = 25, Name = "مطروح", Cities = new List<City> { new City { Id = 2501, Name = "مرسى مطروح", GovernorateId = 25 } } },
-            new Governorate { Id = 26, Name = "شمال سيناء", Cities = new List<City> { new City { Id = 2601, Name = "العريش", GovernorateId = 26 } } },
-            new Governorate { Id = 27, Name = "جنوب سيناء", Cities = new List<City> { new City { Id = 2701, Name = "الطور", GovernorateId = 27 } } }
-        };
+            return new List<Governorate>
+            {
+                new Governorate { Id = 1, Name = "القاهرة" },
+                new Governorate { Id = 2, Name = "الإسكندرية" },
+                new Governorate { Id = 3, Name = "الجيزة" },
+                new Governorate { Id = 4, Name = "القليوبية" },
+                new Governorate { Id = 5, Name = "البحيرة" },
+                new Governorate { Id = 6, Name = "الشرقية" },
+                new Governorate { Id = 7, Name = "الدقهلية" },
+                new Governorate { Id = 8, Name = "الغربية" },
+                new Governorate { Id = 9, Name = "المنوفية" },
+                new Governorate { Id = 10, Name = "كفر الشيخ" },
+                new Governorate { Id = 11, Name = "دمياط" },
+                new Governorate { Id = 12, Name = "بورسعيد" },
+                new Governorate { Id = 13, Name = "الإسماعيلية" },
+                new Governorate { Id = 14, Name = "السويس" },
+                new Governorate { Id = 15, Name = "شمال سيناء" },
+                new Governorate { Id = 16, Name = "جنوب سيناء" },
+                new Governorate { Id = 17, Name = "مطروح" },
+                new Governorate { Id = 18, Name = "الوادي الجديد" },
+                new Governorate { Id = 19, Name = "البحر الأحمر" },
+                new Governorate { Id = 20, Name = "الفيوم" },
+                new Governorate { Id = 21, Name = "بني سويف" },
+                new Governorate { Id = 22, Name = "المنيا" },
+                new Governorate { Id = 23, Name = "أسيوط" },
+                new Governorate { Id = 24, Name = "سوهاج" },
+                new Governorate { Id = 25, Name = "قنا" },
+                new Governorate { Id = 26, Name = "الأقصر" },
+                new Governorate { Id = 27, Name = "أسوان" }
+            };
+        }
+
+        public static List<City> GetCities()
+        {
+            return new List<City>
+            {
+                // القاهرة (1)
+                new City { Id = 101, Name = "مدينة نصر", GovernorateId = 1 },
+                new City { Id = 102, Name = "مصر الجديدة", GovernorateId = 1 },
+                new City { Id = 103, Name = "المعادي", GovernorateId = 1 },
+                new City { Id = 104, Name = "حلوان", GovernorateId = 1 },
+                new City { Id = 105, Name = "شبرا", GovernorateId = 1 },
+                new City { Id = 106, Name = "وسط البلد", GovernorateId = 1 },
+                new City { Id = 107, Name = "الزمالك", GovernorateId = 1 },
+                new City { Id = 108, Name = "جاردن سيتي", GovernorateId = 1 },
+                new City { Id = 109, Name = "المهندسين", GovernorateId = 1 },
+                new City { Id = 110, Name = "الدقي", GovernorateId = 1 },
+                new City { Id = 111, Name = "العجوزة", GovernorateId = 1 },
+                new City { Id = 112, Name = "العباسية", GovernorateId = 1 },
+                new City { Id = 113, Name = "المطرية", GovernorateId = 1 },
+                new City { Id = 114, Name = "عين شمس", GovernorateId = 1 },
+                new City { Id = 115, Name = "المرج", GovernorateId = 1 },
+                new City { Id = 116, Name = "السلام", GovernorateId = 1 },
+                new City { Id = 117, Name = "حدائق القبة", GovernorateId = 1 },
+                new City { Id = 118, Name = "الزيتون", GovernorateId = 1 },
+                new City { Id = 119, Name = "الأميرية", GovernorateId = 1 },
+                new City { Id = 120, Name = "روض الفرج", GovernorateId = 1 },
+                new City { Id = 121, Name = "الساحل", GovernorateId = 1 },
+                new City { Id = 122, Name = "الشرابية", GovernorateId = 1 },
+                new City { Id = 123, Name = "الوايلي", GovernorateId = 1 },
+                new City { Id = 124, Name = "باب الشعرية", GovernorateId = 1 },
+                new City { Id = 125, Name = "الموسكي", GovernorateId = 1 },
+                new City { Id = 126, Name = "عابدين", GovernorateId = 1 },
+                new City { Id = 127, Name = "الأزبكية", GovernorateId = 1 },
+                new City { Id = 128, Name = "بولاق", GovernorateId = 1 },
+                new City { Id = 129, Name = "غرب القاهرة", GovernorateId = 1 },
+                new City { Id = 130, Name = "منشأة ناصر", GovernorateId = 1 },
+                new City { Id = 131, Name = "المقطم", GovernorateId = 1 },
+                new City { Id = 132, Name = "الخليفة", GovernorateId = 1 },
+                new City { Id = 133, Name = "السيدة زينب", GovernorateId = 1 },
+                new City { Id = 134, Name = "مصر القديمة", GovernorateId = 1 },
+                new City { Id = 135, Name = "دار السلام", GovernorateId = 1 },
+                new City { Id = 136, Name = "البساتين", GovernorateId = 1 },
+                new City { Id = 137, Name = "طرة", GovernorateId = 1 },
+                new City { Id = 138, Name = "المعصرة", GovernorateId = 1 },
+                new City { Id = 139, Name = "15 مايو", GovernorateId = 1 },
+                new City { Id = 140, Name = "التبين", GovernorateId = 1 },
+                new City { Id = 141, Name = "القاهرة الجديدة", GovernorateId = 1 },
+                new City { Id = 142, Name = "التجمع الخامس", GovernorateId = 1 },
+                new City { Id = 143, Name = "الشروق", GovernorateId = 1 },
+                new City { Id = 144, Name = "بدر", GovernorateId = 1 },
+                new City { Id = 145, Name = "العبور", GovernorateId = 1 },
+
+                // الإسكندرية (2)
+                new City { Id = 201, Name = "وسط الإسكندرية", GovernorateId = 2 },
+                new City { Id = 202, Name = "محرم بك", GovernorateId = 2 },
+                new City { Id = 203, Name = "سموحة", GovernorateId = 2 },
+                new City { Id = 204, Name = "سبورتنج", GovernorateId = 2 },
+                new City { Id = 205, Name = "ستانلي", GovernorateId = 2 },
+                new City { Id = 206, Name = "جليم", GovernorateId = 2 },
+                new City { Id = 207, Name = "سان ستيفانو", GovernorateId = 2 },
+                new City { Id = 208, Name = "المنتزه", GovernorateId = 2 },
+                new City { Id = 209, Name = "العصافرة", GovernorateId = 2 },
+                new City { Id = 210, Name = "المندرة", GovernorateId = 2 },
+                new City { Id = 211, Name = "أبوقير", GovernorateId = 2 },
+                new City { Id = 212, Name = "سيدي بشر", GovernorateId = 2 },
+                new City { Id = 213, Name = "ميامي", GovernorateId = 2 },
+                new City { Id = 214, Name = "العجمي", GovernorateId = 2 },
+                new City { Id = 215, Name = "الدخيلة", GovernorateId = 2 },
+                new City { Id = 216, Name = "برج العرب", GovernorateId = 2 },
+                new City { Id = 217, Name = "العامرية", GovernorateId = 2 },
+                new City { Id = 218, Name = "كرموز", GovernorateId = 2 },
+                new City { Id = 219, Name = "اللبان", GovernorateId = 2 },
+                new City { Id = 220, Name = "المنشية", GovernorateId = 2 },
+                new City { Id = 221, Name = "بحري", GovernorateId = 2 },
+                new City { Id = 222, Name = "الأنفوشي", GovernorateId = 2 },
+                new City { Id = 223, Name = "رأس التين", GovernorateId = 2 },
+                new City { Id = 224, Name = "السيوف", GovernorateId = 2 },
+                new City { Id = 225, Name = "الرمل", GovernorateId = 2 },
+                new City { Id = 226, Name = "سيدي جابر", GovernorateId = 2 },
+
+                // الجيزة (3)
+                new City { Id = 301, Name = "الدقي", GovernorateId = 3 },
+                new City { Id = 302, Name = "المهندسين", GovernorateId = 3 },
+                new City { Id = 303, Name = "العجوزة", GovernorateId = 3 },
+                new City { Id = 304, Name = "إمبابة", GovernorateId = 3 },
+                new City { Id = 305, Name = "الوراق", GovernorateId = 3 },
+                new City { Id = 306, Name = "بولاق الدكرور", GovernorateId = 3 },
+                new City { Id = 307, Name = "الهرم", GovernorateId = 3 },
+                new City { Id = 308, Name = "فيصل", GovernorateId = 3 },
+                new City { Id = 309, Name = "الجيزة", GovernorateId = 3 },
+                new City { Id = 310, Name = "العمرانية", GovernorateId = 3 },
+                new City { Id = 311, Name = "الطالبية", GovernorateId = 3 },
+                new City { Id = 312, Name = "كرداسة", GovernorateId = 3 },
+                new City { Id = 313, Name = "أوسيم", GovernorateId = 3 },
+                new City { Id = 314, Name = "البدرشين", GovernorateId = 3 },
+                new City { Id = 315, Name = "العياط", GovernorateId = 3 },
+                new City { Id = 316, Name = "الصف", GovernorateId = 3 },
+                new City { Id = 317, Name = "أطفيح", GovernorateId = 3 },
+                new City { Id = 318, Name = "الواحات البحرية", GovernorateId = 3 },
+                new City { Id = 319, Name = "منشأة القناطر", GovernorateId = 3 },
+                new City { Id = 320, Name = "أبو النمرس", GovernorateId = 3 },
+                new City { Id = 321, Name = "الحوامدية", GovernorateId = 3 },
+                new City { Id = 322, Name = "الشيخ زايد", GovernorateId = 3 },
+                new City { Id = 323, Name = "6 أكتوبر", GovernorateId = 3 },
+                new City { Id = 324, Name = "حدائق أكتوبر", GovernorateId = 3 },
+
+                // القليوبية (4)
+                new City { Id = 401, Name = "بنها", GovernorateId = 4 },
+                new City { Id = 402, Name = "شبرا الخيمة", GovernorateId = 4 },
+                new City { Id = 403, Name = "قليوب", GovernorateId = 4 },
+                new City { Id = 404, Name = "القناطر الخيرية", GovernorateId = 4 },
+                new City { Id = 405, Name = "الخانكة", GovernorateId = 4 },
+                new City { Id = 406, Name = "الخصوص", GovernorateId = 4 },
+                new City { Id = 407, Name = "طوخ", GovernorateId = 4 },
+                new City { Id = 408, Name = "قها", GovernorateId = 4 },
+                new City { Id = 409, Name = "شبين القناطر", GovernorateId = 4 },
+                new City { Id = 410, Name = "كفر شكر", GovernorateId = 4 },
+                new City { Id = 411, Name = "العبور", GovernorateId = 4 },
+
+                // البحيرة (5)
+                new City { Id = 501, Name = "دمنهور", GovernorateId = 5 },
+                new City { Id = 502, Name = "كفر الدوار", GovernorateId = 5 },
+                new City { Id = 503, Name = "إدكو", GovernorateId = 5 },
+                new City { Id = 504, Name = "رشيد", GovernorateId = 5 },
+                new City { Id = 505, Name = "أبو حمص", GovernorateId = 5 },
+                new City { Id = 506, Name = "شبراخيت", GovernorateId = 5 },
+                new City { Id = 507, Name = "إيتاي البارود", GovernorateId = 5 },
+                new City { Id = 508, Name = "الدلنجات", GovernorateId = 5 },
+                new City { Id = 509, Name = "كوم حمادة", GovernorateId = 5 },
+                new City { Id = 510, Name = "المحمودية", GovernorateId = 5 },
+                new City { Id = 511, Name = "الرحمانية", GovernorateId = 5 },
+                new City { Id = 512, Name = "أبو المطامير", GovernorateId = 5 },
+                new City { Id = 513, Name = "حوش عيسى", GovernorateId = 5 },
+                new City { Id = 514, Name = "وادي النطرون", GovernorateId = 5 },
+
+                // الشرقية (6)
+                new City { Id = 601, Name = "الزقازيق", GovernorateId = 6 },
+                new City { Id = 602, Name = "العاشر من رمضان", GovernorateId = 6 },
+                new City { Id = 603, Name = "بلبيس", GovernorateId = 6 },
+                new City { Id = 604, Name = "منيا القمح", GovernorateId = 6 },
+                new City { Id = 605, Name = "أبو كبير", GovernorateId = 6 },
+                new City { Id = 606, Name = "فاقوس", GovernorateId = 6 },
+                new City { Id = 607, Name = "الحسينية", GovernorateId = 6 },
+                new City { Id = 608, Name = "كفر صقر", GovernorateId = 6 },
+                new City { Id = 609, Name = "أولاد صقر", GovernorateId = 6 },
+                new City { Id = 610, Name = "ديرب نجم", GovernorateId = 6 },
+                new City { Id = 611, Name = "الإبراهيمية", GovernorateId = 6 },
+                new City { Id = 612, Name = "ههيا", GovernorateId = 6 },
+                new City { Id = 613, Name = "قرية أبو حماد", GovernorateId = 6 },
+                new City { Id = 614, Name = "مشتول السوق", GovernorateId = 6 },
+                new City { Id = 615, Name = "الصالحية الجديدة", GovernorateId = 6 },
+
+                // الدقهلية (7)
+                new City { Id = 701, Name = "المنصورة", GovernorateId = 7 },
+                new City { Id = 702, Name = "طلخا", GovernorateId = 7 },
+                new City { Id = 703, Name = "ميت غمر", GovernorateId = 7 },
+                new City { Id = 704, Name = "أجا", GovernorateId = 7 },
+                new City { Id = 705, Name = "السنبلاوين", GovernorateId = 7 },
+                new City { Id = 706, Name = "دكرنس", GovernorateId = 7 },
+                new City { Id = 707, Name = "المنزلة", GovernorateId = 7 },
+                new City { Id = 708, Name = "شربين", GovernorateId = 7 },
+                new City { Id = 709, Name = "بلقاس", GovernorateId = 7 },
+                new City { Id = 710, Name = "الستاموني", GovernorateId = 7 },
+                new City { Id = 711, Name = "جمصة", GovernorateId = 7 },
+                new City { Id = 712, Name = "ميت سلسيل", GovernorateId = 7 },
+                new City { Id = 713, Name = "بني عبيد", GovernorateId = 7 },
+                new City { Id = 714, Name = "نبروه", GovernorateId = 7 },
+                new City { Id = 715, Name = "الكردي", GovernorateId = 7 },
+                new City { Id = 716, Name = "تمي الأمديد", GovernorateId = 7 },
+                new City { Id = 717, Name = "المنصورة الجديدة", GovernorateId = 7 },
+
+                // الغربية (8)
+                new City { Id = 801, Name = "طنطا", GovernorateId = 8 },
+                new City { Id = 802, Name = "المحلة الكبرى", GovernorateId = 8 },
+                new City { Id = 803, Name = "كفر الزيات", GovernorateId = 8 },
+                new City { Id = 804, Name = "زفتى", GovernorateId = 8 },
+                new City { Id = 805, Name = "السنطة", GovernorateId = 8 },
+                new City { Id = 806, Name = "بسيون", GovernorateId = 8 },
+                new City { Id = 807, Name = "قطور", GovernorateId = 8 },
+                new City { Id = 808, Name = "سمنود", GovernorateId = 8 },
+                new City { Id = 809, Name = "ديرب نجم", GovernorateId = 8 },
+
+                // المنوفية (9)
+                new City { Id = 901, Name = "شبين الكوم", GovernorateId = 9 },
+                new City { Id = 902, Name = "منوف", GovernorateId = 9 },
+                new City { Id = 903, Name = "أشمون", GovernorateId = 9 },
+                new City { Id = 904, Name = "الباجور", GovernorateId = 9 },
+                new City { Id = 905, Name = "قويسنا", GovernorateId = 9 },
+                new City { Id = 906, Name = "بركة السبع", GovernorateId = 9 },
+                new City { Id = 907, Name = "تلا", GovernorateId = 9 },
+                new City { Id = 908, Name = "الشهداء", GovernorateId = 9 },
+                new City { Id = 909, Name = "السادات", GovernorateId = 9 },
+                new City { Id = 910, Name = "سرس الليان", GovernorateId = 9 },
+
+                // كفر الشيخ (10)
+                new City { Id = 1001, Name = "كفر الشيخ", GovernorateId = 10 },
+                new City { Id = 1002, Name = "دسوق", GovernorateId = 10 },
+                new City { Id = 1003, Name = "فوه", GovernorateId = 10 },
+                new City { Id = 1004, Name = "بلطيم", GovernorateId = 10 },
+                new City { Id = 1005, Name = "سيدي سالم", GovernorateId = 10 },
+                new City { Id = 1006, Name = "الرياض", GovernorateId = 10 },
+                new City { Id = 1007, Name = "الحامول", GovernorateId = 10 },
+                new City { Id = 1008, Name = "مطوبس", GovernorateId = 10 },
+                new City { Id = 1009, Name = "البرلس", GovernorateId = 10 },
+                new City { Id = 1010, Name = "قلين", GovernorateId = 10 },
+
+                // دمياط (11)
+                new City { Id = 1101, Name = "دمياط", GovernorateId = 11 },
+                new City { Id = 1102, Name = "رأس البر", GovernorateId = 11 },
+                new City { Id = 1103, Name = "عزبة البرج", GovernorateId = 11 },
+                new City { Id = 1104, Name = "الزرقا", GovernorateId = 11 },
+                new City { Id = 1105, Name = "فارسكور", GovernorateId = 11 },
+                new City { Id = 1106, Name = "كفر سعد", GovernorateId = 11 },
+                new City { Id = 1107, Name = "كفر البطيخ", GovernorateId = 11 },
+                new City { Id = 1108, Name = "دمياط الجديدة", GovernorateId = 11 },
+
+                // بورسعيد (12)
+                new City { Id = 1201, Name = "بورسعيد", GovernorateId = 12 },
+                new City { Id = 1202, Name = "بورفؤاد", GovernorateId = 12 },
+                new City { Id = 1203, Name = "المناخ", GovernorateId = 12 },
+                new City { Id = 1204, Name = "العرب", GovernorateId = 12 },
+                new City { Id = 1205, Name = "الضواحي", GovernorateId = 12 },
+                new City { Id = 1206, Name = "الزهور", GovernorateId = 12 },
+                new City { Id = 1207, Name = "جنوب بورسعيد", GovernorateId = 12 },
+
+                // الإسماعيلية (13)
+                new City { Id = 1301, Name = "الإسماعيلية", GovernorateId = 13 },
+                new City { Id = 1302, Name = "فايد", GovernorateId = 13 },
+                new City { Id = 1303, Name = "القنطرة شرق", GovernorateId = 13 },
+                new City { Id = 1304, Name = "القنطرة غرب", GovernorateId = 13 },
+                new City { Id = 1305, Name = "أبو صوير", GovernorateId = 13 },
+                new City { Id = 1306, Name = "التل الكبير", GovernorateId = 13 },
+                new City { Id = 1307, Name = "نفيشة", GovernorateId = 13 },
+                new City { Id = 1308, Name = "القصاصين", GovernorateId = 13 },
+
+                // السويس (14)
+                new City { Id = 1401, Name = "السويس", GovernorateId = 14 },
+                new City { Id = 1402, Name = "الأربعين", GovernorateId = 14 },
+                new City { Id = 1403, Name = "عتاقة", GovernorateId = 14 },
+                new City { Id = 1404, Name = "الجناين", GovernorateId = 14 },
+                new City { Id = 1405, Name = "فيصل", GovernorateId = 14 },
+
+                // شمال سيناء (15)
+                new City { Id = 1501, Name = "العريش", GovernorateId = 15 },
+                new City { Id = 1502, Name = "الشيخ زويد", GovernorateId = 15 },
+                new City { Id = 1503, Name = "رفح", GovernorateId = 15 },
+                new City { Id = 1504, Name = "بئر العبد", GovernorateId = 15 },
+                new City { Id = 1505, Name = "الحسنة", GovernorateId = 15 },
+                new City { Id = 1506, Name = "نخل", GovernorateId = 15 },
+
+                // جنوب سيناء (16)
+                new City { Id = 1601, Name = "شرم الشيخ", GovernorateId = 16 },
+                new City { Id = 1602, Name = "دهب", GovernorateId = 16 },
+                new City { Id = 1603, Name = "نويبع", GovernorateId = 16 },
+                new City { Id = 1604, Name = "الطور", GovernorateId = 16 },
+                new City { Id = 1605, Name = "سانت كاترين", GovernorateId = 16 },
+                new City { Id = 1606, Name = "طابا", GovernorateId = 16 },
+                new City { Id = 1607, Name = "رأس سدر", GovernorateId = 16 },
+                new City { Id = 1608, Name = "أبو رديس", GovernorateId = 16 },
+                new City { Id = 1609, Name = "أبو زنيمة", GovernorateId = 16 },
+
+                // مطروح (17)
+                new City { Id = 1701, Name = "مرسى مطروح", GovernorateId = 17 },
+                new City { Id = 1702, Name = "السلوم", GovernorateId = 17 },
+                new City { Id = 1703, Name = "سيدي براني", GovernorateId = 17 },
+                new City { Id = 1704, Name = "العلمين", GovernorateId = 17 },
+                new City { Id = 1705, Name = "الضبعة", GovernorateId = 17 },
+                new City { Id = 1706, Name = "النجيلة", GovernorateId = 17 },
+                new City { Id = 1707, Name = "سيوة", GovernorateId = 17 },
+                new City { Id = 1708, Name = "مارينا", GovernorateId = 17 },
+                new City { Id = 1709, Name = "رأس الحكمة", GovernorateId = 17 },
+
+                // الوادي الجديد (18)
+                new City { Id = 1801, Name = "الخارجة", GovernorateId = 18 },
+                new City { Id = 1802, Name = "الداخلة", GovernorateId = 18 },
+                new City { Id = 1803, Name = "الفرافرة", GovernorateId = 18 },
+                new City { Id = 1804, Name = "باريس", GovernorateId = 18 },
+                new City { Id = 1805, Name = "بلاط", GovernorateId = 18 },
+
+                // البحر الأحمر (19)
+                new City { Id = 1901, Name = "الغردقة", GovernorateId = 19 },
+                new City { Id = 1902, Name = "سفاجا", GovernorateId = 19 },
+                new City { Id = 1903, Name = "مرسى علم", GovernorateId = 19 },
+                new City { Id = 1904, Name = "القصير", GovernorateId = 19 },
+                new City { Id = 1905, Name = "رأس غارب", GovernorateId = 19 },
+                new City { Id = 1906, Name = "حلايب", GovernorateId = 19 },
+                new City { Id = 1907, Name = "الشلاتين", GovernorateId = 19 },
+
+                // الفيوم (20)
+                new City { Id = 2001, Name = "الفيوم", GovernorateId = 20 },
+                new City { Id = 2002, Name = "إطسا", GovernorateId = 20 },
+                new City { Id = 2003, Name = "سنورس", GovernorateId = 20 },
+                new City { Id = 2004, Name = "طامية", GovernorateId = 20 },
+                new City { Id = 2005, Name = "إبشواي", GovernorateId = 20 },
+                new City { Id = 2006, Name = "يوسف الصديق", GovernorateId = 20 },
+                new City { Id = 2007, Name = "الفيوم الجديدة", GovernorateId = 20 },
+
+                // بني سويف (21)
+                new City { Id = 2101, Name = "بني سويف", GovernorateId = 21 },
+                new City { Id = 2102, Name = "الواسطى", GovernorateId = 21 },
+                new City { Id = 2103, Name = "ناصر", GovernorateId = 21 },
+                new City { Id = 2104, Name = "إهناسيا", GovernorateId = 21 },
+                new City { Id = 2105, Name = "ببا", GovernorateId = 21 },
+                new City { Id = 2106, Name = "سمسطا", GovernorateId = 21 },
+                new City { Id = 2107, Name = "الفشن", GovernorateId = 21 },
+                new City { Id = 2108, Name = "بني سويف الجديدة", GovernorateId = 21 },
+
+                // المنيا (22)
+                new City { Id = 2201, Name = "المنيا", GovernorateId = 22 },
+                new City { Id = 2202, Name = "ملوي", GovernorateId = 22 },
+                new City { Id = 2203, Name = "سمالوط", GovernorateId = 22 },
+                new City { Id = 2204, Name = "بني مزار", GovernorateId = 22 },
+                new City { Id = 2205, Name = "مطاي", GovernorateId = 22 },
+                new City { Id = 2206, Name = "مغاغة", GovernorateId = 22 },
+                new City { Id = 2207, Name = "أبو قرقاص", GovernorateId = 22 },
+                new City { Id = 2208, Name = "دير مواس", GovernorateId = 22 },
+                new City { Id = 2209, Name = "العدوة", GovernorateId = 22 },
+                new City { Id = 2210, Name = "المنيا الجديدة", GovernorateId = 22 },
+
+                // أسيوط (23)
+                new City { Id = 2301, Name = "أسيوط", GovernorateId = 23 },
+                new City { Id = 2302, Name = "منفلوط", GovernorateId = 23 },
+                new City { Id = 2303, Name = "أبنوب", GovernorateId = 23 },
+                new City { Id = 2304, Name = "أبو تيج", GovernorateId = 23 },
+                new City { Id = 2305, Name = "البداري", GovernorateId = 23 },
+                new City { Id = 2306, Name = "ساحل سليم", GovernorateId = 23 },
+                new City { Id = 2307, Name = "صدفا", GovernorateId = 23 },
+                new City { Id = 2308, Name = "الغنايم", GovernorateId = 23 },
+                new City { Id = 2309, Name = "الفتح", GovernorateId = 23 },
+                new City { Id = 2310, Name = "ديروط", GovernorateId = 23 },
+                new City { Id = 2311, Name = "القوصية", GovernorateId = 23 },
+                new City { Id = 2312, Name = "أسيوط الجديدة", GovernorateId = 23 },
+
+                // سوهاج (24)
+                new City { Id = 2401, Name = "سوهاج", GovernorateId = 24 },
+                new City { Id = 2402, Name = "أخميم", GovernorateId = 24 },
+                new City { Id = 2403, Name = "جرجا", GovernorateId = 24 },
+                new City { Id = 2404, Name = "البلينا", GovernorateId = 24 },
+                new City { Id = 2405, Name = "طهطا", GovernorateId = 24 },
+                new City { Id = 2406, Name = "المراغة", GovernorateId = 24 },
+                new City { Id = 2407, Name = "ساقلتة", GovernorateId = 24 },
+                new City { Id = 2408, Name = "المنشأة", GovernorateId = 24 },
+                new City { Id = 2409, Name = "جهينة", GovernorateId = 24 },
+                new City { Id = 2410, Name = "دار السلام", GovernorateId = 24 },
+                new City { Id = 2411, Name = "طما", GovernorateId = 24 },
+                new City { Id = 2412, Name = "سوهاج الجديدة", GovernorateId = 24 },
+                new City { Id = 2413, Name = "العسيرات", GovernorateId = 24 },
+
+                // قنا (25)
+                new City { Id = 2501, Name = "قنا", GovernorateId = 25 },
+                new City { Id = 2502, Name = "نجع حمادي", GovernorateId = 25 },
+                new City { Id = 2503, Name = "دشنا", GovernorateId = 25 },
+                new City { Id = 2504, Name = "قوص", GovernorateId = 25 },
+                new City { Id = 2505, Name = "أبو تشت", GovernorateId = 25 },
+                new City { Id = 2506, Name = "فرشوط", GovernorateId = 25 },
+                new City { Id = 2507, Name = "نقادة", GovernorateId = 25 },
+                new City { Id = 2508, Name = "الوقف", GovernorateId = 25 },
+                new City { Id = 2509, Name = "قفط", GovernorateId = 25 },
+                new City { Id = 2510, Name = "قنا الجديدة", GovernorateId = 25 },
+
+                // الأقصر (26)
+                new City { Id = 2601, Name = "الأقصر", GovernorateId = 26 },
+                new City { Id = 2602, Name = "إسنا", GovernorateId = 26 },
+                new City { Id = 2603, Name = "أرمنت", GovernorateId = 26 },
+                new City { Id = 2604, Name = "القرنة", GovernorateId = 26 },
+                new City { Id = 2605, Name = "الطود", GovernorateId = 26 },
+                new City { Id = 2606, Name = "طيبة الجديدة", GovernorateId = 26 },
+
+                // أسوان (27)
+                new City { Id = 2701, Name = "أسوان", GovernorateId = 27 },
+                new City { Id = 2702, Name = "إدفو", GovernorateId = 27 },
+                new City { Id = 2703, Name = "كوم أمبو", GovernorateId = 27 },
+                new City { Id = 2704, Name = "دراو", GovernorateId = 27 },
+                new City { Id = 2705, Name = "نصر النوبة", GovernorateId = 27 },
+                new City { Id = 2706, Name = "أبو سمبل", GovernorateId = 27 },
+                new City { Id = 2707, Name = "أسوان الجديدة", GovernorateId = 27 }
+            };
+        }
     }
 }

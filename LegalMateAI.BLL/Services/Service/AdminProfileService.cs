@@ -1,3 +1,4 @@
+// LegalMateAI.BLL/Services/Service/AdminProfileService.cs
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -5,9 +6,9 @@ using LegalMateAI.Domain.Enums;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.BLL.Services.IService;
+using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
-using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.Extensions.Logging;
 
 namespace LegalMateAI.BLL.Services.Service
@@ -38,9 +39,25 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var admin = await _context.Admins
                 .Include(a => a.Profile)
+                    .ThenInclude(p => p!.Governorate)
+                .Include(a => a.Profile)
+                    .ThenInclude(p => p!.City)
                 .FirstOrDefaultAsync(a => a.Id == adminId);
 
             if (admin == null) return null;
+
+            var profile = admin.Profile;
+            var monthsActive = admin.CreatedAt != DateTime.MinValue
+                ? (int)((DateTime.UtcNow - admin.CreatedAt).TotalDays / 30)
+                : 0;
+
+            // فك تشفير البيانات
+            string? decryptedNationalId = null;
+            if (!string.IsNullOrEmpty(profile?.NationalId))
+            {
+                try { decryptedNationalId = _encryption.Decrypt(profile.NationalId); }
+                catch { decryptedNationalId = "غير متاح"; }
+            }
 
             string? decryptedPhone = null;
             if (!string.IsNullOrEmpty(admin.PhoneNumber))
@@ -49,10 +66,12 @@ namespace LegalMateAI.BLL.Services.Service
                 catch { decryptedPhone = "غير متاح"; }
             }
 
-            var profile = admin.Profile;
-            var monthsActive = admin.CreatedAt != DateTime.MinValue
-                ? (int)((DateTime.UtcNow - admin.CreatedAt).TotalDays / 30)
-                : 0;
+            string? decryptedAltPhone = null;
+            if (!string.IsNullOrEmpty(profile?.AlternativePhone))
+            {
+                try { decryptedAltPhone = _encryption.Decrypt(profile.AlternativePhone); }
+                catch { decryptedAltPhone = "غير متاح"; }
+            }
 
             return new AdminProfileDto
             {
@@ -62,37 +81,31 @@ namespace LegalMateAI.BLL.Services.Service
                 LastName = profile?.LastName,
                 Email = admin.Email,
                 PhoneNumber = decryptedPhone,
-                AlternativePhone = profile?.AlternativePhone,
+                AlternativePhone = decryptedAltPhone,
                 ProfilePicture = profile?.ProfilePictureUrl,
                 JobTitle = profile?.JobTitle,
                 Department = profile?.Department,
-                AccessLevel = profile?.AccessLevel,
                 DateOfBirth = profile?.DateOfBirth?.ToString("yyyy-MM-dd"),
-                Gender = profile?.Gender,
                 Nationality = profile?.Nationality,
-                NationalId = profile?.NationalId,
-                EmployeeId = profile?.EmployeeId,
-                Governorate = profile?.Governorate,
-                City = profile?.City,
-                District = profile?.District,
+                NationalId = decryptedNationalId,
+                Governorate = profile?.Governorate?.Name,
+                City = profile?.City?.Name,
                 Address = profile?.Address,
                 CreatedAt = admin.CreatedAt,
                 LastLoginAt = admin.LastLoginAt,
                 JoinDateFormatted = profile?.JoinDate?.ToString("MMMM yyyy", new System.Globalization.CultureInfo("ar-EG")),
-                TotalMonthsActive = monthsActive > 0 ? monthsActive : 0,
+                TotalMonthsActive = monthsActive,
                 Status = "نشط",
                 IsOnline = admin.LastLoginAt?.Date == DateTime.UtcNow.Date,
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),
                 TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer),
-                PendingVerifications = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
-                VerifiedToday = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerifiedAt != null && l.VerifiedAt.Value.Date == DateTime.UtcNow.Date),
+                PendingVerifications = await _context.LawyerProfiles.CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
+                VerifiedToday = await _context.LawyerProfiles.CountAsync(l => l.VerifiedAt != null && l.VerifiedAt.Value.Date == DateTime.UtcNow.Date),
                 TotalVerifiedLawyers = profile?.TotalVerifiedLawyers ?? 0,
                 TotalRejectedLawyers = profile?.TotalRejectedLawyers ?? 0,
-                CanManageUsers = profile?.AccessLevel == "Super Admin",
+                CanManageUsers = true,
                 CanVerifyLawyers = true,
-                CanManageSystem = profile?.AccessLevel == "Super Admin",
+                CanManageSystem = true,
                 CanExportData = true
             };
         }
@@ -108,8 +121,11 @@ namespace LegalMateAI.BLL.Services.Service
             if (!string.IsNullOrEmpty(request.PhoneNumber))
             {
                 admin.PhoneNumber = _encryption.Encrypt(request.PhoneNumber);
+                if (admin.Profile != null)
+                {
+                    admin.Profile.LastActiveAt = DateTime.UtcNow;
+                }
                 await _context.SaveChangesAsync();
-                return true;
             }
 
             return true;
@@ -181,6 +197,12 @@ namespace LegalMateAI.BLL.Services.Service
             var admin = await _context.Admins.Include(a => a.Profile).FirstOrDefaultAsync(a => a.Id == adminId);
             if (admin == null) return null;
 
+            if (admin.Profile != null)
+            {
+                admin.Profile.LastActiveAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
             var pendingLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                 .Where(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null &&
@@ -189,23 +211,15 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(10)
                 .Select(u => new PendingLawyerDto
                 {
-                    UserId = u.UserID, FirstName = u.FirstName, LastName = u.LastName,
-                    Email = u.Email, Phone = u.Phone ?? "",
+                    UserId = u.UserID,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    Phone = u.Phone ?? "",
                     LicenseNumber = u.LawyerProfile!.LicenseNumber ?? "",
                     BarAssociation = u.LawyerProfile.BarAssociation ?? "",
                     YearsOfExperience = u.LawyerProfile.YearsOfExperience ?? 0,
                     RegisteredAt = u.CreatedAt
-                }).ToListAsync();
-
-            var recentActivity = await _context.AdminLogs
-                .Include(l => l.Admin)
-                .Where(l => l.AdminId == adminId)
-                .OrderByDescending(l => l.Timestamp)
-                .Take(10)
-                .Select(l => new AdminLogDto
-                {
-                    Id = l.Id, AdminName = l.Admin != null ? l.Admin.FullName : admin.FullName,
-                    Action = l.Action, TargetType = l.TargetType, TargetId = l.TargetId, Timestamp = l.Timestamp
                 }).ToListAsync();
 
             return new AdminDashboardDto
@@ -215,11 +229,18 @@ namespace LegalMateAI.BLL.Services.Service
                 PendingVerifications = pendingLawyers.Count,
                 VerifiedToday = await _context.LawyerProfiles.CountAsync(l => l.VerifiedAt != null && l.VerifiedAt.Value.Date == DateTime.UtcNow.Date),
                 PendingLawyers = pendingLawyers,
-                RecentActivity = recentActivity,
+                RecentActivity = new(),
                 AdminName = admin.FullName,
                 ProfilePicture = admin.Profile?.ProfilePictureUrl,
                 JobTitle = admin.Profile?.JobTitle ?? "مدير النظام"
             };
+        }
+
+        private string? Decrypt(string? encrypted)
+        {
+            if (string.IsNullOrEmpty(encrypted)) return null;
+            try { return _encryption.Decrypt(encrypted); }
+            catch { return "غير متاح"; }
         }
     }
 }

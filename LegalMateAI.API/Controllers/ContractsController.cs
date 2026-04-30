@@ -23,211 +23,86 @@ namespace LegalMateAI.API.Controllers
             _logger = logger;
         }
 
-        private Guid GetUserId()
-        {
-            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            return Guid.Parse(claim!.Value);
-        }
-
+        private Guid GetUserId() => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         private bool IsLawyer() => User.IsInRole("Lawyer");
 
-        // ========== القوالب (للقراءة فقط) ==========
-
-        /// <summary>
-        /// الحصول على جميع القوالب المتاحة
-        /// </summary>
         [AllowAnonymous]
         [HttpGet("templates")]
-        [ProducesResponseType(typeof(List<ContractTemplateResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllTemplates([FromQuery] ContractType? type = null, [FromQuery] string? search = null)
         {
-            var templates = await _contractService.GetContractTemplatesAsync(type, search);
-            return Ok(templates);
+            return Ok(await _contractService.GetContractTemplatesAsync(type, search));
         }
 
-        /// <summary>
-        /// الحصول على قالب محدد
-        /// </summary>
         [AllowAnonymous]
         [HttpGet("templates/{id}")]
-        [ProducesResponseType(typeof(ContractTemplateResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplateById(Guid id)
         {
             var template = await _contractService.GetTemplateByIdAsync(id);
-            if (template == null)
-                return NotFound(new { message = "القالب غير موجود" });
-            return Ok(template);
+            return template == null ? NotFound(new { message = "القالب غير موجود" }) : Ok(template);
         }
 
-        /// <summary>
-        /// تحميل ملف القالب
-        /// </summary>
-        [AllowAnonymous]
-        [HttpGet("templates/{id}/download")]
-        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DownloadTemplate(Guid id)
-        {
-            var template = await _contractService.GetTemplateByIdAsync(id);
-            if (template == null)
-                return NotFound(new { message = "القالب غير موجود" });
-
-            var fileBytes = await _contractService.DownloadTemplateAsync(id);
-            if (fileBytes == null)
-                return NotFound(new { message = "الملف غير موجود" });
-
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}.docx");
-        }
-
-        // ========== عقود المستخدم ==========
-
-        /// <summary>
-        /// توليد عقد من قالب
-        /// </summary>
         [HttpPost("generate")]
-        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GenerateContract([FromBody] GenerateContractRequest request)
         {
-            var userId = GetUserId();
-            
-            var result = await _contractService.GenerateContractFromTemplateAsync(userId, request);
-            if (result == null)
-                return BadRequest(new { message = "فشل توليد العقد" });
+            var template = await _contractService.GetTemplateByIdAsync(request.TemplateId);
+            if (template == null) return BadRequest(new { message = "القالب غير موجود. يجب اختيار قالب صحيح." });
 
-            _logger.LogInformation($"Contract generated: {result.Id}");
+            var result = await _contractService.GenerateContractFromTemplateAsync(GetUserId(), request);
+            if (result == null) return BadRequest(new { message = "فشل توليد العقد" });
+
             return Ok(result);
         }
 
-        /// <summary>
-        /// الحصول على عقود المستخدم
-        /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(List<ContractResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyContracts([FromQuery] string? search = null, [FromQuery] ContractStatus? status = null)
         {
             var userId = GetUserId();
-
-            if (IsLawyer())
-            {
-                var contracts = await _contractService.GetLawyerContractsAsync(userId, status?.ToString(), search);
-                return Ok(contracts);
-            }
-            else
-            {
-                var contracts = await _contractService.GetUserContractsAsync(userId, status?.ToString(), search);
-                return Ok(contracts);
-            }
+            return Ok(IsLawyer() ? await _contractService.GetLawyerContractsAsync(userId, status?.ToString(), search) : await _contractService.GetUserContractsAsync(userId, status?.ToString(), search));
         }
 
-        /// <summary>
-        /// البحث في العقود
-        /// </summary>
         [HttpGet("search")]
-        [ProducesResponseType(typeof(List<ContractResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchContracts([FromQuery] string q)
         {
-            var userId = GetUserId();
-            
-            if (string.IsNullOrWhiteSpace(q))
-                return BadRequest(new { message = "يرجى إدخال كلمة البحث" });
-
-            var contracts = await _contractService.SearchContractsAsync(userId, q, IsLawyer());
-            return Ok(contracts);
+            if (string.IsNullOrWhiteSpace(q)) return BadRequest(new { message = "يرجى إدخال كلمة البحث" });
+            return Ok(await _contractService.SearchContractsAsync(GetUserId(), q, IsLawyer()));
         }
 
-        /// <summary>
-        /// الحصول على عقد محدد
-        /// </summary>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetContractById(Guid id)
         {
-            var userId = GetUserId();
-            var isLawyer = IsLawyer();
-            var contract = await _contractService.GetContractByIdAsync(userId, id, isLawyer);
-
-            if (contract == null)
-                return NotFound(new { message = "العقد غير موجود" });
-
-            return Ok(contract);
+            var contract = await _contractService.GetContractByIdAsync(GetUserId(), id, IsLawyer());
+            return contract == null ? NotFound(new { message = "العقد غير موجود" }) : Ok(contract);
         }
 
-        /// <summary>
-        /// تحديث بيانات العقد
-        /// </summary>
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateContract(Guid id, [FromBody] UpdateContractDto request)
         {
-            var userId = GetUserId();
-            var result = await _contractService.UpdateContractAsync(userId, id, request);
-
-            if (result == null)
-                return NotFound(new { message = "العقد غير موجود أو لا يمكن تعديله" });
-
-            return Ok(result);
+            var result = await _contractService.UpdateContractAsync(GetUserId(), id, request);
+            return result == null ? NotFound(new { message = "العقد غير موجود" }) : Ok(result);
         }
 
-        /// <summary>
-        /// تحديث حالة العقد
-        /// </summary>
         [HttpPatch("{id}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateContractStatus(Guid id, [FromBody] UpdateContractStatusDto request)
         {
-            var userId = GetUserId();
-            var isLawyer = IsLawyer();
-            var result = await _contractService.UpdateContractStatusAsync(userId, id, request, isLawyer);
-
-            if (!result)
-                return NotFound(new { message = "العقد غير موجود أو لا يمكن تحديث حالته" });
-
-            return Ok(new { message = "تم تحديث حالة العقد بنجاح" });
+            var result = await _contractService.UpdateContractStatusAsync(GetUserId(), id, request, IsLawyer());
+            return !result ? NotFound(new { message = "العقد غير موجود" }) : Ok(new { message = "تم تحديث حالة العقد بنجاح" });
         }
 
-        /// <summary>
-        /// حذف عقد
-        /// </summary>
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteContract(Guid id)
         {
-            var userId = GetUserId();
-            var result = await _contractService.DeleteContractAsync(userId, id);
-
-            if (!result)
-                return NotFound(new { message = "العقد غير موجود أو لا يمكن حذفه" });
-
-            return Ok(new { message = "تم حذف العقد بنجاح" });
+            var result = await _contractService.DeleteContractAsync(GetUserId(), id);
+            return !result ? NotFound(new { message = "العقد غير موجود" }) : Ok(new { message = "تم حذف العقد بنجاح" });
         }
 
-        /// <summary>
-        /// تحميل العقد
-        /// </summary>
         [HttpGet("{id}/download")]
-        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DownloadContract(Guid id)
         {
-            var userId = GetUserId();
-            var fileBytes = await _contractService.DownloadContractAsync(userId, id);
+            var fileBytes = await _contractService.DownloadContractAsync(GetUserId(), id);
+            if (fileBytes == null) return NotFound(new { message = "العقد غير موجود" });
 
-            if (fileBytes == null)
-                return NotFound(new { message = "العقد غير موجود" });
-
-            var contract = await _contractService.GetContractByIdAsync(userId, id, IsLawyer());
-            var fileName = contract?.Title ?? "contract";
-            
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{fileName}.docx");
+            var contract = await _contractService.GetContractByIdAsync(GetUserId(), id, IsLawyer());
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{contract?.Title ?? "contract"}.docx");
         }
     }
-
-    // ✅ تم حذف تعريف GenerateContractRequest من هنا
-    // لأنه موجود في IContractService
 }

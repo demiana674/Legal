@@ -19,34 +19,24 @@ namespace LegalMateAI.BLL.Services.Service
         private readonly double _temperature;
         private readonly ILogger<GeminiService> _logger;
 
-        public GeminiService(IConfiguration configuration, ILogger<GeminiService> logger)
+        public GeminiService(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiService> logger)
         {
+            _httpClient = httpClient;
             _apiKey = configuration["Gemini:ApiKey"] 
-                ?? throw new ArgumentNullException("Gemini:ApiKey مطلوب في appsettings.json");
-            
-            _model = configuration["Gemini:Model"] ?? "gemini-pro";
-            
-            _maxTokens = configuration.GetValue<int>("Gemini:MaxTokens", 2000);
+                ?? throw new ArgumentNullException("Gemini:ApiKey is required");
+
+            _model = configuration["Gemini:Model"] ?? "gemini-1.5-flash";
+            _maxTokens = configuration.GetValue<int>("Gemini:MaxTokens", 4096);
             _temperature = configuration.GetValue<double>("Gemini:Temperature", 0.7);
             _logger = logger;
-
-            _httpClient = new HttpClient
-            {
-                BaseAddress = new Uri("https://generativelanguage.googleapis.com/"),
-                Timeout = TimeSpan.FromSeconds(90)
-            };
         }
 
         private string GetApiUrl()
         {
-            if (_model == "gemini-pro")
-            {
-                return $"v1/models/{_model}:generateContent?key={_apiKey}";
-            }
             return $"v1beta/models/{_model}:generateContent?key={_apiKey}";
         }
 
-        private async Task<string?> CallGeminiAsync(string prompt, int maxTokens = 0)
+        private async Task<string?> CallGeminiAsync(string prompt, int maxTokens = 0, bool isJsonResponse = false)
         {
             try
             {
@@ -58,10 +48,7 @@ namespace LegalMateAI.BLL.Services.Service
                     {
                         new
                         {
-                            parts = new[]
-                            {
-                                new { text = prompt }
-                            }
+                            parts = new[] { new { text = prompt } }
                         }
                     },
                     generationConfig = new
@@ -69,14 +56,11 @@ namespace LegalMateAI.BLL.Services.Service
                         maxOutputTokens = tokens,
                         temperature = _temperature,
                         topP = 0.95,
-                        topK = 40
+                        responseMimeType = isJsonResponse ? "application/json" : "text/plain"
                     }
                 };
 
-                var jsonContent = JsonSerializer.Serialize(requestBody);
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                
-                var response = await _httpClient.PostAsync(GetApiUrl(), httpContent);
+                var response = await _httpClient.PostAsJsonAsync(GetApiUrl(), requestBody);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -85,12 +69,9 @@ namespace LegalMateAI.BLL.Services.Service
                     return null;
                 }
 
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(jsonResponse);
-                var root = doc.RootElement;
-
-                if (root.TryGetProperty("candidates", out var candidates) && 
-                    candidates.GetArrayLength() > 0)
+                var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>();
+                
+                if (jsonResponse.TryGetProperty("candidates", out var candidates) && candidates.GetArrayLength() > 0)
                 {
                     var candidate = candidates[0];
                     if (candidate.TryGetProperty("content", out var content) &&
@@ -112,12 +93,8 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<bool> HealthCheckAsync()
         {
-            try
-            {
-                var result = await CallGeminiAsync("Say hello", 10);
-                return !string.IsNullOrEmpty(result);
-            }
-            catch { return false; }
+            var result = await CallGeminiAsync("Say hello", 10);
+            return !string.IsNullOrEmpty(result);
         }
 
         public async Task<AIAnalysisResult> AnalyzeDocumentAsync(Document document, byte[] fileContent)
@@ -126,36 +103,27 @@ namespace LegalMateAI.BLL.Services.Service
 
             if (string.IsNullOrEmpty(text) || text.Length < 30)
             {
-                return new AIAnalysisResult
-                {
-                    Summary = "النص قصير جداً للتحليل",
-                    IsFallback = true
-                };
+                return new AIAnalysisResult { Summary = "النص قصير جداً أو تعذر استخراجه", IsFallback = true };
             }
 
-            text = text.Length > 8000 ? text[..8000] : text;
+            text = text.Length > 15000 ? text[..15000] : text;
 
-            var prompt = $@"أنت محلل قانوني خبير. حلل المستند التالي وأعطني JSON:
+            var prompt = $@"أنت محلل قانوني مصري خبير. حلل المستند التالي بدقة واستخرج النتائج بصيغة JSON فقط:
 
 {{
-  ""summary"": ""ملخص 3-5 جمل"",
-  ""risks"": [{{""type"": ""نوع"", ""description"": ""وصف"", ""level"": ""High/Medium/Low"", ""suggestion"": ""اقتراح""}}],
-  ""clauses"": [{{""title"": ""عنوان"", ""text"": ""نص"", ""importance"": ""High/Medium/Low""}}]
+  ""summary"": ""ملخص شامل"",
+  ""risks"": [{{""type"": ""نوع الخطر"", ""description"": ""وصف دقيق"", ""level"": ""High/Medium/Low"", ""suggestion"": ""كيفية المعالجة""}}],
+  ""clauses"": [{{""title"": ""البند"", ""text"": ""محتواه"", ""importance"": ""High/Medium/Low""}}]
 }}
 
 المستند:
 {text}";
 
-            var result = await CallGeminiAsync(prompt, _maxTokens);
+            var result = await CallGeminiAsync(prompt, _maxTokens, isJsonResponse: true);
 
             if (string.IsNullOrEmpty(result))
             {
-                return new AIAnalysisResult
-                {
-                    Summary = "فشل التحليل. يرجى المحاولة مرة أخرى.",
-                    ExtractedText = text[..Math.Min(text.Length, 500)],
-                    IsFallback = true
-                };
+                return new AIAnalysisResult { Summary = "فشل التحليل التقني.", IsFallback = true };
             }
 
             return ParseAnalysisResult(result, text);
@@ -163,43 +131,62 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<QuickAnalysisResult> QuickAnalysisAsync(string text)
         {
-            if (string.IsNullOrEmpty(text) || text.Length < 30)
+            if (string.IsNullOrEmpty(text) || text.Length < 20)
+                return new QuickAnalysisResult { RiskSummary = "النص غير كافٍ", IsFallback = true };
+
+            text = text.Length > 15000 ? text[..15000] : text;
+            var prompt = $"حلل المخاطر القانونية باختصار شديد في هذا النص واعرض النتيجة كـ JSON مع الحقول: RiskSummary, RiskLevel, RiskScore, DetectedRisks (array):\n\n{text}";
+            var result = await CallGeminiAsync(prompt, 500, isJsonResponse: true);
+
+            if (string.IsNullOrEmpty(result))
             {
-                return new QuickAnalysisResult
-                {
-                    RiskSummary = "النص قصير جداً",
-                    RiskLevel = "غير معروف",
-                    IsFallback = true
-                };
+                return new QuickAnalysisResult { RiskSummary = "فشل التحليل", RiskLevel = "متوسطة", IsFallback = true };
             }
 
-            text = text.Length > 4000 ? text[..4000] : text;
-
-            var prompt = $"حلل المخاطر في هذا النص باختصار:\n\n{text}";
-            var result = await CallGeminiAsync(prompt, 500);
-
-            return new QuickAnalysisResult
-            {
-                RiskSummary = result ?? "فشل التحليل",
-                RiskLevel = result != null && result.Contains("عالية") ? "عالية" : "متوسطة",
-                RiskScore = result != null && result.Contains("خطر") ? 7 : 3,
-                DetectedRisks = result?.Split('\n').Where(l => l.Contains("خطر") || l.Contains("⚠")).ToList() ?? new(),
-                IsFallback = string.IsNullOrEmpty(result)
-            };
+            return ParseQuickAnalysisResult(result);
         }
 
         public async Task<string> GenerateContractAsync(ContractTemplate template, Dictionary<string, string> data)
         {
             var dataJson = JsonSerializer.Serialize(data);
-            var prompt = $"أنت محامٍ مصري. اصيغ عقد {template.Name} بالعربية:\n{dataJson}";
-            return await CallGeminiAsync(prompt, 1500) ?? $"عقد {template.Name}\n\n{dataJson}";
+            var prompt = $"أنت محامٍ مصري خبير. قم بصياغة عقد {template.Name} قانوني واحترافي بالعربية بناءً على البيانات التالية:\n{dataJson}";
+            return await CallGeminiAsync(prompt, 2000) ?? "عذراً، فشل توليد العقد.";
+        }
+
+        public async Task<string> ChatAsync(string userMessage, List<(string role, string content)>? history = null)
+        {
+            StringBuilder chatPrompt = new StringBuilder(GetSystemPrompt());
+
+            if (history != null)
+            {
+                foreach (var (role, content) in history.TakeLast(10))
+                {
+                    chatPrompt.Append($"\n{(role == "user" ? "المستخدم" : "المستشار")}: {content}");
+                }
+            }
+
+            chatPrompt.Append($"\nالمستخدم: {userMessage}\nالمستشار:");
+
+            return await CallGeminiAsync(chatPrompt.ToString(), 1500) 
+                ?? "أعتذر، واجهت مشكلة في الاتصال بالخادم القانوني.";
         }
 
         public async Task<List<LawyerSuggestionDto>> SuggestLawyersAsync(string documentContent, string specialization)
         {
+            var prompt = $"اقترح نوع المحامي المناسب لتحليل هذا المستند القانوني. التخصص المطلوب: {specialization}.\n\nالمستند:\n{documentContent[..1000]}";
+            var result = await CallGeminiAsync(prompt, 200);
+            
             return new List<LawyerSuggestionDto>
             {
-                new LawyerSuggestionDto { LawyerName = "محامٍ متخصص", Specialization = specialization, MatchScore = 0.8 }
+                new()
+                {
+                    LawyerId = Guid.NewGuid(),
+                    LawyerName = result ?? "محامي متخصص",
+                    Specialization = specialization,
+                    Rating = 4.5,
+                    MatchScore = 0.8,
+                    CasesCount = 10
+                }
             };
         }
 
@@ -207,29 +194,19 @@ namespace LegalMateAI.BLL.Services.Service
         {
             return new List<SearchResultDto>
             {
-                new SearchResultDto { Title = "نتيجة بحث", Snippet = $"نتائج عن: {query}", Relevance = 0.9 }
+                new()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Title = $"نتيجة بحث عن: {query[..Math.Min(query.Length, 50)]}",
+                    Snippet = "استخدم محامٍ متخصص للحصول على نتائج دقيقة",
+                    Relevance = 0.7,
+                    Type = "Legal",
+                    Date = DateTime.Now
+                }
             };
         }
 
-        public async Task<string> ChatAsync(string userMessage, List<(string role, string content)>? history = null)
-        {
-            var systemPrompt = GetSystemPrompt();
-            var fullPrompt = systemPrompt;
-
-            if (history != null && history.Any())
-            {
-                foreach (var (role, content) in history.TakeLast(6))
-                {
-                    var roleLabel = role == "user" ? "المستخدم" : "المساعد";
-                    fullPrompt += $"\n\n{roleLabel}: {content}";
-                }
-            }
-
-            fullPrompt += $"\n\nالمستخدم: {userMessage}\n\nالمساعد:";
-
-            return await CallGeminiAsync(fullPrompt, 1500) ?? 
-                "عذراً، الخدمة غير متاحة حالياً. يرجى المحاولة مرة أخرى.";
-        }
+        #region Helpers
 
         private string ExtractText(byte[] fileContent, string fileName)
         {
@@ -237,61 +214,46 @@ namespace LegalMateAI.BLL.Services.Service
             {
                 return Encoding.UTF8.GetString(fileContent);
             }
-            catch { return ""; }
+            catch
+            {
+                return "";
+            }
         }
 
         private AIAnalysisResult ParseAnalysisResult(string result, string text)
         {
             try
             {
-                var cleaned = result.Replace("```json", "").Replace("```", "").Trim();
-                using var doc = JsonDocument.Parse(cleaned);
-                var root = doc.RootElement;
-
-                var analysis = new AIAnalysisResult
-                {
-                    Summary = root.TryGetProperty("summary", out var s) ? s.GetString() ?? "" : result,
-                    ExtractedText = text[..Math.Min(text.Length, 500)],
-                    Result = result,
-                    IsFallback = false
-                };
-
-                if (root.TryGetProperty("risks", out var risks))
-                {
-                    analysis.Risks = JsonSerializer.Deserialize<List<AIRisk>>(risks.GetRawText()) ?? new();
-                }
-
-                if (root.TryGetProperty("clauses", out var clauses))
-                {
-                    analysis.Clauses = JsonSerializer.Deserialize<List<AIClause>>(clauses.GetRawText()) ?? new();
-                }
-
+                var cleanedJson = result.Replace("```json", "").Replace("```", "").Trim();
+                var analysis = JsonSerializer.Deserialize<AIAnalysisResult>(cleanedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                analysis.ExtractedText = text[..Math.Min(text.Length, 500)];
+                analysis.Result = result;
+                analysis.IsFallback = false;
                 return analysis;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse Gemini JSON response");
+                return new AIAnalysisResult { Summary = result, IsFallback = false };
+            }
+        }
+
+        private QuickAnalysisResult ParseQuickAnalysisResult(string result)
+        {
+            try
+            {
+                var cleanedJson = result.Replace("```json", "").Replace("```", "").Trim();
+                return JsonSerializer.Deserialize<QuickAnalysisResult>(cleanedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
             }
             catch
             {
-                return new AIAnalysisResult
-                {
-                    Summary = result[..Math.Min(result.Length, 500)],
-                    ExtractedText = text[..Math.Min(text.Length, 500)],
-                    Result = result,
-                    IsFallback = false
-                };
+                return new QuickAnalysisResult { RiskSummary = result, RiskLevel = "متوسطة" };
             }
         }
 
-        public static string GetSystemPrompt()
-        {
-            return @"أنت ""المستشار"" - مساعد قانوني ذكي متخصص في القانون المصري.
+        public static string GetSystemPrompt() => 
+            @"أنت 'المستشار' - مساعد قانوني ذكي متخصص في القانون المصري. إجاباتك دقيقة، رسمية، وتستخدم المصطلحات القانونية المصرية الصحيحة. دائماً تنصح باستشارة محامٍ في النهاية.";
 
-هويتك: خبير في القانون المدني، التجاري، الجنائي، العمالي، الأحوال الشخصية.
-
-✅ لغة عربية فصحى واضحة
-✅ إجابات منظمة
-✅ اشرح المصطلحات القانونية
-✅ قل ""يُنصح باستشارة محامٍ متخصص"" للنصائح النهائية
-❌ لا تقدم استشارات قانونية نهائية
-❌ لا تخمن معلومات غير موجودة";
-        }
+        #endregion
     }
 }

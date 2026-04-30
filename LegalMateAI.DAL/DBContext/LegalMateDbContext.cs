@@ -9,7 +9,7 @@ namespace LegalMateAI.DAL.DBContext
     {
         public LegalMateDbContext(DbContextOptions<LegalMateDbContext> options) : base(options) { }
 
-        // ===== ✅ DbSets الأساسية (النشطة حالياً) =====
+        // ===== DbSets الأساسية =====
         public DbSet<User> Users { get; set; }
         public DbSet<LawyerProfile> LawyerProfiles { get; set; }
         public DbSet<Admin> Admins { get; set; }
@@ -19,12 +19,8 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<City> Cities { get; set; }
         public DbSet<LoginAttempt> LoginAttempts { get; set; }
         public DbSet<LegalSpecialization> LegalSpecializations { get; set; }
-
-        // ===== الجداول المؤجلة =====
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<UserDocument> UserDocuments { get; set; }
-        public DbSet<UserSocialLink> UserSocialLinks { get; set; }
-        public DbSet<UserPreferences> UserPreferences { get; set; }
         public DbSet<LawyerSpecialization> LawyerSpecializations { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<LawyerAvailability> LawyerAvailabilities { get; set; }
@@ -36,24 +32,18 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<AppointmentReschedule> AppointmentReschedules { get; set; }
         public DbSet<Contract> Contracts { get; set; }
-        public DbSet<ContractClause> ContractClauses { get; set; }
         public DbSet<ContractTemplate> ContractTemplates { get; set; }
-        public DbSet<Notification> Notifications { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<SearchQuery> SearchQueries { get; set; }
-      
         public DbSet<Law> Laws { get; set; }
         public DbSet<LawyerBranch> LawyerBranches { get; set; }
-public DbSet<BranchAvailability> BranchAvailabilities { get; set; }
+        public DbSet<BranchAvailability> BranchAvailabilities { get; set; }
         public DbSet<LawyerSpecialty> LawyerSpecialties { get; set; }
         public DbSet<LawyerProfileSpecialty> LawyerProfileSpecialties { get; set; }
-
         public DbSet<Case> Cases { get; set; }
         public DbSet<CaseDocument> CaseDocuments { get; set; }
         public DbSet<CaseNote> CaseNotes { get; set; }
         public DbSet<Conversation> Conversations { get; set; }
-
-        // ===== ✅ الجداول الجديدة للعقود الجاهزة =====
         public DbSet<PredefinedContractTemplate> PredefinedContractTemplates { get; set; }
         public DbSet<GeneratedContract> GeneratedContracts { get; set; }
 
@@ -64,73 +54,41 @@ public DbSet<BranchAvailability> BranchAvailabilities { get; set; }
             // ===== 1. Enums as string =====
             EnumConverters.ApplyEnumConversions(modelBuilder);
 
-            // ===== 2. منع Identity للجداول اللي بنحط Id بنفسنا =====
-            
-            // المحافظات والمدن
-            modelBuilder.Entity<Governorate>()
-                .Property(g => g.Id)
-                .ValueGeneratedNever();
+            // ===== 2. منع Identity =====
+            modelBuilder.Entity<Governorate>().Property(g => g.Id).ValueGeneratedNever();
+            modelBuilder.Entity<City>().Property(c => c.Id).ValueGeneratedNever();
 
-            modelBuilder.Entity<City>()
-                .Property(c => c.Id)
-                .ValueGeneratedNever();
+            // ===== 3. Relationships =====
 
-            // القوانين والمواد والتعديلات
-   
-                
-            // Appointment relationships
-            modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.User)
-                .WithMany(u => u.Appointments)
-                .HasForeignKey(a => a.UserID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Lawyer)
-                .WithMany(l => l.Appointments)
-                .HasForeignKey(a => a.LawyerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // ===== 3. Relationships for Active Tables =====
-
-            // Admin & AdminProfile
             modelBuilder.Entity<Admin>()
                 .HasOne(a => a.Profile)
                 .WithOne(ap => ap.Admin)
                 .HasForeignKey<AdminProfile>(ap => ap.AdminId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Admin & AdminLogs
             modelBuilder.Entity<Admin>()
                 .HasMany(a => a.AdminLogs)
                 .WithOne(al => al.Admin)
                 .HasForeignKey(al => al.AdminId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // User & LawyerProfile
             modelBuilder.Entity<User>()
                 .HasOne(u => u.LawyerProfile)
                 .WithOne(l => l.User)
                 .HasForeignKey<LawyerProfile>(l => l.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Governorate & City
             modelBuilder.Entity<Governorate>()
                 .HasMany(g => g.Cities)
                 .WithOne(c => c.Governorate)
                 .HasForeignKey(c => c.GovernorateId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Lawyer Profile Specialties
             modelBuilder.Entity<LawyerProfileSpecialty>()
                 .HasOne(lps => lps.Lawyer)
                 .WithMany(lp => lp.Specialties)
                 .HasForeignKey(lps => lps.LawyerId)
                 .OnDelete(DeleteBehavior.Cascade);
-                // LegalSpecialization - Id auto-increment
-modelBuilder.Entity<LegalSpecialization>()
-    .Property(l => l.Id)
-    .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<LawyerProfileSpecialty>()
                 .HasOne(lps => lps.Specialty)
@@ -138,56 +96,52 @@ modelBuilder.Entity<LegalSpecialization>()
                 .HasForeignKey(lps => lps.SpecialtyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<LawyerProfileSpecialty>()
-                .HasIndex(lps => new { lps.LawyerId, lps.SpecialtyId })
-                .IsUnique();
+            modelBuilder.Entity<LegalSpecialization>()
+                .Property(l => l.Id)
+                .ValueGeneratedOnAdd();
 
+            modelBuilder.Entity<Law>()
+                .HasOne(l => l.AddedByAdmin)
+                .WithMany()
+                .HasForeignKey(l => l.AddedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Law relationships
-modelBuilder.Entity<Law>()
-    .HasOne(l => l.AddedByAdmin)
-    .WithMany()
-    .HasForeignKey(l => l.AddedByAdminId)
-    .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<LawyerBranch>()
+                .HasOne(b => b.Lawyer)
+                .WithMany()
+                .HasForeignKey(b => b.LawyerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-modelBuilder.Entity<Law>()
-    .HasIndex(l => l.Category);
+            modelBuilder.Entity<LawyerBranch>()
+                .HasMany(b => b.Availabilities)
+                .WithOne(a => a.Branch)
+                .HasForeignKey(a => a.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-modelBuilder.Entity<Law>()
-    .HasIndex(l => l.IsActive);
-
-// LawyerBranch relationships
-modelBuilder.Entity<LawyerBranch>()
-    .HasOne(b => b.Lawyer)
-    .WithMany()
-    .HasForeignKey(b => b.LawyerId)
-    .OnDelete(DeleteBehavior.Cascade);
-
-modelBuilder.Entity<LawyerBranch>()
-    .HasMany(b => b.Availabilities)
-    .WithOne(a => a.Branch)
-    .HasForeignKey(a => a.BranchId)
-    .OnDelete(DeleteBehavior.Cascade);
-
-// BranchAvailability relationships
-modelBuilder.Entity<BranchAvailability>()
-    .HasIndex(a => new { a.BranchId, a.DayOfWeek });    
-
-            // LawyerProfile & Governorate
             modelBuilder.Entity<LawyerProfile>()
                 .HasOne(l => l.Governorate)
                 .WithMany(g => g.Lawyers)
                 .HasForeignKey(l => l.GovernorateId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
-            // LoginAttempt & User
+            modelBuilder.Entity<LawyerProfile>()
+                .HasOne(l => l.City)
+                .WithMany()
+                .HasForeignKey(l => l.CityId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<LoginAttempt>()
                 .HasOne(la => la.User)
                 .WithMany()
                 .HasForeignKey(la => la.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // DocumentAnalysis (Multiple cascade paths)
+            modelBuilder.Entity<LoginAttempt>()
+                .HasOne(la => la.Admin)
+                .WithMany()
+                .HasForeignKey(la => la.AdminId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<DocumentAnalysis>()
                 .HasOne(da => da.Document)
                 .WithMany(d => d.Analyses)
@@ -206,13 +160,13 @@ modelBuilder.Entity<BranchAvailability>()
                 .HasForeignKey(c => c.AnalysisId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // UserProfile relationships
-            modelBuilder.Entity<UserProfile>()
-                .HasOne(up => up.Governorate)
-                .WithMany()
-                .HasForeignKey(up => up.GovernorateId)
-                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<DocumentAnalysis>()
+                .HasMany(da => da.Risks)
+                .WithOne(r => r.Analysis)
+                .HasForeignKey(r => r.AnalysisId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // ===== UserProfile Relationships (بدون Governorate مباشر) =====
             modelBuilder.Entity<UserProfile>()
                 .HasOne(up => up.City)
                 .WithMany()
@@ -225,165 +179,144 @@ modelBuilder.Entity<BranchAvailability>()
                 .HasForeignKey<UserProfile>(up => up.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<DocumentAnalysis>()
-                .HasMany(da => da.Risks)
-                .WithOne(r => r.Analysis)
-                .HasForeignKey(r => r.AnalysisId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Appointment (Multiple cascade paths)
-            modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.User)
-                .WithMany()
-                .HasForeignKey(a => a.UserID)
-                .OnDelete(DeleteBehavior.Restrict);
-
+            // ===== Appointment Relationships (بدون User Navigation Property) =====
+            // ملاحظة: Appointment ليه UserID بس من غير Navigation Property
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Lawyer)
                 .WithMany()
                 .HasForeignKey(a => a.LawyerId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // LawyerReview
+            modelBuilder.Entity<Appointment>()
+                .HasOne(a => a.Branch)
+                .WithMany(b => b.Appointments)
+                .HasForeignKey(a => a.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<LawyerReview>()
                 .HasOne(lr => lr.User)
                 .WithMany()
                 .HasForeignKey(lr => lr.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ===== العلاقات الجديدة للعقود الجاهزة =====
-            
-            // PredefinedContractTemplate -> Admin
             modelBuilder.Entity<PredefinedContractTemplate>()
                 .HasOne(t => t.CreatedByAdmin)
                 .WithMany()
                 .HasForeignKey(t => t.CreatedByAdminId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
-            // PredefinedContractTemplate -> GeneratedContract
+
             modelBuilder.Entity<PredefinedContractTemplate>()
                 .HasMany(t => t.GeneratedContracts)
                 .WithOne(g => g.Template)
                 .HasForeignKey(g => g.TemplateId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
-            // GeneratedContract -> User
+
             modelBuilder.Entity<GeneratedContract>()
                 .HasOne(g => g.User)
                 .WithMany()
                 .HasForeignKey(g => g.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
-            // GeneratedContract -> LawyerProfile
+
             modelBuilder.Entity<GeneratedContract>()
                 .HasOne(g => g.Lawyer)
                 .WithMany()
                 .HasForeignKey(g => g.LawyerId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // ===== 4. Indexes =====
-            
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
+            modelBuilder.Entity<AdminProfile>()
+                .HasOne(ap => ap.Governorate)
+                .WithMany()
+                .HasForeignKey(ap => ap.GovernorateId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<AdminProfile>()
+                .HasOne(ap => ap.City)
+                .WithMany()
+                .HasForeignKey(ap => ap.CityId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // ===== Session Entity =====
+            modelBuilder.Entity<Session>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Session>()
+                .HasIndex(s => s.SessionToken)
                 .IsUnique();
 
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Role);
+            // ===== Case Relationships =====
+            modelBuilder.Entity<Case>()
+                .HasOne(c => c.Client)
+                .WithMany()
+                .HasForeignKey(c => c.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Admin>()
-                .HasIndex(a => a.Email)
-                .IsUnique();
+            modelBuilder.Entity<Case>()
+                .HasOne(c => c.Lawyer)
+                .WithMany()
+                .HasForeignKey(c => c.LawyerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<LawyerProfile>()
-                .HasIndex(l => l.VerificationStatus);
+            modelBuilder.Entity<CaseDocument>()
+                .HasOne(cd => cd.Case)
+                .WithMany(c => c.Documents)
+                .HasForeignKey(cd => cd.CaseId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Governorate>()
-                .HasIndex(g => g.Name);
+            modelBuilder.Entity<CaseNote>()
+                .HasOne(cn => cn.Case)
+                .WithMany(c => c.Notes)
+                .HasForeignKey(cn => cn.CaseId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
+            // ===== Indexes =====
+            modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+            modelBuilder.Entity<User>().HasIndex(u => u.Role);
+            modelBuilder.Entity<User>().HasIndex(u => u.NationalId).IsUnique();
+
+            modelBuilder.Entity<Admin>().HasIndex(a => a.Email).IsUnique();
+
+            modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.VerificationStatus);
+            modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.LicenseNumber).IsUnique();
+
+            modelBuilder.Entity<Governorate>().HasIndex(g => g.Name);
+
+            modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.ContractNumber).IsUnique();
+            modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.UserId);
+            modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.CreatedAt);
+
+            modelBuilder.Entity<PredefinedContractTemplate>().HasIndex(t => t.ContractType);
+            modelBuilder.Entity<PredefinedContractTemplate>().HasIndex(t => t.IsActive);
+
+            modelBuilder.Entity<Law>().HasIndex(l => l.Category);
+            modelBuilder.Entity<Law>().HasIndex(l => l.IsActive);
+
+            modelBuilder.Entity<BranchAvailability>()
+                .HasIndex(a => new { a.BranchId, a.DayOfWeek });
+
+            // ===== Default Values =====
+            modelBuilder.Entity<User>().Property(u => u.Status).HasDefaultValue(AccountStatus.Pending);
+            modelBuilder.Entity<User>().Property(u => u.IsActive).HasDefaultValue(false);
+            modelBuilder.Entity<User>().Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity<User>().Property(u => u.JoinDate).HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<Admin>().Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity<AdminLog>().Property(al => al.Timestamp).HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<LawyerProfile>().Property(l => l.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity<LawyerProfile>().Property(l => l.VerificationStatus).HasDefaultValue(LawyerVerificationStatus.Pending);
+
+            modelBuilder.Entity<LoginAttempt>().Property(la => la.AttemptedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<PredefinedContractTemplate>().Property(t => t.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity<PredefinedContractTemplate>().Property(t => t.IsActive).HasDefaultValue(true);
+
+            modelBuilder.Entity<GeneratedContract>().Property(g => g.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity<GeneratedContract>().Property(g => g.Status).HasDefaultValue(ContractStatus.Draft);
             
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.NationalId)
-                .IsUnique();
-            
-            modelBuilder.Entity<LawyerProfile>()
-                .HasIndex(l => l.LicenseNumber)
-                .IsUnique();
-            
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Role);
-            
-            modelBuilder.Entity<LawyerProfile>()
-                .HasIndex(l => l.VerificationStatus);
-
-            // Indexes للجداول الجديدة
-            modelBuilder.Entity<PredefinedContractTemplate>()
-                .HasIndex(t => t.ContractType);
-                
-            modelBuilder.Entity<PredefinedContractTemplate>()
-                .HasIndex(t => t.IsActive);
-                
-            modelBuilder.Entity<GeneratedContract>()
-                .HasIndex(g => g.ContractNumber)
-                .IsUnique();
-                
-            modelBuilder.Entity<GeneratedContract>()
-                .HasIndex(g => g.UserId);
-                
-            modelBuilder.Entity<GeneratedContract>()
-                .HasIndex(g => g.CreatedAt);
-
-            // ===== 5. Default Values =====
-            
-            modelBuilder.Entity<User>()
-                .Property(u => u.Status)
-                .HasDefaultValue(AccountStatus.Pending);
-
-            modelBuilder.Entity<User>()
-                .Property(u => u.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            modelBuilder.Entity<User>()
-                .Property(u => u.JoinDate)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            modelBuilder.Entity<Admin>()
-                .Property(a => a.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            modelBuilder.Entity<AdminLog>()
-                .Property(al => al.Timestamp)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            modelBuilder.Entity<LawyerProfile>()
-                .Property(l => l.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            modelBuilder.Entity<LawyerProfile>()
-                .Property(l => l.VerificationStatus)
-                .HasDefaultValue(LawyerVerificationStatus.Pending);
-
-            modelBuilder.Entity<LoginAttempt>()
-                .Property(la => la.AttemptedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-                
-            modelBuilder.Entity<PredefinedContractTemplate>()
-                .Property(t => t.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-                
-            modelBuilder.Entity<PredefinedContractTemplate>()
-                .Property(t => t.IsActive)
-                .HasDefaultValue(true);
-                
-            modelBuilder.Entity<GeneratedContract>()
-                .Property(g => g.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-                
-            modelBuilder.Entity<GeneratedContract>()
-                .Property(g => g.Status)
-                .HasDefaultValue(ContractStatus.Draft);
+            modelBuilder.Entity<Session>().Property(s => s.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         }
     }
 }

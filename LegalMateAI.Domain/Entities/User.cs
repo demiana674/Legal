@@ -18,7 +18,15 @@ namespace LegalMateAI.Domain.Entities
         public DateTime? DateOfBirth { get; set; }
         public UserRole Role { get; set; }
         public AccountStatus Status { get; set; } = AccountStatus.Pending;
-        public bool IsActive { get; set; } = true;
+        
+        /// <summary>
+        /// افتراضياً false، يتم تفعيله حسب الحالة:
+        /// - المستخدم العادي: يصبح true فور التسجيل
+        /// - المحامي: يبقى false حتى موافقة الأدمن
+        /// - المعلق: يصبح false
+        /// </summary>
+        public bool IsActive { get; set; } = false;
+        
         public bool EmailVerified { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLogin { get; set; }

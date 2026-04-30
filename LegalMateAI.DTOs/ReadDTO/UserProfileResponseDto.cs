@@ -60,8 +60,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         
         // العلاقات
         public List<UserDocumentDto> Documents { get; set; } = new();
-        public List<UserSocialLinkDto> SocialLinks { get; set; } = new();
-        public UserPreferencesDto? Preferences { get; set; }
+ 
         
         // دوال مساعدة
         private string MaskNationalId(string? id)

@@ -2,28 +2,28 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using LegalMateAI.Domain.Enums;
 using LegalMateAI.Domain.Entities;
+
 namespace LegalMateAI.DAL.Configurations
 {
     public static class EnumConverters
     {
-        // محول عام لتحويل أي Enum إلى String في قاعدة البيانات
         public static ValueConverter<T, string> GetEnumToStringConverter<T>() where T : struct, Enum
         {
             return new ValueConverter<T, string>(
-                v => v.ToString(),              // من Enum لـ String
-                v => (T)Enum.Parse(typeof(T), v) // من String لـ Enum
+                v => v.ToString(),
+                v => (T)Enum.Parse(typeof(T), v)
             );
         }
 
-        // تطبيق المحولات على كل الـ Entities
         public static void ApplyEnumConversions(ModelBuilder modelBuilder)
         {
             // ===== User Related =====
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
                 .HasConversion(GetEnumToStringConverter<UserRole>());
-           modelBuilder.Entity<AdminLog>()
-               .Property(al => al.Action)
+           
+            modelBuilder.Entity<AdminLog>()
+                .Property(al => al.Action)
                 .HasConversion(GetEnumToStringConverter<AdminLogAction>());    
 
             modelBuilder.Entity<User>()
@@ -79,40 +79,9 @@ namespace LegalMateAI.DAL.Configurations
                 .Property(r => r.Level)
                 .HasConversion(GetEnumToStringConverter<RiskLevel>());
 
-            // ===== Notification Related =====
-            modelBuilder.Entity<Notification>()
-                .Property(n => n.Type)
-                .HasConversion(GetEnumToStringConverter<NotificationType>());
-
-            // ===== Admin Related =====
-            // modelBuilder.Entity<Admin>()
-            //     .Property(a => a.Role)
-            //     .HasConversion(GetEnumToStringConverter<AdminRole>());
-
-            // modelBuilder.Entity<Admin>()
-            //     .Property(a => a.Status)
-            //     .HasConversion(GetEnumToStringConverter<AdminStatus>());
-
-            // modelBuilder.Entity<AdminLog>()
-            //     .Property(al => al.Action)
-            //     .HasConversion(GetEnumToStringConverter<LogAction>());
-
-                // ✅ صح
-modelBuilder.Entity<AdminLog>()
-    .Property(al => al.Action)
-    .HasConversion(GetEnumToStringConverter<AdminLogAction>());
-
-
-
-            // ===== UserProfile Related =====
-            modelBuilder.Entity<UserSocialLink>()
-                .Property(usl => usl.Platform)
-                .HasConversion(GetEnumToStringConverter<SocialPlatform>());
-
-            // // ===== AdminProfile Related =====
-            // modelBuilder.Entity<AdminNote>()
-            //     .Property(an => an.Type)
-            //     .HasConversion(GetEnumToStringConverter<NoteType>());
+            modelBuilder.Entity<AdminLog>()
+                .Property(al => al.Action)
+                .HasConversion(GetEnumToStringConverter<AdminLogAction>());
         }
     }
 }

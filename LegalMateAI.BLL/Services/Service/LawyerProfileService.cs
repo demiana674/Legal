@@ -5,9 +5,9 @@ using LegalMateAI.Domain.Entities;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.BLL.Services.IService;
+using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using LegalMateAI.Infrastructure.Services.IService;
 using LegalMateAI.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -40,25 +40,37 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(s => s.Specialty)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Governorate)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.City)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Reviews)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
             if (user == null || user.LawyerProfile == null) return null;
 
             var lawyerProfile = user.LawyerProfile;
 
-            string? decryptedPhone = null;
-            if (!string.IsNullOrEmpty(user.Phone))
-            {
-                try { decryptedPhone = _encryption.Decrypt(user.Phone); }
-                catch { decryptedPhone = null; }
-            }
+            // فك تشفير البيانات
+            string? decryptedLicense = Decrypt(lawyerProfile.LicenseNumber);
+            string? decryptedPhone = Decrypt(lawyerProfile.PhoneNumber ?? user.Phone);
+            string? decryptedAltPhone = Decrypt(lawyerProfile.AlternativePhone);
+            string? decryptedNationalId = Decrypt(user.NationalId);
 
-            string? decryptedAlternativePhone = null;
-            if (!string.IsNullOrEmpty(lawyerProfile.AlternativePhone))
-            {
-                try { decryptedAlternativePhone = _encryption.Decrypt(lawyerProfile.AlternativePhone); }
-                catch { decryptedAlternativePhone = null; }
-            }
+            // إحصائيات
+            var activeCases = await _context.Cases
+                .CountAsync(c => c.LawyerId == lawyerProfile.Id && c.Status != CaseStatus.Completed);
+            
+            var upcomingHearings = await _context.Cases
+                .CountAsync(c => c.LawyerId == lawyerProfile.Id && 
+                    c.NextHearingDate.HasValue && 
+                    c.NextHearingDate.Value >= DateTime.UtcNow.Date &&
+                    c.NextHearingDate.Value <= DateTime.UtcNow.Date.AddDays(7));
+
+            var totalClients = await _context.Cases
+                .Where(c => c.LawyerId == lawyerProfile.Id)
+                .Select(c => c.ClientId)
+                .Distinct()
+                .CountAsync();
 
             return new LawyerProfileDto
             {
@@ -68,22 +80,25 @@ namespace LegalMateAI.BLL.Services.Service
                 LastName = user.LastName,
                 Email = user.Email,
                 Phone = decryptedPhone,
-                AlternativePhone = decryptedAlternativePhone,
+                NationalId = decryptedNationalId,
                 ProfilePicture = user.ProfilePicture,
-                NationalId = user.NationalId,
-                LicenseNumber = lawyerProfile.LicenseNumber ?? "",
+                LicenseNumber = decryptedLicense ?? "",
                 BarAssociation = lawyerProfile.BarAssociation ?? "",
                 YearsOfExperience = lawyerProfile.YearsOfExperience ?? 0,
                 LicenseIssueDate = lawyerProfile.LicenseIssueDate,
                 PracticeDegree = lawyerProfile.PracticeDegree,
                 GovernorateId = lawyerProfile.GovernorateId,
                 GovernorateName = lawyerProfile.Governorate?.Name,
-                City = lawyerProfile.City,
+                City = lawyerProfile.City?.Name,
                 OfficeAddress = lawyerProfile.OfficeAddress,
+                AlternativePhone = decryptedAltPhone,
                 VerificationStatus = lawyerProfile.VerificationStatus.ToString(),
                 VerifiedAt = lawyerProfile.VerifiedAt,
                 IsActive = user.IsActive,
                 RejectionReason = lawyerProfile.RejectionReason,
+                ActiveCases = activeCases,
+                UpcomingHearings = upcomingHearings,
+                TotalClients = totalClients,
                 CreatedAt = user.CreatedAt,
                 Specializations = lawyerProfile.Specialties?.Select(s => new SpecializationDto
                 {
@@ -104,26 +119,25 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.Specialties)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
-            if (user == null || user.LawyerProfile == null)
-            {
-                _logger.LogWarning($"Lawyer not found: {userId}");
-                return false;
-            }
+            if (user == null || user.LawyerProfile == null) return false;
 
             var lawyerProfile = user.LawyerProfile;
             bool hasChanges = false;
 
-            if (!string.IsNullOrEmpty(request.FirstName)) { user.FirstName = request.FirstName; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.LastName)) { user.LastName = request.LastName; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.Email)) { user.Email = request.Email; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.Phone)) { user.Phone = _encryption.Encrypt(request.Phone); hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.AlternativePhone)) { lawyerProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone); hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.NationalId)) { user.NationalId = _encryption.Encrypt(request.NationalId); hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.LicenseNumber)) { lawyerProfile.LicenseNumber = request.LicenseNumber; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.BarAssociation)) { lawyerProfile.BarAssociation = request.BarAssociation; hasChanges = true; }
-            if (request.YearsOfExperience.HasValue) { lawyerProfile.YearsOfExperience = request.YearsOfExperience; hasChanges = true; }
+            if (!string.IsNullOrEmpty(request.Phone))
+            {
+                user.Phone = _encryption.Encrypt(request.Phone);
+                lawyerProfile.PhoneNumber = _encryption.Encrypt(request.Phone);
+                hasChanges = true;
+            }
 
-            if (request.SpecialtyIds != null)
+            if (!string.IsNullOrEmpty(request.AlternativePhone))
+            {
+                lawyerProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
+                hasChanges = true;
+            }
+
+            if (request.SpecialtyIds != null && request.SpecialtyIds.Any())
             {
                 if (lawyerProfile.Specialties.Any())
                     _context.LawyerProfileSpecialties.RemoveRange(lawyerProfile.Specialties);
@@ -148,9 +162,23 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            if (request.GovernorateId.HasValue) { lawyerProfile.GovernorateId = request.GovernorateId; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.City)) { lawyerProfile.City = request.City; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.OfficeAddress)) { lawyerProfile.OfficeAddress = request.OfficeAddress; hasChanges = true; }
+            if (request.GovernorateId.HasValue)
+            {
+                lawyerProfile.GovernorateId = request.GovernorateId;
+                hasChanges = true;
+            }
+
+            if (!string.IsNullOrEmpty(request.City))
+            {
+                lawyerProfile.CityId = int.TryParse(request.City, out var cityId) ? cityId : null;
+                hasChanges = true;
+            }
+
+            if (!string.IsNullOrEmpty(request.OfficeAddress))
+            {
+                lawyerProfile.OfficeAddress = request.OfficeAddress;
+                hasChanges = true;
+            }
 
             if (hasChanges)
             {
@@ -207,6 +235,13 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<LawyerProfileDto?> GetDashboardAsync(Guid userId)
         {
             return await GetProfileAsync(userId);
+        }
+
+        private string? Decrypt(string? encrypted)
+        {
+            if (string.IsNullOrEmpty(encrypted)) return null;
+            try { return _encryption.Decrypt(encrypted); }
+            catch { return encrypted; }
         }
     }
 }

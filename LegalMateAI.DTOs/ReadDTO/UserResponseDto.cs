@@ -1,17 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// LegalMateAI.DTOs/ReadDTO/UserResponseDto.cs
 using System;
 using LegalMateAI.Domain.Enums;
-using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
 
 namespace LegalMateAI.DTOs.ReadDTO
 {
-
-    // 1. User Response
     public class UserResponseDto
     {
         public Guid Id { get; set; }
@@ -20,8 +12,10 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string FullName => $"{FirstName} {LastName}";
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
-        public string? NationalId {get; set;}
+        public string? NationalId { get; set; }
         public string? City { get; set; }
+        public int? GovernorateId { get; set; }
+        public string? GovernorateName { get; set; }
         public string? Address { get; set; }
         public string Gender { get; set; } = string.Empty;
         public string Nationality { get; set; } = string.Empty;

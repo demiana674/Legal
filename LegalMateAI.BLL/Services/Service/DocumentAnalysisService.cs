@@ -114,7 +114,7 @@ namespace LegalMateAI.BLL.Services.Service
                             AnalysisId = analysis.Id,
                             RiskType = risk.Type,
                             Description = risk.Description,
-                            Level = risk.Level,
+                            Level = RiskMapper.MapToRiskLevel(risk.Level),
                             Suggestion = risk.Suggestion
                         });
                     }
@@ -227,11 +227,6 @@ namespace LegalMateAI.BLL.Services.Service
                     Suggestion = r.Suggestion
                 }).ToList()
             }).ToList();
-        }
-
-        public async Task<QuickAnalysisResult> QuickAnalyzeTextAsync(string text)
-        {
-            return await _aiService.QuickAnalysisAsync(text);
         }
     }
 }

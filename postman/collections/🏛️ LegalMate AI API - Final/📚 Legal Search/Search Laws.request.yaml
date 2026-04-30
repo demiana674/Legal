@@ -1,8 +1,0 @@
-$kind: http-request
-url: "{{base_url}}/api/Legal/search?q=عقد إيجار"
-method: GET
-headers:
-  Authorization: Bearer {{access_token}}
-queryParams:
-  q: عقد إيجار
-order: 1000

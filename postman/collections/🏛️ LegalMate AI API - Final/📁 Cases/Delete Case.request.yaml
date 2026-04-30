@@ -1,6 +1,0 @@
-$kind: http-request
-url: "{{base_url}}/api/Cases/{caseId}"
-method: DELETE
-headers:
-  Authorization: Bearer {{access_token}}
-order: 8000
