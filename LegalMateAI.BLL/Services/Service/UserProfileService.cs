@@ -47,7 +47,8 @@ namespace LegalMateAI.BLL.Services.Service
             // فك تشفير البيانات الحساسة
             string? decryptedPhone = Decrypt(user.Phone);
             string? decryptedNationalId = Decrypt(user.NationalId);
-            string? decryptedAltPhone = null;
+            string? decryptedAltPhone= null;
+            
             
             if (user.UserProfile != null)
             {
@@ -62,7 +63,7 @@ namespace LegalMateAI.BLL.Services.Service
                 NationalId = decryptedNationalId,
                 Nationality = user.Nationality ?? "مصري",
                 DateOfBirth = user.DateOfBirth?.ToString("dd MMMM yyyy"),
-                Gender = "ذكر",
+                // Gender = "ذكر",
                 AlternativePhone = decryptedAltPhone,
                 ProfilePicture = user.ProfilePicture,
                 GovernorateName = user.UserProfile?.City?.Governorate?.Name,

@@ -29,7 +29,7 @@ namespace LegalMateAI.Domain.Entities
         public virtual City? City { get; set; }
         
         public string? Address { get; set; }
-        
+        // public string? Gender { get; set; } 
         // ✅ مشفرة في قاعدة البيانات
         public string? NationalId { get; set; }
         

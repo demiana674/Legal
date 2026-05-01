@@ -116,7 +116,7 @@ namespace LegalMateAI.BLL.Services.Service
                         DateOfBirth = request.DateOfBirth,
                         GovernorateId = request.GovernorateId,
                         
-                        City = null,
+                        CityId = request.CityId,
                         Address = request.Address,
                         CreatedAt = DateTime.UtcNow,
                         LastProfileUpdate = DateTime.UtcNow

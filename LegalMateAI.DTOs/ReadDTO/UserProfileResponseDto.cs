@@ -38,7 +38,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         // الشخصية
         public DateTime? DateOfBirth { get; set; }
         public string? DateOfBirthFormatted => DateOfBirth?.ToString("dd MMM yyyy");
-        public string? Gender { get; set; }
+        // public string? Gender { get; set; }
         public string? Nationality { get; set; }
         public string? NationalId { get; set; }
         public string? NationalIdMasked => MaskNationalId(NationalId);

@@ -60,6 +60,9 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<List<UserResponseDto>> GetAllUsersAsync(UserFilterDto? filter = null)
         {
             var query = _context.Users
+                .Include(u => u.UserProfile)
+                    .ThenInclude(p => p!.City)
+                        .ThenInclude(c => c!.Governorate)
                 .Where(u => u.Role == UserRole.User)
                 .AsQueryable();
 
@@ -100,6 +103,7 @@ namespace LegalMateAI.BLL.Services.Service
             foreach (var user in result)
             {
                 user.PhoneNumber = Decrypt(user.PhoneNumber) ?? "";
+                user.AlternativePhone = Decrypt(user.AlternativePhone);
                 user.NationalId = Decrypt(user.NationalId);
             }
             
@@ -108,11 +112,18 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<UserResponseDto?> GetUserDetailsAsync(Guid userId)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.User);
+            var user = await _context.Users
+                .Include(u => u.UserProfile)
+                    .ThenInclude(p => p!.City)
+                        .ThenInclude(c => c!.Governorate)
+                .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.User);
+            
             if (user == null) return null;
             
             var result = MapUserToDto(user);
+            
             result.PhoneNumber = Decrypt(result.PhoneNumber) ?? "";
+            result.AlternativePhone = Decrypt(result.AlternativePhone);
             result.NationalId = Decrypt(result.NationalId);
             
             return result;
@@ -658,11 +669,20 @@ namespace LegalMateAI.BLL.Services.Service
             LastName = user.LastName,
             Email = user.Email,
             PhoneNumber = user.Phone ?? "",
+            AlternativePhone = string.IsNullOrWhiteSpace(user.UserProfile?.AlternativePhone) ? null : user.UserProfile.AlternativePhone,
             NationalId = user.NationalId,
+            Nationality = string.IsNullOrWhiteSpace(user.UserProfile?.Nationality) ? null : user.UserProfile.Nationality,
+            Address = user.UserProfile?.Address,
+            City = user.UserProfile?.City?.Name,
+            GovernorateId = user.UserProfile?.City?.GovernorateId,
+            GovernorateName = user.UserProfile?.City?.Governorate?.Name,
             Role = user.Role,
             Status = user.Status,
             CreatedAt = user.CreatedAt,
-            LastLoginAt = user.LastLogin
+            LastLoginAt = user.LastLogin,
+            DocumentsCount = 0,
+            ContractsCount = 0,
+            AppointmentsCount = 0
         };
 
         private AdminLogDto MapLogToDto(AdminLog log) => new()

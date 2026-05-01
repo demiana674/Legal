@@ -41,7 +41,7 @@ namespace LegalMateAI.DTOs
         public DateTime DateOfBirth { get; set; }
 
         [Required(ErrorMessage = "الجنسية مطلوبة")]
-        public string Nationality { get; set; } = "مصري";
+        public string? Nationality { get; set; } 
 
         // ✅ معرف المحافظة - رقم مش اسم
         public int? GovernorateId { get; set; }
@@ -49,10 +49,12 @@ namespace LegalMateAI.DTOs
         // ✅ معرف المدينة - رقم مش اسم
         public int? CityId { get; set; }
         
+        
         [StringLength(300)]
         public string? Address { get; set; }
 
         [Required(ErrorMessage = "نوع المستخدم مطلوب")]
+        // public string? Gender { get; set; }
         public UserRole Role { get; set; } = UserRole.User;
 
         // محامي فقط
