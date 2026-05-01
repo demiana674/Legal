@@ -34,6 +34,22 @@ namespace LegalMateAI.BLL.Services.Service
             _logger = logger;
         }
 
+        private string? Decrypt(string? encryptedText)
+        {
+            if (string.IsNullOrEmpty(encryptedText))
+                return null;
+            
+            try
+            {
+                return _encryption.Decrypt(encryptedText);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to decrypt value");
+                return encryptedText;
+            }
+        }
+
         public async Task<AdminProfileDto?> GetProfileAsync(Guid adminId)
         {
             var admin = await _context.Admins
@@ -46,31 +62,6 @@ namespace LegalMateAI.BLL.Services.Service
             if (admin == null) return null;
 
             var profile = admin.Profile;
-            var monthsActive = admin.CreatedAt != DateTime.MinValue
-                ? (int)((DateTime.UtcNow - admin.CreatedAt).TotalDays / 30)
-                : 0;
-
-            // فك تشفير البيانات
-            string? decryptedPhone = null;
-            if (!string.IsNullOrEmpty(admin.PhoneNumber))
-            {
-                try { decryptedPhone = _encryption.Decrypt(admin.PhoneNumber); }
-                catch { decryptedPhone = "غير متاح"; }
-            }
-
-            string? decryptedAltPhone = null;
-            if (!string.IsNullOrEmpty(profile?.AlternativePhone))
-            {
-                try { decryptedAltPhone = _encryption.Decrypt(profile.AlternativePhone); }
-                catch { decryptedAltPhone = "غير متاح"; }
-            }
-
-            string? decryptedNationalId = null;
-            if (!string.IsNullOrEmpty(profile?.NationalId))
-            {
-                try { decryptedNationalId = _encryption.Decrypt(profile.NationalId); }
-                catch { decryptedNationalId = "غير متاح"; }
-            }
 
             return new AdminProfileDto
             {
@@ -79,25 +70,20 @@ namespace LegalMateAI.BLL.Services.Service
                 FirstName = profile?.FirstName,
                 LastName = profile?.LastName,
                 Email = admin.Email,
-                PhoneNumber = decryptedPhone,
-                AlternativePhone = decryptedAltPhone,
+                PhoneNumber = Decrypt(admin.PhoneNumber),
+                AlternativePhone = Decrypt(profile?.AlternativePhone),
                 ProfilePicture = profile?.ProfilePictureUrl,
                 JobTitle = profile?.JobTitle,
                 Department = profile?.Department,
-                // ❌ شيلنا AccessLevel
                 DateOfBirth = profile?.DateOfBirth?.ToString("yyyy-MM-dd"),
-                // ❌ شيلنا Gender
                 Nationality = profile?.Nationality,
-                NationalId = decryptedNationalId,
-                // ❌ شيلنا EmployeeId
-                Governorate = profile?.Governorate?.Name,
-                City = profile?.City?.Name,
-                // ❌ شيلنا District
+                NationalId = Decrypt(profile?.NationalId),
+                Governorate = profile?.Governorate?.Name ?? "",  // تحويل إلى string (الاسم فقط)
+                City = profile?.City?.Name ?? "",                // تحويل إلى string (الاسم فقط)
                 Address = profile?.Address,
                 CreatedAt = admin.CreatedAt,
                 LastLoginAt = admin.LastLoginAt,
                 JoinDateFormatted = profile?.JoinDate?.ToString("MMMM yyyy", new System.Globalization.CultureInfo("ar-EG")),
-                TotalMonthsActive = monthsActive > 0 ? monthsActive : 0,
                 Status = "نشط",
                 IsOnline = admin.LastLoginAt?.Date == DateTime.UtcNow.Date,
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),
@@ -108,9 +94,7 @@ namespace LegalMateAI.BLL.Services.Service
                     .CountAsync(l => l.VerifiedAt != null && l.VerifiedAt.Value.Date == DateTime.UtcNow.Date),
                 TotalVerifiedLawyers = profile?.TotalVerifiedLawyers ?? 0,
                 TotalRejectedLawyers = profile?.TotalRejectedLawyers ?? 0,
-                CanManageUsers = true,   // أو حسب منطقك
                 CanVerifyLawyers = true,
-                CanManageSystem = true,
                 CanExportData = true
             };
         }
@@ -123,16 +107,64 @@ namespace LegalMateAI.BLL.Services.Service
 
             if (admin == null) return false;
 
+            // تحديث رقم الهاتف الأساسي
             if (!string.IsNullOrEmpty(request.PhoneNumber))
             {
                 admin.PhoneNumber = _encryption.Encrypt(request.PhoneNumber);
-                if (admin.Profile != null)
-                {
-                    admin.Profile.LastActiveAt = DateTime.UtcNow;
-                }
-                await _context.SaveChangesAsync();
             }
 
+            // تحديث البيانات في الـ Profile إذا كان موجود
+            if (admin.Profile != null)
+            {
+                if (!string.IsNullOrEmpty(request.AlternativePhone))
+                {
+                    admin.Profile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
+                }
+
+                // if (!string.IsNullOrEmpty(request.NationalId))
+                // {
+                //     admin.Profile.NationalId = _encryption.Encrypt(request.NationalId);
+                // }
+
+                // if (!string.IsNullOrEmpty(request.FirstName))
+                // {
+                //     admin.Profile.FirstName = request.FirstName;
+                // }
+
+                // if (!string.IsNullOrEmpty(request.LastName))
+                // {
+                //     admin.Profile.LastName = request.LastName;
+                // }
+
+                // if (!string.IsNullOrEmpty(request.JobTitle))
+                // {
+                //     admin.Profile.JobTitle = request.JobTitle;
+                // }
+
+                // if (!string.IsNullOrEmpty(request.Department))
+                // {
+                //     admin.Profile.Department = request.Department;
+                // }
+
+                if (!string.IsNullOrEmpty(request.Address))
+                {
+                    admin.Profile.Address = request.Address;
+                }
+
+                if (request.GovernorateId.HasValue)
+                {
+                    admin.Profile.GovernorateId = request.GovernorateId.Value;
+                }
+
+                if (request.CityId.HasValue)
+                {
+                    admin.Profile.CityId = request.CityId.Value;
+                }
+
+                admin.Profile.LastActiveAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
             return true;
         }
 
@@ -210,9 +242,12 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(10)
                 .Select(u => new PendingLawyerDto
                 {
-                    UserId = u.UserID, FirstName = u.FirstName, LastName = u.LastName,
-                    Email = u.Email, Phone = u.Phone ?? "",
-                    LicenseNumber = u.LawyerProfile!.LicenseNumber ?? "",
+                    UserId = u.UserID,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    Phone = Decrypt(u.Phone) ?? "",
+                    LicenseNumber = Decrypt(u.LawyerProfile!.LicenseNumber) ?? "",
                     BarAssociation = u.LawyerProfile.BarAssociation ?? "",
                     YearsOfExperience = u.LawyerProfile.YearsOfExperience ?? 0,
                     RegisteredAt = u.CreatedAt
@@ -225,8 +260,12 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(10)
                 .Select(l => new AdminLogDto
                 {
-                    Id = l.Id, AdminName = l.Admin != null ? l.Admin.FullName : admin.FullName,
-                    Action = l.Action, TargetType = l.TargetType, TargetId = l.TargetId, Timestamp = l.Timestamp
+                    Id = l.Id,
+                    AdminName = l.Admin != null ? l.Admin.FullName : admin.FullName,
+                    Action = l.Action,
+                    TargetType = l.TargetType,
+                    TargetId = l.TargetId,
+                    Timestamp = l.Timestamp
                 }).ToListAsync();
 
             return new AdminDashboardDto

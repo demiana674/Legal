@@ -1,3 +1,4 @@
+// LegalMateAI.BLL/Services/Service/RegistrationService.cs
 using LegalMateAI.Domain.Entities;
 using LegalMateAI.Domain.Enums;
 using LegalMateAI.BLL.Services.IService;
@@ -30,19 +31,56 @@ namespace LegalMateAI.BLL.Services.Service
             try
             {
                 if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
-                    return new RegistrationResult { Success = false, Message = "البريد الإلكتروني وكلمة المرور مطلوبان" };
+                {
+                    return new RegistrationResult 
+                    { 
+                        Success = false, 
+                        Message = "البريد الإلكتروني وكلمة المرور مطلوبان" 
+                    };
+                }
 
                 if (request.Password != request.ConfirmPassword)
-                    return new RegistrationResult { Success = false, Message = "كلمة المرور وتأكيدها غير متطابقين" };
+                {
+                    return new RegistrationResult 
+                    { 
+                        Success = false, 
+                        Message = "كلمة المرور وتأكيدها غير متطابقين" 
+                    };
+                }
+
+                if (!IsStrongPassword(request.Password))
+                {
+                    return new RegistrationResult 
+                    { 
+                        Success = false, 
+                        Message = "كلمة المرور يجب أن تحتوي على: 8 أحرف على الأقل، حرف كبير، حرف صغير، رقم، ورمز خاص (@$!%*?&)" 
+                    };
+                }
 
                 if (await _repo.UserExistsAsync(request.Email))
-                    return new RegistrationResult { Success = false, Message = "البريد الإلكتروني موجود بالفعل" };
+                {
+                    _logger.LogWarning("Registration failed - email exists: {Email}", request.Email);
+                    return new RegistrationResult 
+                    { 
+                        Success = false, 
+                        Message = "البريد الإلكتروني موجود بالفعل" 
+                    };
+                }
 
-                if (await _repo.NationalIdExistsAsync(_encryption.Encrypt(request.NationalId)))
-                    return new RegistrationResult { Success = false, Message = "الرقم القومي موجود بالفعل" };
+                if (await _repo.NationalIdExistsAsync(request.NationalId))
+                {
+                    _logger.LogWarning("Registration failed - national ID exists: {NationalId}", request.NationalId);
+                    return new RegistrationResult 
+                    { 
+                        Success = false, 
+                        Message = "الرقم القومي موجود بالفعل" 
+                    };
+                }
 
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
+                var encryptedPhone = string.IsNullOrEmpty(request.Phone) ? null : _encryption.Encrypt(request.Phone);
+                var encryptedNationalId = _encryption.Encrypt(request.NationalId);
+                
                 var user = new User
                 {
                     UserID = Guid.NewGuid(),
@@ -50,18 +88,19 @@ namespace LegalMateAI.BLL.Services.Service
                     LastName = request.LastName,
                     Email = request.Email,
                     PasswordHash = passwordHash,
-                    Phone = _encryption.Encrypt(request.Phone),
-                    NationalId = _encryption.Encrypt(request.NationalId),
+                    Phone = encryptedPhone,
+                    NationalId = encryptedNationalId,
                     Nationality = request.Nationality,
                     DateOfBirth = request.DateOfBirth,
                     Role = request.Role,
-                    IsActive = request.Role == UserRole.User, // المستخدم العادي يتفعّل فوراً
+                    IsActive = request.Role == UserRole.User,
                     Status = AccountStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
                     JoinDate = DateTime.UtcNow,
                     EmailVerified = false
                 };
 
+                // ✅ تسجيل مستخدم عادي
                 if (request.Role == UserRole.User)
                 {
                     var userProfile = new UserProfile
@@ -71,20 +110,23 @@ namespace LegalMateAI.BLL.Services.Service
                         FirstName = request.FirstName,
                         LastName = request.LastName,
                         Email = request.Email,
-                        PhoneNumber = _encryption.Encrypt(request.Phone),
-                        NationalId = _encryption.Encrypt(request.NationalId),
+                        PhoneNumber = request.Phone,
+                        NationalId = request.NationalId,
                         Nationality = request.Nationality,
                         DateOfBirth = request.DateOfBirth,
                         GovernorateId = request.GovernorateId,
-                        CityId = request.CityId,
+                        
+                        City = null,
                         Address = request.Address,
                         CreatedAt = DateTime.UtcNow,
                         LastProfileUpdate = DateTime.UtcNow
                     };
-
+                    
                     await _repo.AddUserWithProfileAsync(user, userProfile);
                     await _repo.SaveChangesAsync();
-
+                    
+                    _logger.LogInformation("User registered successfully: {Email}", request.Email);
+                    
                     return new RegistrationResult
                     {
                         Success = true,
@@ -93,38 +135,63 @@ namespace LegalMateAI.BLL.Services.Service
                         RequiresApproval = false
                     };
                 }
+                
+                // ✅ تسجيل محامي
                 else if (request.Role == UserRole.Lawyer)
                 {
                     if (string.IsNullOrEmpty(request.LicenseNumber))
-                        return new RegistrationResult { Success = false, Message = "رقم رخصة المحاماة مطلوب" };
+                    {
+                        return new RegistrationResult
+                        {
+                            Success = false,
+                            Message = "رقم رخصة المحاماة مطلوب للمحامي"
+                        };
+                    }
 
-                    if (await _repo.LicenseNumberExistsAsync(_encryption.Encrypt(request.LicenseNumber)))
-                        return new RegistrationResult { Success = false, Message = "رقم رخصة المحاماة موجود بالفعل" };
+                    if (!IsValidLicenseNumber(request.LicenseNumber))
+                    {
+                        return new RegistrationResult
+                        {
+                            Success = false,
+                            Message = "صيغة رخصة المحاماة غير صحيحة. يجب أن تكون مثل: LAW-12345 أو BAR-67890"
+                        };
+                    }
 
-                    // المحامي لا يتفعّل إلا بعد موافقة الأدمن
+                    if (await _repo.LicenseNumberExistsAsync(request.LicenseNumber))
+                    {
+                        _logger.LogWarning("Registration failed - license number exists: {LicenseNumber}", request.LicenseNumber);
+                        return new RegistrationResult
+                        {
+                            Success = false,
+                            Message = "رقم رخصة المحاماة موجود بالفعل"
+                        };
+                    }
+
                     user.IsActive = false;
                     user.Status = AccountStatus.Pending;
-
+                    
                     var lawyerProfile = new LawyerProfile
                     {
                         Id = Guid.NewGuid(),
                         UserId = user.UserID,
-                        LicenseNumber = _encryption.Encrypt(request.LicenseNumber),
+                        LicenseNumber = request.LicenseNumber,
                         BarAssociation = request.BarAssociation ?? "",
-                        LicenseIssueDate = request.LicenseIssueDate,
-                        PracticeDegree = request.PracticeDegree,
+                        LicenseIssueDate = request.LicenseIssueDate,      // ✅ تاريخ القيد
+                        PracticeDegree = request.PracticeDegree,           // ✅ درجة المزاولة
                         YearsOfExperience = request.YearsOfExperience ?? 0,
-                        PhoneNumber = _encryption.Encrypt(request.Phone),
                         GovernorateId = request.GovernorateId,
-                        CityId = request.CityId,
+                        CityId= request.CityId,
                         OfficeAddress = request.Address,
                         VerificationStatus = LawyerVerificationStatus.Pending,
                         CreatedAt = DateTime.UtcNow
                     };
-
+                    
                     await _repo.AddLawyerWithProfileAsync(user, lawyerProfile);
                     await _repo.SaveChangesAsync();
-
+                    
+                    _logger.LogInformation("Lawyer registration submitted: {Email}, License: {LicenseNumber}", 
+                        request.Email, request.LicenseNumber);
+                    
                     return new RegistrationResult
                     {
                         Success = true,
@@ -134,12 +201,20 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
 
-                return new RegistrationResult { Success = false, Message = "نوع المستخدم غير صالح" };
+                return new RegistrationResult
+                {
+                    Success = false,
+                    Message = "نوع المستخدم غير صالح"
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Registration error for email: {Email}", request.Email);
-                return new RegistrationResult { Success = false, Message = "حدث خطأ أثناء التسجيل" };
+                return new RegistrationResult
+                {
+                    Success = false,
+                    Message = "حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى."
+                };
             }
         }
 
@@ -147,6 +222,36 @@ namespace LegalMateAI.BLL.Services.Service
         {
             request.Role = UserRole.User;
             return await RegisterAsync(request);
+        }
+
+        private bool IsStrongPassword(string password)
+        {
+            if (string.IsNullOrEmpty(password) || password.Length < 8)
+                return false;
+            
+            bool hasUpper = false;
+            bool hasLower = false;
+            bool hasDigit = false;
+            bool hasSpecial = false;
+            
+            foreach (char c in password)
+            {
+                if (char.IsUpper(c)) hasUpper = true;
+                else if (char.IsLower(c)) hasLower = true;
+                else if (char.IsDigit(c)) hasDigit = true;
+                else if ("@$!%*?&".Contains(c)) hasSpecial = true;
+            }
+            
+            return hasUpper && hasLower && hasDigit && hasSpecial;
+        }
+
+        private bool IsValidLicenseNumber(string licenseNumber)
+        {
+            if (string.IsNullOrEmpty(licenseNumber))
+                return false;
+            
+            var regex = new System.Text.RegularExpressions.Regex(@"^[A-Z]{2,3}-\d{4,8}$");
+            return regex.IsMatch(licenseNumber);
         }
     }
 }

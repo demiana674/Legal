@@ -5,7 +5,6 @@ using LegalMateAI.DAL.Repositories.IRepository;
 using LegalMateAI.DTOs;
 using Microsoft.Extensions.Logging;
 using BCrypt.Net;
-using Microsoft.AspNetCore.Http;
 
 namespace LegalMateAI.BLL.Services.Service
 {
@@ -14,20 +13,20 @@ namespace LegalMateAI.BLL.Services.Service
         private readonly IAuthRepository _authRepo;
         private readonly IJwtService _jwtService;
         private readonly ILogger<AuthService> _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AuthService(
             IAuthRepository authRepo,
             IJwtService jwtService,
-            ILogger<AuthService> logger,
-            IHttpContextAccessor httpContextAccessor)
+            ILogger<AuthService> logger)
         {
             _authRepo = authRepo;
             _jwtService = jwtService;
             _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
         }
 
+        /// <summary>
+        /// تسجيل الدخول الموحد لجميع المستخدمين (User, Lawyer, Admin)
+        /// </summary>
         public async Task<AuthResponse?> LoginAsync(LoginRequest request)
         {
             try
@@ -38,19 +37,22 @@ namespace LegalMateAI.BLL.Services.Service
                     return null;
                 }
 
+                // 1. البحث عن مستخدم عادي أو محامي
                 var user = await _authRepo.GetUserByEmailAsync(request.Email);
                 if (user != null)
                 {
                     return await HandleUserLogin(user, request);
                 }
 
+                // 2. البحث عن أدمن
                 var admin = await _authRepo.GetAdminByEmailAsync(request.Email);
                 if (admin != null)
                 {
                     return await HandleAdminLogin(admin, request);
                 }
 
-                await _authRepo.LogLoginAttemptAsync(null, null, request.Email, false);
+                // 3. لا يوجد مستخدم بهذا البريد
+                await _authRepo.LogLoginAttemptAsync(null, request.Email, false);
                 _logger.LogWarning("Login failed - user not found: {Email}", request.Email);
                 return null;
             }
@@ -61,75 +63,46 @@ namespace LegalMateAI.BLL.Services.Service
             }
         }
 
+        /// <summary>
+        /// معالجة تسجيل دخول المستخدم العادي أو المحامي
+        /// </summary>
         private async Task<AuthResponse?> HandleUserLogin(User user, LoginRequest request)
         {
+            // التحقق من كلمة المرور
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
-                await _authRepo.LogLoginAttemptAsync(user.UserID, null, request.Email, false);
+                await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
                 _logger.LogWarning("Login failed - invalid password: {Email}", request.Email);
                 return null;
             }
 
-            if (!user.IsActive || user.Status == AccountStatus.Deactivated)
+            // التحقق من حالة الحساب
+            if (!user.IsActive)
             {
-                await _authRepo.LogLoginAttemptAsync(user.UserID, null, request.Email, false);
+                await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
                 _logger.LogWarning("Login failed - inactive account: {Email}", request.Email);
                 throw new UnauthorizedAccessException("الحساب غير نشط. يرجى التواصل مع الدعم.");
             }
 
-            // المحامي المعلق = ممنوع من الدخول تماماً
+            // التحقق من حالة المحامي (إذا كان محامي)
             if (user.Role == UserRole.Lawyer && user.LawyerProfile != null)
             {
-                if (user.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Suspended)
-                {
-                    await _authRepo.LogLoginAttemptAsync(user.UserID, null, request.Email, false);
-                    _logger.LogWarning("Login blocked - suspended lawyer: {Email}", request.Email);
-                    throw new UnauthorizedAccessException("تم تعليق حساب المحامي الخاص بك. يرجى التواصل مع الإدارة.");
-                }
-                
                 if (user.LawyerProfile.VerificationStatus != LawyerVerificationStatus.Active)
                 {
-                    await _authRepo.LogLoginAttemptAsync(user.UserID, null, request.Email, false);
+                    await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
                     _logger.LogWarning("Login failed - unverified lawyer: {Email}", request.Email);
                     throw new UnauthorizedAccessException("حساب المحامي لم يتم توثيقه بعد. يرجى الانتظار حتى مراجعة الإدارة.");
                 }
             }
 
-            // المستخدم المعلق = يدخل كـ Guest فقط
-            if (user.Role == UserRole.User && user.Status == AccountStatus.Suspended)
-            {
-                user.LastLogin = DateTime.UtcNow;
-                var token = _jwtService.GenerateToken(user);
-                
-                await _authRepo.LogLoginAttemptAsync(user.UserID, null, request.Email, true);
-                
-                // تسجيل Session
-                await CreateSessionAsync(user.UserID);
-                
-                await _authRepo.SaveChangesAsync();
-                
-                _logger.LogInformation("Suspended user logged in as Guest: {Email}", user.Email);
-                
-                return new AuthResponse
-                {
-                    UserId = user.UserID,
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Role = "Guest",
-                    Token = token,
-                    IsAdmin = false
-                };
-            }
-
+            // تحديث آخر تسجيل دخول
             user.LastLogin = DateTime.UtcNow;
-            var userToken = _jwtService.GenerateToken(user);
             
-            await _authRepo.LogLoginAttemptAsync(user.UserID, null, request.Email, true);
+            // توليد JWT Token
+            var token = _jwtService.GenerateToken(user);
             
-            // تسجيل Session
-            await CreateSessionAsync(user.UserID);
-            
+            // تسجيل محاولة ناجحة
+            await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, true);
             await _authRepo.SaveChangesAsync();
             
             _logger.LogInformation("User logged in: {Email}, Role: {Role}", user.Email, user.Role);
@@ -141,24 +114,32 @@ namespace LegalMateAI.BLL.Services.Service
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Role = user.Role.ToString(),
-                Token = userToken,
+                Token = token,
                 IsAdmin = false
             };
         }
 
+        /// <summary>
+        /// معالجة تسجيل دخول الأدمن
+        /// </summary>
         private async Task<AuthResponse?> HandleAdminLogin(Admin admin, LoginRequest request)
         {
+            // التحقق من كلمة المرور
             if (!BCrypt.Net.BCrypt.Verify(request.Password, admin.PasswordHash))
             {
-                await _authRepo.LogLoginAttemptAsync(null, admin.Id, request.Email, false);
+                await _authRepo.LogLoginAttemptAsync(null, request.Email, false);
                 _logger.LogWarning("Admin login failed - invalid password: {Email}", request.Email);
                 return null;
             }
 
+            // تحديث آخر تسجيل دخول
             admin.LastLoginAt = DateTime.UtcNow;
+            
+            // توليد JWT Token
             var token = _jwtService.GenerateAdminToken(admin);
             
-            await _authRepo.LogLoginAttemptAsync(null, admin.Id, request.Email, true);
+            // تسجيل محاولة ناجحة
+            await _authRepo.LogLoginAttemptAsync(null, request.Email, true);
             await _authRepo.SaveChangesAsync();
             
             _logger.LogInformation("Admin logged in: {Email}", admin.Email);
@@ -175,24 +156,9 @@ namespace LegalMateAI.BLL.Services.Service
             };
         }
 
-        private async Task CreateSessionAsync(Guid userId)
-        {
-            var httpContext = _httpContextAccessor.HttpContext;
-            var session = new Session
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                SessionToken = Guid.NewGuid().ToString(),
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                LastActivityAt = DateTime.UtcNow,
-                IpAddress = httpContext?.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = httpContext?.Request.Headers["User-Agent"].ToString(),
-                IsActive = true
-            };
-            await _authRepo.AddSessionAsync(session);
-        }
-
+        /// <summary>
+        /// تغيير كلمة المرور
+        /// </summary>
         public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordDto request)
         {
             try
@@ -214,6 +180,14 @@ namespace LegalMateAI.BLL.Services.Service
                 _logger.LogError(ex, "Error changing password for user: {UserId}", userId);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// تسجيل دخول الأدمن (للتوافق)
+        /// </summary>
+        public async Task<AuthResponse?> AdminLoginAsync(LoginRequest request)
+        {
+            return await LoginAsync(request);
         }
     }
 }

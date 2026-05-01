@@ -33,7 +33,7 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<AppointmentReschedule> AppointmentReschedules { get; set; }
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<ContractTemplate> ContractTemplates { get; set; }
-        public DbSet<Session> Sessions { get; set; }
+        // public DbSet<Session> Sessions { get; set; }
         public DbSet<SearchQuery> SearchQueries { get; set; }
         public DbSet<Law> Laws { get; set; }
         public DbSet<LawyerBranch> LawyerBranches { get; set; }
@@ -235,16 +235,16 @@ namespace LegalMateAI.DAL.DBContext
                 .HasForeignKey(ap => ap.CityId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // ===== Session Entity =====
-            modelBuilder.Entity<Session>()
-                .HasOne(s => s.User)
-                .WithMany()
-                .HasForeignKey(s => s.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // // ===== Session Entity =====
+            // modelBuilder.Entity<Session>()
+            //     .HasOne(s => s.User)
+            //     .WithMany()
+            //     .HasForeignKey(s => s.UserId)
+            //     .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Session>()
-                .HasIndex(s => s.SessionToken)
-                .IsUnique();
+            // modelBuilder.Entity<Session>()
+            //     .HasIndex(s => s.SessionToken)
+            //     .IsUnique();
 
             // ===== Case Relationships =====
             modelBuilder.Entity<Case>()
@@ -316,7 +316,7 @@ namespace LegalMateAI.DAL.DBContext
             modelBuilder.Entity<GeneratedContract>().Property(g => g.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             modelBuilder.Entity<GeneratedContract>().Property(g => g.Status).HasDefaultValue(ContractStatus.Draft);
             
-            modelBuilder.Entity<Session>().Property(s => s.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            // modelBuilder.Entity<Session>().Property(s => s.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         }
     }
 }

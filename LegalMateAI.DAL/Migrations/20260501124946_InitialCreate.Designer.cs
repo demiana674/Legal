@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegalMateAI.DAL.Migrations
 {
     [DbContext(typeof(LegalMateDbContext))]
-    [Migration("20260430195627_InitialCreate1")]
-    partial class InitialCreate1
+    [Migration("20260501124946_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1389,49 +1389,6 @@ namespace LegalMateAI.DAL.Migrations
                     b.ToTable("SearchQueries");
                 });
 
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Session", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("IpAddress")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastActivityAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SessionToken")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UserAgent")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SessionToken")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Sessions");
-                });
-
             modelBuilder.Entity("LegalMateAI.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("UserID")
@@ -2044,17 +2001,6 @@ namespace LegalMateAI.DAL.Migrations
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.SearchQuery", b =>
-                {
-                    b.HasOne("LegalMateAI.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.Session", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
                         .WithMany()

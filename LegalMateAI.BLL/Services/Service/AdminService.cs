@@ -94,13 +94,28 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(pageSize)
                 .ToListAsync();
 
-            return users.Select(MapUserToDto).ToList();
+            var result = users.Select(MapUserToDto).ToList();
+            
+            // فك التشفير بعد جلب البيانات
+            foreach (var user in result)
+            {
+                user.PhoneNumber = Decrypt(user.PhoneNumber) ?? "";
+                user.NationalId = Decrypt(user.NationalId);
+            }
+            
+            return result;
         }
 
         public async Task<UserResponseDto?> GetUserDetailsAsync(Guid userId)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId);
-            return user == null ? null : MapUserToDto(user);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.User);
+            if (user == null) return null;
+            
+            var result = MapUserToDto(user);
+            result.PhoneNumber = Decrypt(result.PhoneNumber) ?? "";
+            result.NationalId = Decrypt(result.NationalId);
+            
+            return result;
         }
 
         public async Task<bool> UpdateUserStatusAsync(Guid adminId, Guid userId, AccountStatus status, string? reason = null)
@@ -133,7 +148,7 @@ namespace LegalMateAI.BLL.Services.Service
         {
             _logger.LogInformation("Getting pending lawyers...");
 
-            return await _context.Users
+            var lawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                 .Where(u => u.Role == UserRole.Lawyer &&
                        u.LawyerProfile != null &&
@@ -152,6 +167,15 @@ namespace LegalMateAI.BLL.Services.Service
                     RegisteredAt = u.CreatedAt
                 })
                 .ToListAsync();
+
+            // فك التشفير بعد جلب البيانات
+            foreach (var lawyer in lawyers)
+            {
+                lawyer.Phone = Decrypt(lawyer.Phone) ?? "";
+                lawyer.LicenseNumber = Decrypt(lawyer.LicenseNumber) ?? "";
+            }
+
+            return lawyers;
         }
 
         public async Task<List<LawyerResponseDto>> GetAllLawyersAsync(LawyerFilterDto? filter = null)
@@ -160,6 +184,10 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Specialties)
                     .ThenInclude(s => s.Specialty)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Governorate)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.City)
                 .Where(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null)
                 .AsQueryable();
 
@@ -177,7 +205,7 @@ namespace LegalMateAI.BLL.Services.Service
                         u.LastName.ToLower().Contains(term) ||
                         u.Email.ToLower().Contains(term) ||
                         (u.LawyerProfile!.LicenseNumber != null &&
-                         u.LawyerProfile.LicenseNumber.ToLower().Contains(term)));
+                         u.LawyerProfile.LicenseNumber.Contains(term)));
                 }
 
                 if (filter.GovernorateId.HasValue)
@@ -189,8 +217,7 @@ namespace LegalMateAI.BLL.Services.Service
 
                 if (!string.IsNullOrEmpty(filter.City))
                     query = query.Where(u => u.LawyerProfile!.City != null &&
-                        // u.LawyerProfile.City.Contains(filter.City));
-                        u.LawyerProfile.City != null && u.LawyerProfile.City.Name.Contains(filter.City));
+                        u.LawyerProfile.City.Name.Contains(filter.City));
             }
 
             int page = Math.Max(1, filter?.Page ?? 1);
@@ -215,9 +242,34 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.Certificates)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Governorate)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.City)
                 .FirstOrDefaultAsync(u => u.UserID == lawyerId && u.Role == UserRole.Lawyer);
 
             return user?.LawyerProfile == null ? null : MapLawyerToDto(user);
+        }
+
+        public async Task<LawyerResponseDto?> GetLawyerDetailsByIdAsync(Guid lawyerId)
+        {
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Specialties)
+                        .ThenInclude(s => s.Specialty)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Certificates)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Reviews)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Governorate)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.City)
+                .FirstOrDefaultAsync(u => u.UserID == lawyerId && u.Role == UserRole.Lawyer);
+
+            if (user?.LawyerProfile == null) return null;
+            
+            return MapLawyerToDto(user);
         }
 
         public async Task<bool> ApproveLawyerAsync(Guid userId)
@@ -299,6 +351,11 @@ namespace LegalMateAI.BLL.Services.Service
             return logs.Select(MapLogToDto).ToList();
         }
 
+        public async Task<List<AdminLogDto>> GetAdminLogsAsync(LogFilterDto? filter = null)
+        {
+            return await GetLogsAsync(filter);
+        }
+
         public async Task<byte[]> ExportLogsAsync(LogFilterDto? filter, string format = "csv")
         {
             var logs = await GetLogsAsync(filter);
@@ -313,6 +370,88 @@ namespace LegalMateAI.BLL.Services.Service
             return format.ToLower() == "pdf"
                 ? _pdfService.ExportAdminLogsToPdf(logs, adminName, filter?.FromDate, filter?.ToDate)
                 : _pdfService.ExportAdminLogsToExcel(logs);
+        }
+
+        public async Task<byte[]> ExportLogsToPdfAsync(LogFilterDto? filter = null)
+        {
+            return await ExportLogsAsync(filter, "pdf");
+        }
+
+        public async Task<List<AdminLogDto>> GetAllUserLogsAsync(LogFilterDto? filter = null)
+        {
+            var query = _context.AdminLogs
+                .Include(l => l.Admin)
+                .Where(l => l.TargetType == "User" || l.TargetType == "Lawyer")
+                .AsQueryable();
+
+            if (filter != null)
+            {
+                if (!string.IsNullOrEmpty(filter.AdminId) && Guid.TryParse(filter.AdminId, out var adminId))
+                    query = query.Where(l => l.AdminId == adminId);
+
+                if (filter.UserId.HasValue)
+                    query = query.Where(l => l.TargetId == filter.UserId.Value);
+
+                if (filter.Action.HasValue)
+                    query = query.Where(l => l.Action == filter.Action.Value);
+
+                if (!string.IsNullOrEmpty(filter.TargetType))
+                    query = query.Where(l => l.TargetType == filter.TargetType);
+
+                if (filter.FromDate.HasValue)
+                    query = query.Where(l => l.Timestamp >= filter.FromDate.Value);
+
+                if (filter.ToDate.HasValue)
+                    query = query.Where(l => l.Timestamp <= filter.ToDate.Value);
+            }
+
+            int page = Math.Max(1, filter?.Page ?? 1);
+            int pageSize = Math.Max(1, Math.Min(500, filter?.PageSize ?? 50));
+
+            var logs = await query
+                .OrderByDescending(l => l.Timestamp)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return logs.Select(MapLogToDto).ToList();
+        }
+
+        public async Task<List<AdminLogDto>> GetUserLogsAsync(Guid userId, LogFilterDto? filter = null)
+        {
+            var query = _context.AdminLogs
+                .Include(l => l.Admin)
+                .Where(l => l.TargetId == userId)
+                .AsQueryable();
+
+            if (filter != null)
+            {
+                if (!string.IsNullOrEmpty(filter.AdminId) && Guid.TryParse(filter.AdminId, out var adminId))
+                    query = query.Where(l => l.AdminId == adminId);
+
+                if (filter.Action.HasValue)
+                    query = query.Where(l => l.Action == filter.Action.Value);
+
+                if (!string.IsNullOrEmpty(filter.TargetType))
+                    query = query.Where(l => l.TargetType == filter.TargetType);
+
+                if (filter.FromDate.HasValue)
+                    query = query.Where(l => l.Timestamp >= filter.FromDate.Value);
+
+                if (filter.ToDate.HasValue)
+                    query = query.Where(l => l.Timestamp <= filter.ToDate.Value);
+            }
+
+            int page = Math.Max(1, filter?.Page ?? 1);
+            int pageSize = Math.Max(1, Math.Min(500, filter?.PageSize ?? 50));
+
+            var logs = await query
+                .OrderByDescending(l => l.Timestamp)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return logs.Select(MapLogToDto).ToList();
         }
 
         public async Task<SystemLogsStatsDto> GetLogsStatsAsync()
@@ -359,7 +498,7 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        // ==================== Admin Details (مضافة للتوافق) ====================
+        // ==================== Admin Details ====================
         public async Task<AdminProfileDto?> GetAdminDetailsAsync(Guid adminId)
         {
             var admin = await _context.Admins
@@ -387,8 +526,8 @@ namespace LegalMateAI.BLL.Services.Service
                 DateOfBirth = profile?.DateOfBirth?.ToString("yyyy-MM-dd"),
                 Nationality = profile?.Nationality,
                 NationalId = Decrypt(profile?.NationalId),
-                Governorate = profile?.Governorate?.Name,
-                City = profile?.City?.Name,
+                Governorate = profile?.Governorate?.Name ?? "",
+                City = profile?.City?.Name ?? "",
                 Address = profile?.Address,
                 CreatedAt = admin.CreatedAt,
                 LastLoginAt = admin.LastLoginAt,
@@ -397,15 +536,20 @@ namespace LegalMateAI.BLL.Services.Service
             };
         }
 
-        // ==================== Entity Details (مضافة للتوافق) ====================
+        public async Task<AdminProfileDto?> GetAdminDetailsByIdAsync(Guid adminId)
+        {
+            return await GetAdminDetailsAsync(adminId);
+        }
+
+        // ==================== Entity Details ====================
         public async Task<object?> GetEntityDetailsAsync(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user != null)
             {
                 if (user.Role == UserRole.Lawyer)
-                    return await GetLawyerDetailsAsync(id);
-                else
+                    return await GetLawyerDetailsByIdAsync(id);
+                else if (user.Role == UserRole.User)
                     return await GetUserDetailsAsync(id);
             }
             return await GetAdminDetailsAsync(id);
@@ -513,8 +657,8 @@ namespace LegalMateAI.BLL.Services.Service
             FirstName = user.FirstName,
             LastName = user.LastName,
             Email = user.Email,
-            PhoneNumber = Decrypt(user.Phone) ?? "",
-            NationalId = Decrypt(user.NationalId),
+            PhoneNumber = user.Phone ?? "",
+            NationalId = user.NationalId,
             Role = user.Role,
             Status = user.Status,
             CreatedAt = user.CreatedAt,
@@ -556,7 +700,6 @@ namespace LegalMateAI.BLL.Services.Service
                 TotalReviews = lawyer.Reviews?.Count ?? 0,
                 GovernorateId = lawyer.GovernorateId,
                 GovernorateName = lawyer.Governorate?.Name,
-                // City = lawyer.City,
                 City = lawyer.City?.Name,
                 OfficeAddress = lawyer.OfficeAddress,
                 Specialties = lawyer.Specialties?.Select(s => new LawyerProfileSpecialtyDto
