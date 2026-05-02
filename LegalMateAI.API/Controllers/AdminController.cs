@@ -181,60 +181,37 @@ namespace LegalMateAI.API.Controllers
                 : Ok(entity);
         }
 
-        // ==================== Admin Logs ====================
-        [HttpGet("logs")]
-        public async Task<IActionResult> GetAdminLogs([FromQuery] LogFilterDto? filter)
+        // ==================== Unified Logs ====================
+        
+        /// <summary>
+        /// الحصول على جميع السجلات (أدمن، مستخدمين، محامين) مع فلترة وترقيم
+        /// </summary>
+        [HttpGet("logs/all")]
+        public async Task<IActionResult> GetAllLogs([FromQuery] UnifiedLogFilterDto filter)
         {
-            var logs = await _adminService.GetAdminLogsAsync(filter ?? new LogFilterDto());
+            var logs = await _adminService.GetAllLogsAsync(filter ?? new UnifiedLogFilterDto());
             return Ok(logs);
         }
 
-        [HttpGet("logs/export")]
-        public async Task<IActionResult> ExportLogs([FromQuery] LogFilterDto? filter, [FromQuery] string format = "csv")
-        {
-            var file = await _adminService.ExportLogsAsync(filter, format);
-            var contentType = format.ToLower() == "pdf" ? "application/pdf" : "text/csv; charset=utf-8";
-            return File(file, contentType, $"admin_logs_{DateTime.Now:yyyyMMdd_HHmmss}.{format}");
-        }
-
-        // ==================== All User Logs ====================
-        [HttpGet("logs/users")]
-        public async Task<IActionResult> GetAllUserLogs([FromQuery] LogFilterDto? filter)
-        {
-            var logs = await _adminService.GetAllUserLogsAsync(filter ?? new LogFilterDto());
-            return Ok(logs);
-        }
-
-        [HttpGet("logs/users/{userId}")]
-        public async Task<IActionResult> GetUserLogs(Guid userId, [FromQuery] LogFilterDto? filter)
-        {
-            var logs = await _adminService.GetUserLogsAsync(userId, filter ?? new LogFilterDto());
-            return Ok(logs);
-        }
-
-        [HttpGet("logs/search")]
-        public async Task<IActionResult> SearchLogs([FromQuery] string q)
-        {
-            if (string.IsNullOrWhiteSpace(q))
-                return BadRequest(new { message = "يرجى إدخال كلمة البحث" });
-
-            var filter = new LogFilterDto();
-            var allLogs = await _adminService.GetAllUserLogsAsync(filter);
-            var filtered = allLogs
-                .Where(l => l.AdminName.Contains(q, StringComparison.OrdinalIgnoreCase) || 
-                            l.TargetType.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                            l.Action.ToString().Contains(q, StringComparison.OrdinalIgnoreCase))
-                .Take(100)
-                .ToList();
-
-            return Ok(filtered);
-        }
-
+        /// <summary>
+        /// الحصول على إحصائيات السجلات
+        /// </summary>
         [HttpGet("logs/stats")]
         public async Task<IActionResult> GetLogsStats()
         {
             var stats = await _adminService.GetLogsStatsAsync();
             return Ok(stats);
+        }
+
+        /// <summary>
+        /// تصدير السجلات (CSV/PDF)
+        /// </summary>
+        [HttpGet("logs/export-all")]
+        public async Task<IActionResult> ExportAllLogs([FromQuery] UnifiedLogFilterDto filter, [FromQuery] string format = "csv")
+        {
+            var file = await _adminService.ExportLogsAsync(filter ?? new UnifiedLogFilterDto(), format);
+            var contentType = format.ToLower() == "pdf" ? "application/pdf" : "text/csv; charset=utf-8";
+            return File(file, contentType, $"admin_logs_{DateTime.Now:yyyyMMdd_HHmmss}.{format}");
         }
 
         // ==================== System ====================

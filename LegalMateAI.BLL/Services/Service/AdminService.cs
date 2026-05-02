@@ -10,16 +10,29 @@ using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using System.Text;
+using OfficeOpenXml;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using Document = QuestPDF.Fluent.Document;
 
 namespace LegalMateAI.BLL.Services.Service
 {
     public class AdminService : IAdminService
     {
         private readonly LegalMateDbContext _context;
-        private readonly PdfGenerationService _pdfService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<AdminService> _logger;
         private readonly IEncryptionService _encryption;
+
+        static AdminService()
+        {
+            // إعداد ترخيص EPPlus للإصدارات الجديدة
+            ExcelPackage.License.SetNonCommercialPersonal("LegalMateAI");
+            // إعداد ترخيص QuestPDF
+            QuestPDF.Settings.License = LicenseType.Community;
+        }
 
         public AdminService(
             LegalMateDbContext context,
@@ -28,7 +41,6 @@ namespace LegalMateAI.BLL.Services.Service
             IEncryptionService encryption)
         {
             _context = context;
-            _pdfService = new PdfGenerationService();
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
             _encryption = encryption;
@@ -99,7 +111,6 @@ namespace LegalMateAI.BLL.Services.Service
 
             var result = users.Select(MapUserToDto).ToList();
             
-            // فك التشفير بعد جلب البيانات
             foreach (var user in result)
             {
                 user.PhoneNumber = Decrypt(user.PhoneNumber) ?? "";
@@ -179,7 +190,6 @@ namespace LegalMateAI.BLL.Services.Service
                 })
                 .ToListAsync();
 
-            // فك التشفير بعد جلب البيانات
             foreach (var lawyer in lawyers)
             {
                 lawyer.Phone = Decrypt(lawyer.Phone) ?? "";
@@ -264,23 +274,7 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<LawyerResponseDto?> GetLawyerDetailsByIdAsync(Guid lawyerId)
         {
-            var user = await _context.Users
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
-                        .ThenInclude(s => s.Specialty)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Governorate)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.City)
-                .FirstOrDefaultAsync(u => u.UserID == lawyerId && u.Role == UserRole.Lawyer);
-
-            if (user?.LawyerProfile == null) return null;
-            
-            return MapLawyerToDto(user);
+            return await GetLawyerDetailsAsync(lawyerId);
         }
 
         public async Task<bool> ApproveLawyerAsync(Guid userId)
@@ -324,34 +318,57 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        // ==================== Log Management ====================
-        public async Task<List<AdminLogDto>> GetLogsAsync(LogFilterDto? filter = null)
+        // ==================== Unified Log Management ====================
+        
+        public async Task<UnifiedLogsResponseDto> GetAllLogsAsync(UnifiedLogFilterDto filter)
         {
-            var query = _context.AdminLogs.Include(l => l.Admin).AsQueryable();
+            var query = _context.AdminLogs
+                .Include(l => l.Admin)
+                .AsQueryable();
 
-            if (filter != null)
+            if (!string.IsNullOrEmpty(filter.SearchTerm))
             {
-                if (!string.IsNullOrEmpty(filter.AdminId) && Guid.TryParse(filter.AdminId, out var adminId))
-                    query = query.Where(l => l.AdminId == adminId);
-
-                if (filter.UserId.HasValue)
-                    query = query.Where(l => l.TargetId == filter.UserId.Value);
-
-                if (filter.Action.HasValue)
-                    query = query.Where(l => l.Action == filter.Action.Value);
-
-                if (!string.IsNullOrEmpty(filter.TargetType))
-                    query = query.Where(l => l.TargetType == filter.TargetType);
-
-                if (filter.FromDate.HasValue)
-                    query = query.Where(l => l.Timestamp >= filter.FromDate.Value);
-
-                if (filter.ToDate.HasValue)
-                    query = query.Where(l => l.Timestamp <= filter.ToDate.Value);
+                var term = filter.SearchTerm.ToLower();
+                query = query.Where(l => 
+                    (l.Admin != null && l.Admin.FullName.ToLower().Contains(term)) ||
+                    (l.Admin != null && l.Admin.Email.ToLower().Contains(term)) ||
+                    l.Action.ToString().ToLower().Contains(term) ||
+                    l.TargetType.ToLower().Contains(term));
             }
 
-            int page = Math.Max(1, filter?.Page ?? 1);
-            int pageSize = Math.Max(1, Math.Min(500, filter?.PageSize ?? 50));
+            if (filter.AdminId.HasValue)
+                query = query.Where(l => l.AdminId == filter.AdminId.Value);
+
+            if (filter.UserId.HasValue)
+                query = query.Where(l => l.TargetId == filter.UserId.Value);
+
+            if (!string.IsNullOrEmpty(filter.TargetType))
+                query = query.Where(l => l.TargetType == filter.TargetType);
+
+            if (filter.Role.HasValue)
+            {
+                var targetUserIdsByRole = await _context.Users
+                    .Where(u => u.Role == filter.Role.Value)
+                    .Select(u => u.UserID)
+                    .ToListAsync();
+                query = query.Where(l => targetUserIdsByRole.Contains(l.TargetId));
+            }
+
+            if (filter.Action.HasValue)
+                query = query.Where(l => l.Action == filter.Action.Value);
+
+            if (filter.FromDate.HasValue)
+                query = query.Where(l => l.Timestamp >= filter.FromDate.Value);
+
+            if (filter.ToDate.HasValue)
+            {
+                var endDate = filter.ToDate.Value.Date.AddDays(1);
+                query = query.Where(l => l.Timestamp < endDate);
+            }
+
+            var totalCount = await query.CountAsync();
+            int page = Math.Max(1, filter.Page);
+            int pageSize = Math.Max(1, Math.Min(500, filter.PageSize));
 
             var logs = await query
                 .OrderByDescending(l => l.Timestamp)
@@ -359,110 +376,71 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(pageSize)
                 .ToListAsync();
 
-            return logs.Select(MapLogToDto).ToList();
-        }
-
-        public async Task<List<AdminLogDto>> GetAdminLogsAsync(LogFilterDto? filter = null)
-        {
-            return await GetLogsAsync(filter);
-        }
-
-        public async Task<byte[]> ExportLogsAsync(LogFilterDto? filter, string format = "csv")
-        {
-            var logs = await GetLogsAsync(filter);
-            var adminName = "مدير النظام";
-
-            if (!string.IsNullOrEmpty(filter?.AdminId) && Guid.TryParse(filter.AdminId, out var adminId))
-            {
-                var admin = await _context.Admins.FindAsync(adminId);
-                if (admin != null) adminName = admin.FullName;
-            }
-
-            return format.ToLower() == "pdf"
-                ? _pdfService.ExportAdminLogsToPdf(logs, adminName, filter?.FromDate, filter?.ToDate)
-                : _pdfService.ExportAdminLogsToExcel(logs);
-        }
-
-        public async Task<byte[]> ExportLogsToPdfAsync(LogFilterDto? filter = null)
-        {
-            return await ExportLogsAsync(filter, "pdf");
-        }
-
-        public async Task<List<AdminLogDto>> GetAllUserLogsAsync(LogFilterDto? filter = null)
-        {
-            var query = _context.AdminLogs
-                .Include(l => l.Admin)
+            var targetUserIdsList = logs
                 .Where(l => l.TargetType == "User" || l.TargetType == "Lawyer")
-                .AsQueryable();
-
-            if (filter != null)
+                .Select(l => l.TargetId)
+                .Distinct()
+                .ToList();
+            
+            var usersDict = await _context.Users
+                .Where(u => targetUserIdsList.Contains(u.UserID))
+                .ToDictionaryAsync(u => u.UserID, u => u);
+            
+            var targetAdminIdsList = logs
+                .Where(l => l.TargetType == "Admin")
+                .Select(l => l.TargetId)
+                .Distinct()
+                .ToList();
+            
+            var adminsDict = await _context.Admins
+                .Where(a => targetAdminIdsList.Contains(a.Id))
+                .ToDictionaryAsync(a => a.Id, a => a);
+            
+            var result = new List<UnifiedLogDto>();
+            
+            foreach (var log in logs)
             {
-                if (!string.IsNullOrEmpty(filter.AdminId) && Guid.TryParse(filter.AdminId, out var adminId))
-                    query = query.Where(l => l.AdminId == adminId);
+                var unifiedLog = new UnifiedLogDto
+                {
+                    Id = log.Id,
+                    Timestamp = log.Timestamp,
+                    AdminId = log.AdminId,
+                    AdminName = log.Admin?.FullName ?? "غير معروف",
+                    AdminEmail = log.Admin?.Email ?? "",
+                    Action = log.Action,
+                    TargetType = log.TargetType,
+                    TargetId = log.TargetId
+                };
 
-                if (filter.UserId.HasValue)
-                    query = query.Where(l => l.TargetId == filter.UserId.Value);
+                if (log.TargetId != Guid.Empty && (log.TargetType == "User" || log.TargetType == "Lawyer"))
+                {
+                    if (usersDict.TryGetValue(log.TargetId, out var targetUser))
+                    {
+                        unifiedLog.TargetName = targetUser.FullName;
+                        unifiedLog.TargetEmail = targetUser.Email;
+                        unifiedLog.TargetRole = targetUser.Role;
+                    }
+                }
+                
+                if (log.TargetId != Guid.Empty && log.TargetType == "Admin")
+                {
+                    if (adminsDict.TryGetValue(log.TargetId, out var targetAdmin))
+                    {
+                        unifiedLog.TargetName = targetAdmin.FullName;
+                        unifiedLog.TargetEmail = targetAdmin.Email;
+                    }
+                }
 
-                if (filter.Action.HasValue)
-                    query = query.Where(l => l.Action == filter.Action.Value);
-
-                if (!string.IsNullOrEmpty(filter.TargetType))
-                    query = query.Where(l => l.TargetType == filter.TargetType);
-
-                if (filter.FromDate.HasValue)
-                    query = query.Where(l => l.Timestamp >= filter.FromDate.Value);
-
-                if (filter.ToDate.HasValue)
-                    query = query.Where(l => l.Timestamp <= filter.ToDate.Value);
+                result.Add(unifiedLog);
             }
 
-            int page = Math.Max(1, filter?.Page ?? 1);
-            int pageSize = Math.Max(1, Math.Min(500, filter?.PageSize ?? 50));
-
-            var logs = await query
-                .OrderByDescending(l => l.Timestamp)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return logs.Select(MapLogToDto).ToList();
-        }
-
-        public async Task<List<AdminLogDto>> GetUserLogsAsync(Guid userId, LogFilterDto? filter = null)
-        {
-            var query = _context.AdminLogs
-                .Include(l => l.Admin)
-                .Where(l => l.TargetId == userId)
-                .AsQueryable();
-
-            if (filter != null)
+            return new UnifiedLogsResponseDto
             {
-                if (!string.IsNullOrEmpty(filter.AdminId) && Guid.TryParse(filter.AdminId, out var adminId))
-                    query = query.Where(l => l.AdminId == adminId);
-
-                if (filter.Action.HasValue)
-                    query = query.Where(l => l.Action == filter.Action.Value);
-
-                if (!string.IsNullOrEmpty(filter.TargetType))
-                    query = query.Where(l => l.TargetType == filter.TargetType);
-
-                if (filter.FromDate.HasValue)
-                    query = query.Where(l => l.Timestamp >= filter.FromDate.Value);
-
-                if (filter.ToDate.HasValue)
-                    query = query.Where(l => l.Timestamp <= filter.ToDate.Value);
-            }
-
-            int page = Math.Max(1, filter?.Page ?? 1);
-            int pageSize = Math.Max(1, Math.Min(500, filter?.PageSize ?? 50));
-
-            var logs = await query
-                .OrderByDescending(l => l.Timestamp)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return logs.Select(MapLogToDto).ToList();
+                Logs = result,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<SystemLogsStatsDto> GetLogsStatsAsync()
@@ -482,6 +460,151 @@ namespace LegalMateAI.BLL.Services.Service
                 ActionsByType = allLogs
                     .GroupBy(l => l.Action.ToString())
                     .ToDictionary(g => g.Key, g => g.Count())
+            };
+        }
+
+        // ==================== Export Methods ====================
+        
+        public async Task<byte[]> ExportLogsToCsvAsync(UnifiedLogFilterDto filter)
+        {
+            var logsResponse = await GetAllLogsAsync(filter);
+            var logs = logsResponse.Logs;
+            
+            var csv = new StringBuilder();
+            csv.AppendLine("التاريخ,الأدمن,الإجراء,نوع المستهدف,المستهدف,البريد الإلكتروني");
+            
+            foreach (var log in logs)
+            {
+                csv.AppendLine($"\"{log.TimestampFormatted}\",\"{log.AdminName}\",\"{log.ActionDescription}\",\"{log.TargetTypeAr}\",\"{log.TargetName}\",\"{log.TargetEmail}\"");
+            }
+            
+            var utf8WithBom = new UTF8Encoding(true);
+            return utf8WithBom.GetBytes(csv.ToString());
+        }
+
+        public async Task<byte[]> ExportLogsToExcelAsync(UnifiedLogFilterDto filter)
+        {
+            var logsResponse = await GetAllLogsAsync(filter);
+            var logs = logsResponse.Logs;
+            
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("السجلات");
+                
+                worksheet.View.RightToLeft = true;
+                
+                using (var range = worksheet.Cells[1, 1, 1, 5])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Font.Size = 12;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                }
+                
+                worksheet.Cells[1, 1].Value = "التاريخ";
+                worksheet.Cells[1, 2].Value = "الأدمن";
+                worksheet.Cells[1, 3].Value = "الإجراء";
+                worksheet.Cells[1, 4].Value = "نوع المستهدف";
+                worksheet.Cells[1, 5].Value = "المستهدف";
+                
+                int row = 2;
+                foreach (var log in logs)
+                {
+                    worksheet.Cells[row, 1].Value = log.TimestampFormatted;
+                    worksheet.Cells[row, 2].Value = log.AdminName;
+                    worksheet.Cells[row, 3].Value = log.ActionDescription;
+                    worksheet.Cells[row, 4].Value = log.TargetTypeAr;
+                    worksheet.Cells[row, 5].Value = log.TargetName;
+                    row++;
+                }
+                
+                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                
+                return package.GetAsByteArray();
+            }
+        }
+
+        public async Task<byte[]> ExportLogsToPdfAsync(UnifiedLogFilterDto filter)
+        {
+            var logsResponse = await GetAllLogsAsync(filter);
+            var logs = logsResponse.Logs;
+            
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(10));
+                    
+                    page.Header()
+                        .Text("تقرير سجلات النظام")
+                        .SemiBold().FontSize(20).FontColor(Colors.Blue.Medium).AlignCenter();
+                    
+                    page.Header()
+                        .PaddingTop(10)
+                        .Text($"تاريخ التقرير: {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
+                        .FontSize(9)
+                        .FontColor(Colors.Grey.Darken1)
+                        .AlignRight();
+                    
+                    page.Content()
+                        .PaddingVertical(10)
+                        .Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(3);
+                            });
+                            
+                            table.Header(header =>
+                            {
+                                header.Cell().Text("التاريخ").Bold();
+                                header.Cell().Text("الأدمن").Bold();
+                                header.Cell().Text("الإجراء").Bold();
+                                header.Cell().Text("نوع المستهدف").Bold();
+                                header.Cell().Text("المستهدف").Bold();
+                            });
+                            
+                            foreach (var log in logs)
+                            {
+                                table.Cell().Text(log.TimestampFormatted);
+                                table.Cell().Text(log.AdminName);
+                                table.Cell().Text(log.ActionDescription);
+                                table.Cell().Text(log.TargetTypeAr);
+                                table.Cell().Text(log.TargetName ?? "-");
+                            }
+                        });
+                    
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(text =>
+                        {
+                            text.Span("الصفحة ");
+                            text.CurrentPageNumber();
+                            text.Span(" من ");
+                            text.TotalPages();
+                        });
+                });
+            });
+            
+            return document.GeneratePdf();
+        }
+
+        public async Task<byte[]> ExportLogsAsync(UnifiedLogFilterDto filter, string format = "csv")
+        {
+            return format.ToLower() switch
+            {
+                "csv" => await ExportLogsToCsvAsync(filter),
+                "xlsx" => await ExportLogsToExcelAsync(filter),
+                "pdf" => await ExportLogsToPdfAsync(filter),
+                _ => await ExportLogsToCsvAsync(filter)
             };
         }
 
@@ -575,7 +698,15 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(count)
                 .ToListAsync();
 
-            return logs.Select(MapLogToDto).ToList();
+            return logs.Select(l => new AdminLogDto
+            {
+                Id = l.Id,
+                AdminName = l.Admin?.FullName ?? "غير معروف",
+                Action = l.Action,
+                TargetType = l.TargetType,
+                TargetId = l.TargetId,
+                Timestamp = l.Timestamp
+            }).ToList();
         }
 
         private async Task LogAdminActionAsync(Guid adminId, AdminLogAction action, string targetType, Guid? targetId)
@@ -683,16 +814,6 @@ namespace LegalMateAI.BLL.Services.Service
             DocumentsCount = 0,
             ContractsCount = 0,
             AppointmentsCount = 0
-        };
-
-        private AdminLogDto MapLogToDto(AdminLog log) => new()
-        {
-            Id = log.Id,
-            AdminName = log.Admin?.FullName ?? "غير معروف",
-            Action = log.Action,
-            TargetType = log.TargetType,
-            TargetId = log.TargetId,
-            Timestamp = log.Timestamp
         };
 
         private LawyerResponseDto MapLawyerToDto(User user)

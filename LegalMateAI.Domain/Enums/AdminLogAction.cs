@@ -13,7 +13,8 @@ namespace LegalMateAI.Domain.Enums
         Suspend = 9,
         Activate = 10,
         UpdateProfile = 11,
-        Export = 12,
-        ClearCache = 13
+        ChangePassword = 12, 
+        Export = 13,
+        ClearCache = 14
     }
 }

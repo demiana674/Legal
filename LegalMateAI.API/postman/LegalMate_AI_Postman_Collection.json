@@ -1,9 +1,9 @@
 {
   "info": {
     "name": "🏛️ LegalMate AI API - Final (Gemini Only)",
-    "description": "# LegalMate AI API Collection\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد الإلكتروني | كلمة المرور |\n|-------|-------------------|-------------|\n| **Admin 1** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط الـ API: `http://localhost:5101`\n- رابط الـ Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Gemini API (gemini-1.5-flash)**\n\n## 🆔 معرفات المحافظات والمدن\n\n### المحافظات (Governorate IDs)\n| ID | الاسم |\n|----|------|\n| 1 | القاهرة |\n| 2 | الإسكندرية |\n| 3 | الجيزة |\n\n### مدن القاهرة (City IDs)\n| ID | الاسم |\n|----|------|\n| 101 | مدينة نصر |\n| 102 | مصر الجديدة |\n| 103 | المعادي |\n| 106 | وسط البلد |\n| 109 | المهندسين |\n\n### مدن الإسكندرية (City IDs)\n| ID | الاسم |\n|----|------|\n| 201 | وسط الإسكندرية |\n| 202 | محرم بك |\n| 203 | سموحة |\n\n### مدن الجيزة (City IDs)\n| ID | الاسم |\n|----|------|\n| 301 | الدقي |\n| 302 | المهندسين |\n| 307 | الهرم |\n\n## ✅ التعديلات الجديدة\n\n- **Registration**: استخدام `governorateId` و `cityId` بدلاً من `city` string\n- **LawyerBranches**: استخدام `cityId` بدلاً من `city` string\n- **Sessions**: تم تفعيل تسجيل الجلسات بعد تسجيل الدخول\n- **IsActive**: المستخدم العادي يتفعّل تلقائياً، المحامي يحتاج موافقة\n- **Appointments**: تم إزالة User navigation property\n- **Admin Profile**: تحديث بيانات الأدمن (رقم الهاتف، العنوان، المحافظة، المدينة)\n- **User Profile**: تحديث بيانات المستخدم (رقم الهاتف، العنوان، المحافظة، المدينة)\n- **Lawyer Profile**: تحديث بيانات المحامي (رقم الهاتف، العنوان، المحافظة، المدينة، التخصصات)\n- **Decryption**: فك التشفير يتم بعد جلب البيانات من قاعدة البيانات",
+    "description": "# LegalMate AI API Collection\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد الإلكتروني | كلمة المرور |\n|-------|-------------------|-------------|\n| **Admin 1** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط الـ API: `http://localhost:5101`\n- رابط الـ Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Gemini API (gemini-1.5-flash)**\n\n## 🆔 معرفات المحافظات والمدن\n\n### المحافظات (Governorate IDs)\n| ID | الاسم |\n|----|------|\n| 1 | القاهرة |\n| 2 | الإسكندرية |\n| 3 | الجيزة |\n\n### مدن القاهرة (City IDs)\n| ID | الاسم |\n|----|------|\n| 101 | مدينة نصر |\n| 102 | مصر الجديدة |\n| 103 | المعادي |\n| 106 | وسط البلد |\n| 109 | المهندسين |\n\n## ✅ التعديلات الجديدة\n\n- **Registration**: استخدام `governorateId` و `cityId` بدلاً من `city` string\n- **LawyerBranches**: استخدام `cityId` بدلاً من `city` string\n- **Unified Logs**: نظام سجلات موحد لجميع المستخدمين (أدمن، مستخدمين، محامين)\n- **Log Filters**: دعم الفلترة بـ ID, Role, Action, TargetType, التاريخ, والبحث النصي\n- **Log Export**: تصدير السجلات إلى CSV/PDF\n- **IsActive**: المستخدم العادي يتفعّل تلقائياً، المحامي يحتاج موافقة",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "legal-mate-ai-final-gemini-v9",
+    "_postman_id": "legal-mate-ai-final-gemini-v10",
     "variable": [
       {
         "key": "base_url",
@@ -262,7 +262,7 @@
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"أحمد\",\n  \"lastName\": \"محمد علي\",\n  \"email\": \"ahmed.new@example.com\",\n  \"password\": \"Test@123456\",\n \"ConfirmPassword\":\"Test@123456\",\n \"phone\": \"01012345678\",\n  \"nationalId\": \"12345678901234\",\n  \"dateOfBirth\": \"1990-03-15\",\n  \"nationality\": \"مصري\",\n  \"governorateId\": 1,\n  \"cityId\": 101,\n  \"address\": \"شارع مصطفى النحاس، بناية 12، شقة 5\",\n  \"role\": 1\n}"
+              "raw": "{\n  \"firstName\": \"أحمد\",\n  \"lastName\": \"محمد علي\",\n  \"email\": \"ahmed.new@example.com\",\n  \"password\": \"Test@123456\",\n  \"confirmPassword\": \"Test@123456\",\n  \"phone\": \"01012345678\",\n  \"nationalId\": \"12345678901234\",\n  \"dateOfBirth\": \"1990-03-15\",\n  \"nationality\": \"مصري\",\n  \"governorateId\": 1,\n  \"cityId\": 101,\n  \"address\": \"شارع مصطفى النحاس، بناية 12، شقة 5\",\n  \"role\": 1\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/Registration",
@@ -279,7 +279,7 @@
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"كريم\",\n  \"lastName\": \"محمود إبراهيم\",\n  \"email\": \"karim.law@example.com\",\n  \"password\": \"Test@123456\",\n \"ConfirmPassword\": \"Test@123456\",\n  \"phone\": \"01098765432\",\n  \"nationalId\": \"28206121234567\",\n  \"dateOfBirth\": \"1982-06-12\",\n  \"nationality\": \"مصري\",\n  \"governorateId\": 1,\n  \"cityId\": 106,\n  \"address\": \"24 شارع رمسيس، ط6\",\n  \"role\": 2,\n  \"licenseNumber\": \"LAW-29841\",\n  \"barAssociation\": \"نقابة المحامين المصرية\",\n  \"licenseIssueDate\": \"2010-03-01\",\n  \"practiceDegree\": \"محامٍ أول (استئناف)\",\n  \"yearsOfExperience\": 14\n}"
+              "raw": "{\n  \"firstName\": \"كريم\",\n  \"lastName\": \"محمود إبراهيم\",\n  \"email\": \"karim.law@example.com\",\n  \"password\": \"Test@123456\",\n  \"confirmPassword\": \"Test@123456\",\n  \"phone\": \"01098765432\",\n  \"nationalId\": \"28206121234567\",\n  \"dateOfBirth\": \"1982-06-12\",\n  \"nationality\": \"مصري\",\n  \"governorateId\": 1,\n  \"cityId\": 106,\n  \"address\": \"24 شارع رمسيس، ط6\",\n  \"role\": 2,\n  \"licenseNumber\": \"LAW-29841\",\n  \"barAssociation\": \"نقابة المحامين المصرية\",\n  \"licenseIssueDate\": \"2010-03-01\",\n  \"practiceDegree\": \"محامٍ أول (استئناف)\",\n  \"yearsOfExperience\": 14\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/Registration",
@@ -659,7 +659,19 @@
           },
           "response": []
         },
-        
+        {
+          "name": "Get Lawyer Details By ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/details/{{lawyer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "details", "{{lawyer_id}}"]
+            }
+          },
+          "response": []
+        },
         {
           "name": "Approve Lawyer",
           "request": {
@@ -753,7 +765,7 @@
           "response": []
         },
         {
-          "name": "Get Admin Details By ID (New)",
+          "name": "Get Admin Details By ID",
           "request": {
             "method": "GET",
             "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
@@ -764,62 +776,34 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get Entity Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/entity/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "entity", "{{user_id}}"]
+            }
+          },
+          "response": []
         }
-       
       ]
     },
     {
-      "name": "📊 Logs",
+      "name": "📊 Logs (Unified System)",
       "item": [
         {
-          "name": "Get Admin Logs",
+          "name": "Get All Logs (Unified)",
           "request": {
             "method": "GET",
             "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/admin/logs",
+              "raw": "{{base_url}}/api/admin/logs/all",
               "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All User Logs",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/users",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "users"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Logs by ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "users", "{{user_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Logs",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/search?q=admin",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "search"],
-              "query": [{"key": "q", "value": "admin"}]
+              "path": ["api", "admin", "logs", "all"]
             }
           },
           "response": []
@@ -843,9 +827,9 @@
             "method": "GET",
             "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/admin/logs/export?format=csv",
+              "raw": "{{base_url}}/api/admin/logs/export-all?format=csv",
               "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "export"],
+              "path": ["api", "admin", "logs", "export-all"],
               "query": [{"key": "format", "value": "csv"}]
             }
           },
@@ -857,10 +841,114 @@
             "method": "GET",
             "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/admin/logs/export?format=pdf",
+              "raw": "{{base_url}}/api/admin/logs/export-all?format=pdf",
               "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "export"],
+              "path": ["api", "admin", "logs", "export-all"],
               "query": [{"key": "format", "value": "pdf"}]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Logs - By User ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?UserId={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [{"key": "UserId", "value": "{{user_id}}"}]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Logs - By Admin ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?AdminId={{admin_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [{"key": "AdminId", "value": "{{admin_id}}"}]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Logs - By Target Type (Lawyer)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?TargetType=Lawyer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [{"key": "TargetType", "value": "Lawyer"}]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Logs - By Action (Verify)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?Action=6",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [{"key": "Action", "value": "6"}]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Logs - By Date Range",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?FromDate=2024-01-01&ToDate=2024-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [
+                {"key": "FromDate", "value": "2024-01-01"},
+                {"key": "ToDate", "value": "2024-12-31"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Logs - Text Search",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?SearchTerm=أحمد",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [{"key": "SearchTerm", "value": "أحمد"}]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Logs with Pagination",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/all?Page=1&PageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "all"],
+              "query": [
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "10"}
+              ]
             }
           },
           "response": []
@@ -906,30 +994,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Download Law PDF",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/laws/1/download",
-              "host": ["{{base_url}}"],
-              "path": ["api", "laws", "1", "download"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Law Categories",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/laws/categories",
-              "host": ["{{base_url}}"],
-              "path": ["api", "laws", "categories"]
-            }
-          },
-          "response": []
         }
       ]
     },
@@ -950,19 +1014,6 @@
           "response": []
         },
         {
-          "name": "Get Template by ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Contracts/templates/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Contracts", "templates", "1"]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Generate Contract",
           "request": {
             "method": "POST",
@@ -972,7 +1023,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"templateId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"filledData\": {\n    \"PartyName\": \"شركة مصر للتطوير العقاري\",\n    \"TenantName\": \"كريم محمود\",\n    \"Duration\": \"5\",\n    \"RentAmount\": \"15000\",\n    \"PropertyAddress\": \"مدينة نصر، القاهرة\"\n  },\n  \"contractTitle\": \"عقد إيجار شقة سكنية\"\n}"
+              "raw": "{\n  \"templateId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"filledData\": {\n    \"PartyName\": \"شركة مصر للتطوير العقاري\",\n    \"TenantName\": \"كريم محمود\"\n  },\n  \"contractTitle\": \"عقد إيجار\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/Contracts/generate",
@@ -994,32 +1045,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Get Contract by ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Contracts/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Contracts", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Contract",
-          "request": {
-            "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Contracts/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Contracts", "1"]
-            }
-          },
-          "response": []
         }
       ]
     },
@@ -1031,13 +1056,12 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/Lawyer/search?specialization=مدني&governorateId=1&minExperience=5",
+              "raw": "{{base_url}}/api/Lawyer/search?specialization=مدني&governorateId=1",
               "host": ["{{base_url}}"],
               "path": ["api", "Lawyer", "search"],
               "query": [
                 {"key": "specialization", "value": "مدني"},
-                {"key": "governorateId", "value": "1"},
-                {"key": "minExperience", "value": "5"}
+                {"key": "governorateId", "value": "1"}
               ]
             }
           },
@@ -1104,207 +1128,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Analyze Document (AI)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"extractClauses\": true,\n  \"assessRisks\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Documents/1/analyze",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Documents", "1", "analyze"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "📁 Cases",
-      "item": [
-        {
-          "name": "Create Case",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"نزاع ملكية عقارية\",\n  \"description\": \"خلاف على ملكية عقار في مدينة نصر\",\n  \"clientId\": \"{{user_id}}\",\n  \"court\": \"محكمة القاهرة الابتدائية\",\n  \"status\": 1,\n  \"priority\": 3,\n  \"caseType\": \"مدني\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Cases",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Cases"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Cases",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Cases",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Cases"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Case by ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Cases/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Cases", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Case",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"تحديث القضية\",\n  \"status\": 3\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Cases/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Cases", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Case",
-          "request": {
-            "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Cases/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Cases", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Case Stats",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Cases/stats",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Cases", "stats"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "📅 Appointments",
-      "item": [
-        {
-          "name": "Create Appointment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"lawyerId\": \"{{lawyer_id}}\",\n  \"appointmentType\": \"استشارة قانونية\",\n  \"date\": \"2024-12-20\",\n  \"time\": \"10:00 AM\",\n  \"durationMinutes\": 60,\n  \"location\": \"المكتب الرئيسي\",\n  \"notes\": \"مراجعة عقد إيجار\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Appointments",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Appointments"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Appointments",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Appointments/user",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Appointments", "user"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Lawyer Appointments",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Appointments/lawyer",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Appointments", "lawyer"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Appointment by ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/Appointments/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Appointments", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cancel Appointment",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"ظروف طارئة\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Appointments/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Appointments", "1"]
-            }
-          },
-          "response": []
         }
       ]
     },
@@ -1353,25 +1176,13 @@
           "response": []
         },
         {
-          "name": "AI Health Check (Gemini)",
+          "name": "AI Health Check",
           "request": {
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/AI/health",
               "host": ["{{base_url}}"],
               "path": ["api", "AI", "health"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Swagger UI",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/swagger",
-              "host": ["{{base_url}}"],
-              "path": ["swagger"]
             }
           },
           "response": []

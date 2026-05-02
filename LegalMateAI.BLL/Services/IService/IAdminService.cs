@@ -20,7 +20,7 @@ namespace LegalMateAI.BLL.Services.IService
         Task<List<PendingLawyerDto>> GetPendingLawyersAsync();
         Task<List<LawyerResponseDto>> GetAllLawyersAsync(LawyerFilterDto? filter = null);
         Task<LawyerResponseDto?> GetLawyerDetailsAsync(Guid lawyerId);
-        Task<LawyerResponseDto?> GetLawyerDetailsByIdAsync(Guid lawyerId);  // New
+        Task<LawyerResponseDto?> GetLawyerDetailsByIdAsync(Guid lawyerId);
         Task<bool> ApproveLawyerAsync(Guid userId);
         Task<bool> RejectLawyerAsync(Guid userId, string reason);
         Task<bool> SuspendLawyerAsync(Guid userId, string? reason = null);
@@ -29,19 +29,16 @@ namespace LegalMateAI.BLL.Services.IService
         
         // Admin Details
         Task<AdminProfileDto?> GetAdminDetailsAsync(Guid adminId);
-        Task<AdminProfileDto?> GetAdminDetailsByIdAsync(Guid adminId);  // New
+        Task<AdminProfileDto?> GetAdminDetailsByIdAsync(Guid adminId);
         
         // Entity Details
         Task<object?> GetEntityDetailsAsync(Guid id);
         
-        // Log Management
-        Task<List<AdminLogDto>> GetLogsAsync(LogFilterDto? filter = null);
-        Task<List<AdminLogDto>> GetAdminLogsAsync(LogFilterDto? filter = null);
-        Task<byte[]> ExportLogsAsync(LogFilterDto? filter, string format = "csv");
-        Task<byte[]> ExportLogsToPdfAsync(LogFilterDto? filter = null);
-        Task<List<AdminLogDto>> GetAllUserLogsAsync(LogFilterDto? filter = null);
-        Task<List<AdminLogDto>> GetUserLogsAsync(Guid userId, LogFilterDto? filter = null);
+        // 🆕 Unified Log Management
+        Task<UnifiedLogsResponseDto> GetAllLogsAsync(UnifiedLogFilterDto filter);
         Task<SystemLogsStatsDto> GetLogsStatsAsync();
+        Task<byte[]> ExportLogsAsync(UnifiedLogFilterDto filter, string format = "csv");
+        Task<byte[]> ExportLogsToPdfAsync(UnifiedLogFilterDto filter);
         
         // System Management
         Task<SystemStatsDto> GetSystemStatsAsync();
