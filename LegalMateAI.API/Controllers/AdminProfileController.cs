@@ -5,6 +5,7 @@ using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.DTOs.CreateDTO;
 using System.Security.Claims;
 using LegalMateAI.DTOs.ReadDTO;
+using LegalMateAI.Domain.Enums;
 
 namespace LegalMateAI.API.Controllers
 {
@@ -14,11 +15,16 @@ namespace LegalMateAI.API.Controllers
     public class AdminProfileController : ControllerBase
     {
         private readonly IAdminProfileService _profileService;
+        private readonly ILogService _logService;
         private readonly ILogger<AdminProfileController> _logger;
 
-        public AdminProfileController(IAdminProfileService profileService, ILogger<AdminProfileController> logger)
+        public AdminProfileController(
+            IAdminProfileService profileService,
+            ILogService logService,
+            ILogger<AdminProfileController> logger)
         {
             _profileService = profileService;
+            _logService = logService;
             _logger = logger;
         }
 
@@ -46,8 +52,14 @@ namespace LegalMateAI.API.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateAdminProfileDto request)
         {
-            var result = await _profileService.UpdateProfileAsync(GetAdminId(), request);
+            var adminId = GetAdminId();
+            var result = await _profileService.UpdateProfileAsync(adminId, request);
             if (!result) return BadRequest(new { message = "فشل تحديث البيانات" });
+
+            // ✅ تسجيل تحديث الملف الشخصي
+            await _logService.LogActionAsync(adminId, AdminLogAction.UpdateProfile, "Admin", adminId);
+            _logger.LogInformation("Admin {AdminId} updated profile", adminId);
+
             return Ok(new { message = "تم تحديث البيانات بنجاح" });
         }
 
@@ -55,16 +67,27 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> UploadPicture([FromForm] UploadProfilePictureDto request)
         {
             if (request.ProfilePicture == null) return BadRequest(new { message = "الصورة مطلوبة" });
-            var pictureUrl = await _profileService.UploadProfilePictureAsync(GetAdminId(), request.ProfilePicture);
+            
+            var adminId = GetAdminId();
+            var pictureUrl = await _profileService.UploadProfilePictureAsync(adminId, request.ProfilePicture);
             if (pictureUrl == null) return BadRequest(new { message = "فشل رفع الصورة" });
+
+            // ✅ تسجيل رفع الصورة
+            await _logService.LogActionAsync(adminId, AdminLogAction.UpdateProfile, "Admin", adminId);
+
             return Ok(new { pictureUrl });
         }
 
         [HttpDelete("picture")]
         public async Task<IActionResult> RemovePicture()
         {
-            var result = await _profileService.RemoveProfilePictureAsync(GetAdminId());
+            var adminId = GetAdminId();
+            var result = await _profileService.RemoveProfilePictureAsync(adminId);
             if (!result) return BadRequest(new { message = "فشل حذف الصورة" });
+
+            // ✅ تسجيل حذف الصورة
+            await _logService.LogActionAsync(adminId, AdminLogAction.UpdateProfile, "Admin", adminId);
+
             return Ok(new { message = "تم حذف الصورة بنجاح" });
         }
     }

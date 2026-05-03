@@ -4,6 +4,7 @@ using LegalMateAI.BLL.Services.IService;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.DTOs.CreateDTO;
 using System.Security.Claims;
+using LegalMateAI.Domain.Enums;
 
 namespace LegalMateAI.API.Controllers
 {
@@ -13,10 +14,12 @@ namespace LegalMateAI.API.Controllers
     public class LawyerProfileController : ControllerBase
     {
         private readonly ILawyerProfileService _profileService;
+        private readonly ILogService _logService;
 
-        public LawyerProfileController(ILawyerProfileService profileService)
+        public LawyerProfileController(ILawyerProfileService profileService, ILogService logService)
         {
             _profileService = profileService;
+            _logService = logService;
         }
 
         private Guid GetUserId()
@@ -42,24 +45,39 @@ namespace LegalMateAI.API.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateLawyerProfileDto request)
         {
-            var result = await _profileService.UpdateProfileAsync(GetUserId(), request);
+            var userId = GetUserId();
+            var result = await _profileService.UpdateProfileAsync(userId, request);
             if (!result) return BadRequest(new { message = "فشل تحديث البيانات" });
+
+            // ✅ تسجيل تحديث الملف الشخصي للمحامي
+            await _logService.LogActionAsync(userId, AdminLogAction.UpdateProfile, "Lawyer", userId);
+
             return Ok(new { message = "تم تحديث البيانات بنجاح" });
         }
 
         [HttpPost("picture")]
         public async Task<IActionResult> UploadPicture([FromForm] UploadProfilePictureDto request)
         {
-            var pictureUrl = await _profileService.UploadProfilePictureAsync(GetUserId(), request.ProfilePicture);
+            var userId = GetUserId();
+            var pictureUrl = await _profileService.UploadProfilePictureAsync(userId, request.ProfilePicture);
             if (pictureUrl == null) return BadRequest(new { message = "فشل رفع الصورة" });
+
+            // ✅ تسجيل رفع الصورة
+            await _logService.LogActionAsync(userId, AdminLogAction.UpdateProfile, "Lawyer", userId);
+
             return Ok(new { pictureUrl });
         }
 
         [HttpDelete("picture")]
         public async Task<IActionResult> RemovePicture()
         {
-            var result = await _profileService.RemoveProfilePictureAsync(GetUserId());
+            var userId = GetUserId();
+            var result = await _profileService.RemoveProfilePictureAsync(userId);
             if (!result) return BadRequest(new { message = "فشل حذف الصورة" });
+
+            // ✅ تسجيل حذف الصورة
+            await _logService.LogActionAsync(userId, AdminLogAction.UpdateProfile, "Lawyer", userId);
+
             return Ok(new { message = "تم حذف الصورة بنجاح" });
         }
     }

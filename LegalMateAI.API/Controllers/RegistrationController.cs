@@ -5,6 +5,7 @@ using LegalMateAI.Infrastructure.Services.IService;
 using LegalMateAI.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
+using LegalMateAI.Domain.Enums;
 
 namespace LegalMateAI.API.Controllers
 {
@@ -13,15 +14,18 @@ namespace LegalMateAI.API.Controllers
     public class RegistrationController : ControllerBase
     {
         private readonly IRegistrationService _regService;
+        private readonly ILogService _logService;
         private readonly IEncryptionService _encryption;
         private readonly ILogger<RegistrationController> _logger;
 
         public RegistrationController(
-            IRegistrationService regService, 
+            IRegistrationService regService,
+            ILogService logService,
             IEncryptionService encryption,
             ILogger<RegistrationController> logger)
         {
             _regService = regService;
+            _logService = logService;
             _encryption = encryption;
             _logger = logger;
         }
@@ -50,7 +54,13 @@ namespace LegalMateAI.API.Controllers
                     return BadRequest(new { message = result.Message });
                 }
 
-                _logger.LogInformation("Registration successful for user: {UserId}", result.UserId);
+                // ✅ تسجيل عملية التسجيل (للمستخدمين والمحامين)
+                var action = request.Role == UserRole.Lawyer ? AdminLogAction.Create : AdminLogAction.Create;
+                if (result.UserId.HasValue)
+{
+    await _logService.LogActionAsync(result.UserId.Value, action, request.Role.ToString(), result.UserId.Value);
+}
+                _logger.LogInformation("Registration successful for user: {UserId}, Role: {Role}", result.UserId, request.Role);
                 
                 return Ok(new
                 {
@@ -61,7 +71,6 @@ namespace LegalMateAI.API.Controllers
             }
             catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && sqlEx.Number == 2627)
             {
-                // ✅ خطأ تكرار في قاعدة البيانات (Unique Constraint)
                 _logger.LogWarning(ex, "Duplicate key error during registration");
                 
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;

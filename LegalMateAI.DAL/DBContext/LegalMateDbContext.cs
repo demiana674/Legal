@@ -66,11 +66,11 @@ namespace LegalMateAI.DAL.DBContext
                 .HasForeignKey<AdminProfile>(ap => ap.AdminId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Admin>()
-                .HasMany(a => a.AdminLogs)
-                .WithOne(al => al.Admin)
-                .HasForeignKey(al => al.AdminId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // modelBuilder.Entity<Admin>()
+            //     .HasMany(a => a.AdminLogs)
+            //     .WithOne(al => al.Admin)
+            //     .HasForeignKey(al => al.AdminId)
+            //     .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.LawyerProfile)

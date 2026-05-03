@@ -36,6 +36,7 @@ namespace LegalMateAI.Domain.Entities
         // Relationships
         public LawyerProfile? LawyerProfile { get; set; }
         public UserProfile? UserProfile { get; set; }
+        
         public ICollection<Document> Documents { get; set; } = new List<Document>();
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();

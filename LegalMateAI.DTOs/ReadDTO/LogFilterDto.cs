@@ -5,14 +5,18 @@ namespace LegalMateAI.DTOs.ReadDTO
 {
     public class LogFilterDto
     {
-        public string? AdminId { get; set; }
+        // public string? AdminId { get; set; } 
         public Guid? UserId { get; set; }
         public string? UserType { get; set; }
         public AdminLogAction? Action { get; set; }
-        public string? TargetType { get; set; }
+        public String? TargetType { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public string? Status { get; set; }
+        /// <summary>
+        /// بحث نصي في الاسم أو البريد
+        /// </summary>
+        public string? SearchTerm { get; set; }
         
         private int _page = 1;
         public int Page { get => _page; set => _page = value < 1 ? 1 : value; }

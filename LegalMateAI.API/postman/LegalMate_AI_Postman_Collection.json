@@ -1,93 +1,93 @@
 {
   "info": {
-    "name": "🏛️ LegalMate AI API - Final (Gemini Only)",
-    "description": "# LegalMate AI API Collection\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد الإلكتروني | كلمة المرور |\n|-------|-------------------|-------------|\n| **Admin 1** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط الـ API: `http://localhost:5101`\n- رابط الـ Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Gemini API (gemini-1.5-flash)**\n\n## 🆔 معرفات المحافظات والمدن\n\n### المحافظات (Governorate IDs)\n| ID | الاسم |\n|----|------|\n| 1 | القاهرة |\n| 2 | الإسكندرية |\n| 3 | الجيزة |\n\n### مدن القاهرة (City IDs)\n| ID | الاسم |\n|----|------|\n| 101 | مدينة نصر |\n| 102 | مصر الجديدة |\n| 103 | المعادي |\n| 106 | وسط البلد |\n| 109 | المهندسين |\n\n## ✅ التعديلات الجديدة\n\n- **Registration**: استخدام `governorateId` و `cityId` بدلاً من `city` string\n- **LawyerBranches**: استخدام `cityId` بدلاً من `city` string\n- **Unified Logs**: نظام سجلات موحد لجميع المستخدمين (أدمن، مستخدمين، محامين)\n- **Log Filters**: دعم الفلترة بـ ID, Role, Action, TargetType, التاريخ, والبحث النصي\n- **Log Export**: تصدير السجلات إلى CSV/PDF\n- **IsActive**: المستخدم العادي يتفعّل تلقائياً، المحامي يحتاج موافقة",
+    "name": "🏛️ LegalMate AI API - Complete Collection",
+    "description": "# LegalMate AI API Collection - Full System\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد الإلكتروني | كلمة المرور |\n|-------|-------------------|-------------|\n| **Admin** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط الـ API: `http://localhost:5101`\n- رابط الـ Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Gemini API (gemini-1.5-flash)**\n\n## 📊 Admin APIs (المتاحة حالياً)\n\n| الطريقة | الـ Endpoint | الوصف |\n|---------|--------------|-------|\n| GET | `/api/admin/dashboard/stats` | إحصائيات الداشبورد |\n| GET | `/api/admin/users` | جميع المستخدمين |\n| GET | `/api/admin/users/{userId}` | تفاصيل مستخدم |\n| PUT | `/api/admin/users/{userId}/status` | تحديث حالة مستخدم |\n| DELETE | `/api/admin/users/{userId}` | حذف مستخدم |\n| GET | `/api/admin/lawyers/pending` | المحامين المعلقين |\n| GET | `/api/admin/lawyers` | جميع المحامين |\n| GET | `/api/admin/lawyers/{lawyerId}` | تفاصيل محامي |\n| POST | `/api/admin/lawyers/{lawyerId}/approve` | قبول محامي |\n| POST | `/api/admin/lawyers/{lawyerId}/reject` | رفض محامي |\n| POST | `/api/admin/lawyers/{lawyerId}/suspend` | تعليق محامي |\n| POST | `/api/admin/lawyers/{lawyerId}/activate` | تفعيل محامي |\n| DELETE | `/api/admin/lawyers/{lawyerId}` | حذف محامي |\n| GET | `/api/admin/logs` | السجل مع فلترة |\n| GET | `/api/admin/logs/stats` | إحصائيات السجل |\n| GET | `/api/admin/export/excel` | تصدير Excel |\n| GET | `/api/admin/export/pdf` | تصدير PDF |\n| GET | `/api/admin/system/stats` | إحصائيات النظام |\n| POST | `/api/admin/system/clear-cache` | مسح الكاش |\n\n## 🆔 معرفات المحافظات والمدن\n\n### المحافظات (Governorate IDs)\n| ID | الاسم |\n|----|------|\n| 1 | القاهرة |\n| 2 | الإسكندرية |\n| 3 | الجيزة |\n\n### مدن القاهرة (City IDs)\n| ID | الاسم |\n|----|------|\n| 101 | مدينة نصر |\n| 102 | مصر الجديدة |\n| 103 | المعادي |\n| 106 | وسط البلد |\n| 109 | المهندسين |\n\n## 📝 ملاحظات على الـ APIs\n\n- **التصدير**: CSV حالياً Commented Out، المتاح Excel و PDF فقط\n- **اللوجز**: GET فقط، الفلترة عبر Query Parameters\n- **جميع الإجراءات تُسجل تلقائياً**",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "legal-mate-ai-final-gemini-v10",
-    "variable": [
+    "_postman_id": "legal-mate-ai-complete-v2"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5101",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lawyer_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "branch_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "case_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "contract_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "document_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "law_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "city_id_cairo_nasr",
+      "value": "101",
+      "type": "string"
+    },
+    {
+      "key": "governorate_id_cairo",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
       {
-        "key": "base_url",
-        "value": "http://localhost:5101",
-        "type": "string"
-      },
-      {
-        "key": "access_token",
-        "value": "",
-        "type": "string"
-      },
-      {
-        "key": "city_id_cairo_nasr",
-        "value": "101",
-        "type": "string"
-      },
-      {
-        "key": "city_id_cairo_downtown",
-        "value": "106",
-        "type": "string"
-      },
-      {
-        "key": "city_id_alex_downtown",
-        "value": "201",
-        "type": "string"
-      },
-      {
-        "key": "city_id_giza_dokki",
-        "value": "301",
-        "type": "string"
-      },
-      {
-        "key": "governorate_id_cairo",
-        "value": "1",
-        "type": "string"
-      },
-      {
-        "key": "governorate_id_alex",
-        "value": "2",
-        "type": "string"
-      },
-      {
-        "key": "governorate_id_giza",
-        "value": "3",
-        "type": "string"
-      },
-      {
-        "key": "lawyer_id",
-        "value": "",
-        "type": "string"
-      },
-      {
-        "key": "branch_id",
-        "value": "",
-        "type": "string"
-      },
-      {
-        "key": "user_id",
-        "value": "",
-        "type": "string"
-      },
-      {
-        "key": "admin_id",
-        "value": "",
+        "key": "token",
+        "value": "{{access_token}}",
         "type": "string"
       }
-    ],
-    "auth": {
-      "type": "bearer",
-      "bearer": [
-        {
-          "key": "token",
-          "value": "{{access_token}}",
-          "type": "string"
-        }
-      ]
-    }
+    ]
   },
   "item": [
     {
       "name": "🔐 Authentication",
       "item": [
         {
-          "name": "Login - Admin 1",
+          "name": "Login - Admin",
           "event": [
             {
               "listen": "test",
@@ -96,6 +96,9 @@
                   "const response = pm.response.json();",
                   "if (response.data && response.data.token) {",
                   "    pm.environment.set('access_token', response.data.token);",
+                  "    if (response.data.userId) {",
+                  "        pm.environment.set('admin_id', response.data.userId);",
+                  "    }",
                   "    console.log('✅ Token saved');",
                   "}",
                   "pm.test('Login successful', function() {",
@@ -119,8 +122,83 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Auth", "login"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Login - User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('access_token', response.data.token);",
+                  "    if (response.data.userId) {",
+                  "        pm.environment.set('user_id', response.data.userId);",
+                  "    }",
+                  "    console.log('✅ Token saved');",
+                  "}",
+                  "pm.test('Login successful', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ahmed.new@example.com\",\n  \"password\": \"Test@123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Lawyer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('access_token', response.data.token);",
+                  "    if (response.data.userId) {",
+                  "        pm.environment.set('lawyer_id', response.data.userId);",
+                  "    }",
+                  "    console.log('✅ Token saved');",
+                  "}",
+                  "pm.test('Login successful', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"karim.law@example.com\",\n  \"password\": \"Test@123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Auth", "login"]
+            }
+          }
         },
         {
           "name": "Login - Admin 2",
@@ -155,80 +233,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Auth", "login"]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Login - User",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const response = pm.response.json();",
-                  "if (response.data && response.data.token) {",
-                  "    pm.environment.set('access_token', response.data.token);",
-                  "    console.log('✅ Token saved');",
-                  "}",
-                  "pm.test('Login successful', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "    pm.expect(response.success).to.be.true;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"ahmed.new@example.com\",\n  \"password\": \"Test@123456\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Auth", "login"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Login - Lawyer",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const response = pm.response.json();",
-                  "if (response.data && response.data.token) {",
-                  "    pm.environment.set('access_token', response.data.token);",
-                  "    console.log('✅ Token saved');",
-                  "}",
-                  "pm.test('Login successful', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "    pm.expect(response.success).to.be.true;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"karim.law@example.com\",\n  \"password\": \"Test@123456\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/Auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["api", "Auth", "login"]
-            }
-          },
-          "response": []
+          }
         },
         {
           "name": "Change Password",
@@ -240,15 +245,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"OldPass@123\",\n  \"newPassword\": \"NewPass@123\"\n}"
+              "raw": "{\n  \"currentPassword\": \"Admin@123\",\n  \"newPassword\": \"NewAdmin@123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/Auth/change-password",
               "host": ["{{base_url}}"],
               "path": ["api", "Auth", "change-password"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
@@ -269,8 +273,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Registration"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Register - Lawyer",
@@ -286,8 +289,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Registration"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
@@ -304,8 +306,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "profile"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Update User Profile",
@@ -324,8 +325,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "profile"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Lawyer Profile",
@@ -337,8 +337,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "lawyer", "profile"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Update Lawyer Profile",
@@ -350,15 +349,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phone\": \"01098765432\",\n  \"alternativePhone\": \"01098765433\",\n  \"governorateId\": 1,\n  \"cityId\": 109,\n  \"officeAddress\": \"المهندسين، القاهرة\",\n  \"specialtyIds\": [1, 3]\n}"
+              "raw": "{\n  \"phone\": \"01098765432\",\n  \"alternativePhone\": \"01098765433\",\n  \"governorateId\": 1,\n  \"city\": \"المهندسين\",\n  \"officeAddress\": \"المهندسين، القاهرة\",\n  \"specialtyIds\": [1, 3]\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/lawyer/profile",
               "host": ["{{base_url}}"],
               "path": ["api", "lawyer", "profile"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Admin Profile",
@@ -370,8 +368,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "profile"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Update Admin Profile",
@@ -390,59 +387,464 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "profile"]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Upload Profile Picture",
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {"key": "profilePicture", "type": "file", "src": []}
-              ]
-            },
-            "url": {
-              "raw": "{{base_url}}/api/admin/profile/picture",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "profile", "picture"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Profile Picture",
-          "request": {
-            "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/profile/picture",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "profile", "picture"]
-            }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "⚖️ Lawyer Branches",
+      "name": "👑 Admin Management",
       "item": [
         {
-          "name": "Get Lawyer Branches",
+          "name": "Get Dashboard Stats",
           "request": {
             "method": "GET",
             "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/lawyer/branches/lawyer?lawyerId={{lawyer_id}}",
+              "raw": "{{base_url}}/api/admin/dashboard/stats",
               "host": ["{{base_url}}"],
-              "path": ["api", "lawyer", "branches", "lawyer"],
-              "query": [{"key": "lawyerId", "value": "{{lawyer_id}}"}]
+              "path": ["api", "admin", "dashboard", "stats"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users?Page=1&PageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 1,\n  \"reason\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Lawyers",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Lawyers",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Get Lawyer Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "{{lawyer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve Lawyer",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Lawyer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\"المستندات غير مكتملة\""
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Suspend Lawyer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\"مخالفة شروط المنصة\""
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/suspend",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "suspend"]
+            }
+          }
+        },
+        {
+          "name": "Activate Lawyer",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/activate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Delete Lawyer",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "lawyers", "{{lawyer_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Logs & Export",
+      "item": [
+        {
+          "name": "Get All Logs (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs?Page=1&PageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs"],
+              "query": [
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs by User ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs?UserId={{user_id}}&Page=1&PageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs"],
+              "query": [
+                {"key": "UserId", "value": "{{user_id}}"},
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs by Action (Verify=6)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs?Action=6&Page=1&PageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs"],
+              "query": [
+                {"key": "Action", "value": "6"},
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs by Target Type (Lawyer)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs?TargetType=Lawyer&Page=1&PageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs"],
+              "query": [
+                {"key": "TargetType", "value": "Lawyer"},
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs?FromDate=2024-01-01T00:00:00&ToDate=2024-12-31T23:59:59&Page=1&PageSize=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs"],
+              "query": [
+                {"key": "FromDate", "value": "2024-01-01T00:00:00"},
+                {"key": "ToDate", "value": "2024-12-31T23:59:59"},
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "50"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs with Search Term",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs?SearchTerm=أحمد&Page=1&PageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs"],
+              "query": [
+                {"key": "SearchTerm", "value": "أحمد"},
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Logs Stats",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/logs/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "logs", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Export Logs to Excel",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/export/excel?Page=1&PageSize=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "export", "excel"],
+              "query": [
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "100"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Logs to PDF",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/export/pdf?Page=1&PageSize=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "export", "pdf"],
+              "query": [
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "100"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Logs with Filters to Excel",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/export/excel?UserId={{user_id}}&Action=6&TargetType=Lawyer&FromDate=2024-01-01T00:00:00&ToDate=2024-12-31T23:59:59&SearchTerm=محامي&Page=1&PageSize=500",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "export", "excel"],
+              "query": [
+                {"key": "UserId", "value": "{{user_id}}"},
+                {"key": "Action", "value": "6"},
+                {"key": "TargetType", "value": "Lawyer"},
+                {"key": "FromDate", "value": "2024-01-01T00:00:00"},
+                {"key": "ToDate", "value": "2024-12-31T23:59:59"},
+                {"key": "SearchTerm", "value": "محامي"},
+                {"key": "Page", "value": "1"},
+                {"key": "PageSize", "value": "500"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🖼️ System",
+      "item": [
+        {
+          "name": "Get System Stats",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/system/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "system", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cache",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/system/clear-cache",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "system", "clear-cache"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📍 Locations",
+      "item": [
+        {
+          "name": "Get All Governorates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/Locations/governorates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Locations", "governorates"]
+            }
+          }
+        },
+        {
+          "name": "Get Cities by Governorate",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/Locations/governorates/1/cities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Locations", "governorates", "1", "cities"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚖️ Lawyer Search & Branches",
+      "item": [
+        {
+          "name": "Search Lawyers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/Lawyer/search?specialization=مدني&governorateId=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Lawyer", "search"],
+              "query": [
+                {"key": "specialization", "value": "مدني"},
+                {"key": "governorateId", "value": "1"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Lawyer Specialties",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/Lawyer/specialties",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Lawyer", "specialties"]
+            }
+          }
+        },
+        {
+          "name": "Get Lawyer by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/Lawyer/{{lawyer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Lawyer", "{{lawyer_id}}"]
+            }
+          }
         },
         {
           "name": "Create Branch",
@@ -461,8 +863,19 @@
               "host": ["{{base_url}}"],
               "path": ["api", "lawyer", "branches"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get Lawyer Branches",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/lawyer/branches/lawyer/{{lawyer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "lawyer", "branches", "lawyer", "{{lawyer_id}}"]
+            }
+          }
         },
         {
           "name": "Update Branch",
@@ -481,8 +894,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "lawyer", "branches", "{{branch_id}}"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Delete Branch",
@@ -494,41 +906,18 @@
               "host": ["{{base_url}}"],
               "path": ["api", "lawyer", "branches", "{{branch_id}}"]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Branch Availability",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "[\n  {\n    \"dayOfWeek\": 0,\n    \"startTime\": \"09:00:00\",\n    \"endTime\": \"17:00:00\",\n    \"slotDurationMinutes\": 60,\n    \"isAvailable\": true\n  },\n  {\n    \"dayOfWeek\": 1,\n    \"startTime\": \"10:00:00\",\n    \"endTime\": \"18:00:00\",\n    \"slotDurationMinutes\": 60,\n    \"isAvailable\": true\n  }\n]"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/lawyer/branches/{{branch_id}}/availability",
-              "host": ["{{base_url}}"],
-              "path": ["api", "lawyer", "branches", "{{branch_id}}", "availability"]
-            }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Branch Availability",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
               "raw": "{{base_url}}/api/lawyer/branches/{{branch_id}}/availability",
               "host": ["{{base_url}}"],
               "path": ["api", "lawyer", "branches", "{{branch_id}}", "availability"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Available Time Slots",
@@ -540,460 +929,7 @@
               "path": ["api", "lawyer", "branches", "{{branch_id}}", "available-slots"],
               "query": [{"key": "date", "value": "2024-12-20"}]
             }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "👑 Admin Management",
-      "item": [
-        {
-          "name": "Get Admin Dashboard",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/dashboard",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "dashboard"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/users",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "users"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Details",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "users", "{{user_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update User Status",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": 4,\n  \"reason\": \"تم التعليق\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/admin/users/{{user_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "users", "{{user_id}}", "status"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete User",
-          "request": {
-            "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "users", "{{user_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Lawyers",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Pending Lawyers",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/pending",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "pending"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Lawyer Details",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "{{lawyer_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Lawyer Details By ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/details/{{lawyer_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "details", "{{lawyer_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Approve Lawyer",
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/approve",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "approve"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reject Lawyer",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"المستندات غير مكتملة\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/reject",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "reject"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Suspend Lawyer",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"},
-              {"key": "Authorization", "value": "Bearer {{access_token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"مخالفة شروط المنصة\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/suspend",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "suspend"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Activate Lawyer",
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}/activate",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "{{lawyer_id}}", "activate"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Lawyer",
-          "request": {
-            "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/lawyers/{{lawyer_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "lawyers", "{{lawyer_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Admin Details",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/admins/{{admin_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "admins", "{{admin_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Admin Details By ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/admins/details/{{admin_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "admins", "details", "{{admin_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Entity Details",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/entity/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "entity", "{{user_id}}"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "📊 Logs (Unified System)",
-      "item": [
-        {
-          "name": "Get All Logs (Unified)",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Logs Stats",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/stats",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "stats"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Export Logs - CSV",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/export-all?format=csv",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "export-all"],
-              "query": [{"key": "format", "value": "csv"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Export Logs - PDF",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/export-all?format=pdf",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "export-all"],
-              "query": [{"key": "format", "value": "pdf"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Filter Logs - By User ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?UserId={{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [{"key": "UserId", "value": "{{user_id}}"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Filter Logs - By Admin ID",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?AdminId={{admin_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [{"key": "AdminId", "value": "{{admin_id}}"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Filter Logs - By Target Type (Lawyer)",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?TargetType=Lawyer",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [{"key": "TargetType", "value": "Lawyer"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Filter Logs - By Action (Verify)",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?Action=6",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [{"key": "Action", "value": "6"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Filter Logs - By Date Range",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?FromDate=2024-01-01&ToDate=2024-12-31",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [
-                {"key": "FromDate", "value": "2024-01-01"},
-                {"key": "ToDate", "value": "2024-12-31"}
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Logs - Text Search",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?SearchTerm=أحمد",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [{"key": "SearchTerm", "value": "أحمد"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Logs with Pagination",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/logs/all?Page=1&PageSize=10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "logs", "all"],
-              "query": [
-                {"key": "Page", "value": "1"},
-                {"key": "PageSize", "value": "10"}
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "📜 Laws",
-      "item": [
-        {
-          "name": "Get All Laws",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/laws",
-              "host": ["{{base_url}}"],
-              "path": ["api", "laws"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Laws",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/laws/search?q=مدني",
-              "host": ["{{base_url}}"],
-              "path": ["api", "laws", "search"],
-              "query": [{"key": "q", "value": "مدني"}]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Law by ID",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/laws/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "laws", "1"]
-            }
-          },
-          "response": []
+          }
         }
       ]
     },
@@ -1010,8 +946,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Contracts", "templates"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Generate Contract",
@@ -1030,8 +965,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Contracts", "generate"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get My Contracts",
@@ -1043,53 +977,172 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Contracts"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get Contract Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Contracts/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Contracts", "{{contract_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Contract",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"عقد إيجار محدد\",\n  \"progressPercentage\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Contracts/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Contracts", "{{contract_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Contract Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Contracts/{{contract_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Contracts", "{{contract_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Delete Contract",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Contracts/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Contracts", "{{contract_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Download Contract",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Contracts/{{contract_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Contracts", "{{contract_id}}", "download"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "⚖️ Lawyers Search",
+      "name": "⚖️ Cases",
       "item": [
         {
-          "name": "Search Lawyers",
+          "name": "Create Case",
           "request": {
-            "method": "GET",
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"قضية إيجار\",\n  \"description\": \"خلاف حول عقد الإيجار\",\n  \"clientId\": \"{{user_id}}\",\n  \"court\": \"محكمة القاهرة الاقتصادية\",\n  \"nextHearingDate\": \"2024-12-15T10:00:00\",\n  \"status\": 1,\n  \"priority\": 2,\n  \"caseType\": \"مدني\"\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/Lawyer/search?specialization=مدني&governorateId=1",
+              "raw": "{{base_url}}/api/Cases",
               "host": ["{{base_url}}"],
-              "path": ["api", "Lawyer", "search"],
-              "query": [
-                {"key": "specialization", "value": "مدني"},
-                {"key": "governorateId", "value": "1"}
-              ]
+              "path": ["api", "Cases"]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Get Lawyer by ID",
+          "name": "Get My Cases",
           "request": {
             "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/Lawyer/{{lawyer_id}}",
+              "raw": "{{base_url}}/api/Cases",
               "host": ["{{base_url}}"],
-              "path": ["api", "Lawyer", "{{lawyer_id}}"]
+              "path": ["api", "Cases"]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Get Specialties",
+          "name": "Get Case Details",
           "request": {
             "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/Lawyer/specialties",
+              "raw": "{{base_url}}/api/Cases/{{case_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "Lawyer", "specialties"]
+              "path": ["api", "Cases", "{{case_id}}"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Update Case",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"قضية إيجار - محدثة\",\n  \"status\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Cases/{{case_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Cases", "{{case_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Case",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Cases/{{case_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Cases", "{{case_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Case Stats",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Cases/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Cases", "stats"]
+            }
+          }
         }
       ]
     },
@@ -1113,8 +1166,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Documents", "upload"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get My Documents",
@@ -1126,55 +1178,209 @@
               "host": ["{{base_url}}"],
               "path": ["api", "Documents"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get Document Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Documents/{{document_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Documents", "{{document_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Documents/{{document_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Documents", "{{document_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Analyze Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detailedAnalysis\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Documents/{{document_id}}/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Documents", "{{document_id}}", "analyze"]
+            }
+          }
+        },
+        {
+          "name": "Get Document Analysis",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Documents/{{document_id}}/analysis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Documents", "{{document_id}}", "analysis"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "📍 Locations",
+      "name": "📜 Laws",
       "item": [
         {
-          "name": "Get All Governorates",
+          "name": "Get All Laws",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/Locations/governorates",
+              "raw": "{{base_url}}/api/laws",
               "host": ["{{base_url}}"],
-              "path": ["api", "Locations", "governorates"]
+              "path": ["api", "laws"]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Get Cities by Governorate",
+          "name": "Search Laws",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/Locations/governorates/1/cities",
+              "raw": "{{base_url}}/api/laws/search?q=مدني",
               "host": ["{{base_url}}"],
-              "path": ["api", "Locations", "governorates", "1", "cities"]
+              "path": ["api", "laws", "search"],
+              "query": [{"key": "q", "value": "مدني"}]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get Law Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/laws/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "laws", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Law by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/laws/{{law_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "laws", "{{law_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Download Law",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/laws/{{law_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "laws", "{{law_id}}", "download"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "🏥 Health",
+      "name": "📅 Appointments",
       "item": [
         {
-          "name": "API Health Check",
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lawyerId\": \"{{lawyer_id}}\",\n  \"branchId\": \"{{branch_id}}\",\n  \"appointmentType\": 1,\n  \"date\": \"2024-12-20\",\n  \"time\": \"10:00\",\n  \"durationMinutes\": 60,\n  \"location\": \"المكتب\",\n  \"notes\": \"استشارة قانونية\",\n  \"isUrgent\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Appointments"]
+            }
+          }
+        },
+        {
+          "name": "Get My Appointments",
           "request": {
             "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/health",
+              "raw": "{{base_url}}/api/Appointments/user",
               "host": ["{{base_url}}"],
-              "path": ["api", "health"]
+              "path": ["api", "Appointments", "user"]
             }
-          },
-          "response": []
+          }
         },
+        {
+          "name": "Get Lawyer Appointments",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Appointments/lawyer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Appointments", "lawyer"]
+            }
+          }
+        },
+        {
+          "name": "Get Appointment Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/Appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Appointments", "{{appointment_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\"تم الإلغاء لظروف طارئة\""
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Appointments", "{{appointment_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Services",
+      "item": [
         {
           "name": "AI Health Check",
           "request": {
@@ -1184,39 +1390,80 @@
               "host": ["{{base_url}}"],
               "path": ["api", "AI", "health"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Quick Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"هذا عقد إيجار بين طرفين، البند الثالث ينص على زيادة سنوية بنسبة 10%...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/AI/analyze/quick",
+              "host": ["{{base_url}}"],
+              "path": ["api", "AI", "analyze", "quick"]
+            }
+          }
+        },
+        {
+          "name": "Analyze Document Text",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"نص العقد القانوني...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/AI/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "AI", "analyze"]
+            }
+          }
+        },
+        {
+          "name": "Generate Contract with AI",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateName\": \"عقد عمل\",\n  \"data\": {\n    \"employeeName\": \"أحمد محمد\",\n    \"employerName\": \"شركة LegalMate\",\n    \"salary\": \"15000\",\n    \"startDate\": \"2024-01-01\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/AI/generate-contract",
+              "host": ["{{base_url}}"],
+              "path": ["api", "AI", "generate-contract"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "🖼️ System",
+      "name": "🏥 Health Check",
       "item": [
         {
-          "name": "Get System Stats",
+          "name": "API Health",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
             "url": {
-              "raw": "{{base_url}}/api/admin/stats",
+              "raw": "{{base_url}}/api/health",
               "host": ["{{base_url}}"],
-              "path": ["api", "admin", "stats"]
+              "path": ["api", "health"]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Clear Cache",
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
-            "url": {
-              "raw": "{{base_url}}/api/admin/clear-cache",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "clear-cache"]
-            }
-          },
-          "response": []
+          }
         }
       ]
     }

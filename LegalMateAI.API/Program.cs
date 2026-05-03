@@ -124,9 +124,12 @@ builder.Services.AddScoped<ICaseService, CaseService>();
 builder.Services.AddScoped<PdfGenerationService>();
 builder.Services.AddScoped<ILawService, LawService>();
 builder.Services.AddScoped<ILawyerBranchService, LawyerBranchService>();
-
+builder.Services.AddScoped<LawParserService>();
+builder.Services.AddScoped<ILawService, LawService>();
 builder.Services.AddHttpContextAccessor();
-
+// تسجيل Log Service (للتسجيل التلقائي للإجراءات)
+builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddHttpContextAccessor();
 // ===== CORS =====
 builder.Services.AddCors(options =>
 {

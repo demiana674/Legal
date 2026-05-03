@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
 using LegalMateAI.DTOs;
 using System.Security.Claims;
-
+using LegalMateAI.Domain.Enums;
 namespace LegalMateAI.API.Controllers
 {
     [ApiController]
@@ -11,19 +11,21 @@ namespace LegalMateAI.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ILogService _logService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
+            ILogService logService,
             ILogger<AuthController> logger)
         {
             _authService = authService;
+            _logService = logService;
             _logger = logger;
         }
 
         private Guid GetUserId()
         {
-            // ✅ جرب كل الـ claim types الممكنة
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
             claim ??= User.FindFirst("id");
             claim ??= User.FindFirst("sub");
@@ -37,6 +39,11 @@ namespace LegalMateAI.API.Controllers
             }
             
             return Guid.Parse(claim.Value);
+        }
+
+        private string GetUserRole()
+        {
+            return User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
         }
 
         /// <summary>
@@ -63,6 +70,10 @@ namespace LegalMateAI.API.Controllers
                 {
                     return Unauthorized(ApiResponse<object>.Unauthorized("البريد الإلكتروني أو كلمة المرور غير صحيحة"));
                 }
+
+                // ✅ تسجيل عملية تسجيل الدخول
+                await _logService.LogActionAsync(result.UserId, AdminLogAction.Login, result.Role, result.UserId);
+                _logger.LogInformation("User logged in: {Email}, Role: {Role}", request.Email, result.Role);
 
                 return Ok(ApiResponse<AuthResponse>.Ok(result, "تم تسجيل الدخول بنجاح"));
             }
@@ -103,6 +114,10 @@ namespace LegalMateAI.API.Controllers
                 {
                     return BadRequest(ApiResponse<object>.BadRequest("كلمة المرور الحالية غير صحيحة"));
                 }
+
+                // ✅ تسجيل تغيير كلمة المرور
+                var role = GetUserRole();
+                await _logService.LogActionAsync(userId, AdminLogAction.ChangePassword, role, userId);
 
                 return Ok(ApiResponse<object>.Ok("تم تغيير كلمة المرور بنجاح"));
             }

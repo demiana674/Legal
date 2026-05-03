@@ -8,7 +8,7 @@ using QuestPDF.Infrastructure;
 using iText.Kernel.Pdf;
 using iText.Forms;
 using LegalMateAI.DTOs.ReadDTO;
-
+ using ClosedXML.Excel;
 namespace LegalMateAI.BLL.Services.Service
 {
     public class PdfGenerationService
@@ -421,7 +421,7 @@ namespace LegalMateAI.BLL.Services.Service
                                     .Border(1)
                                     .BorderColor(Colors.Grey.Lighten2)
                                     .Padding(5)
-                                    .Text(log.AdminName)
+                                    .Text(log.Name)
                                     .FontSize(8);
                                     
                                 // خلية معرف الهدف
@@ -457,28 +457,38 @@ namespace LegalMateAI.BLL.Services.Service
             return ms.ToArray();
         }
 
-        /// <summary>
-        /// تصدير سجلات الأدمن كملف Excel (CSV)
-        /// </summary>
-        public byte[] ExportAdminLogsToExcel(List<AdminLogDto> logs)
-        {
-            var csv = new StringBuilder();
-            csv.AppendLine("التاريخ والوقت,الإجراء,النوع,المسؤول,معرف الهدف");
-            
-            foreach (var log in logs)
-            {
-                csv.AppendLine($"\"{log.TimestampFormatted}\",\"{log.ActionName}\",\"{log.TargetTypeAr}\",\"{log.AdminName}\",\"{log.TargetId}\"");
-            }
+      
 
-            // إضافة BOM لدعم العربية في Excel
-            var preamble = Encoding.UTF8.GetPreamble();
-            var csvBytes = Encoding.UTF8.GetBytes(csv.ToString());
-            
-            var result = new byte[preamble.Length + csvBytes.Length];
-            Buffer.BlockCopy(preamble, 0, result, 0, preamble.Length);
-            Buffer.BlockCopy(csvBytes, 0, result, preamble.Length, csvBytes.Length);
-            
-            return result;
-        }
+public byte[] ExportAdminLogsToExcel(List<AdminLogDto> logs)
+{
+    using var workbook = new XLWorkbook();
+    var ws = workbook.Worksheets.Add("Logs");
+
+    ws.Cell(1, 1).Value = "التاريخ والوقت";
+    ws.Cell(1, 2).Value = "الإجراء";
+    ws.Cell(1, 3).Value = "النوع";
+    ws.Cell(1, 4).Value = "المسؤول";
+    ws.Cell(1, 5).Value = "معرف الهدف";
+
+    int row = 2;
+
+    foreach (var log in logs)
+    {
+        ws.Cell(row, 1).Value = log.TimestampFormatted;
+        ws.Cell(row, 2).Value = log.ActionName;
+        ws.Cell(row, 3).Value = log.TargetTypeAr;
+        ws.Cell(row, 4).Value = log.Name;
+        ws.Cell(row, 5).Value = log.TargetId.ToString();
+        row++;
     }
+
+    ws.Columns().AdjustToContents();
+
+    using var stream = new MemoryStream();
+    workbook.SaveAs(stream);
+
+    return stream.ToArray();
+}
+        
+    } 
 }

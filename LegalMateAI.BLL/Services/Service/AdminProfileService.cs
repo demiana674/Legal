@@ -253,21 +253,20 @@ namespace LegalMateAI.BLL.Services.Service
                     RegisteredAt = u.CreatedAt
                 }).ToListAsync();
 
-            var recentActivity = await _context.AdminLogs
-                .Include(l => l.Admin)
-                .Where(l => l.AdminId == adminId)
-                .OrderByDescending(l => l.Timestamp)
-                .Take(10)
-                .Select(l => new AdminLogDto
-                {
-                    Id = l.Id,
-                    AdminName = l.Admin != null ? l.Admin.FullName : admin.FullName,
-                    Action = l.Action,
-                    TargetType = l.TargetType,
-                    TargetId = l.TargetId,
-                    Timestamp = l.Timestamp
-                }).ToListAsync();
-
+        var recentActivity = await _context.AdminLogs
+    .Where(l => l.ActorId == adminId)
+    .OrderByDescending(l => l.Timestamp)
+    .Take(10)
+    .Select(l => new AdminLogDto
+    {
+        Id = l.Id,
+        Name = l.ActorName,
+        Action = l.Action,
+        TargetType = l.TargetType,
+        TargetId = l.TargetId,
+        Timestamp = l.Timestamp
+    })
+    .ToListAsync();
             return new AdminDashboardDto
             {
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),

@@ -513,7 +513,7 @@ namespace LegalMateAI.BLL.Services.Service
             var log = new AdminLog
             {
                 Id = Guid.NewGuid(),
-                AdminId = adminId,
+                ActorId = adminId,
                 Action = action,
                 TargetType = targetType,
                 TargetId = targetId,
