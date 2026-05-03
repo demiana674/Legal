@@ -9,7 +9,8 @@ using LegalMateAI.BLL.Services.IService;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
-
+using iText.Kernel.Crypto;
+using LegalMateAI.Infrastructure.Services.IService;
 namespace LegalMateAI.BLL.Services.Service
 {
     public class AdminService : IAdminService
@@ -18,16 +19,18 @@ namespace LegalMateAI.BLL.Services.Service
         private readonly PdfGenerationService _pdfService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<AdminService> _logger;
-
+        private readonly IEncryptionService _encryptionService;
         public AdminService(
             LegalMateDbContext context,
             IHttpContextAccessor httpContextAccessor,
+            IEncryptionService encryptionService,
             ILogger<AdminService> logger)
         {
             _context = context;
             _pdfService = new PdfGenerationService();
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
+            _encryptionService = encryptionService;
         }
 
         // ==================== Dashboard ====================
@@ -653,8 +656,12 @@ private AdminLogDto MapLogToDto(AdminLog log)
                 LastName = user.LastName,
                 FullName = user.FullName,
                 Email = user.Email,
-                Phone = user.Phone,
-                NationalId = user.NationalId,
+      
+
+
+                Phone = _encryptionService.Decrypt(user.Phone),
+// AlternativePthone = _encryptionService.Decrypt(user.UserProfile.AlternativePhone),
+NationalId = _encryptionService.Decrypt(user.NationalId),
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
                 IsActive = user.IsActive,
@@ -674,6 +681,7 @@ private AdminLogDto MapLogToDto(AdminLog log)
             {
                 Id = admin.Id,
                 FullName = admin.FullName,
+                 Phone = _encryptionService.Decrypt(admin.PhoneNumber),
                 Email = admin.Email
             };
         }
