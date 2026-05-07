@@ -22,7 +22,7 @@ namespace LegalMateAI.Domain.Entities
         
         // ✅ معرف المحافظة
         public int? GovernorateId { get; set; }
-        // public virtual Governorate? Governorate { get; set; } 
+        public virtual Governorate? Governorate { get; set; } 
         
         // ✅ معرف المدينة
         public int? CityId { get; set; }
