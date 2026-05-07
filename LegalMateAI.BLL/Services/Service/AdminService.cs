@@ -178,8 +178,6 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Certificates)
                 .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Governorate)
@@ -242,8 +240,6 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Certificates)
                 .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Governorate)
@@ -282,26 +278,26 @@ namespace LegalMateAI.BLL.Services.Service
                     user.Status = AccountStatus.Suspended;
                     lawyerProfile.RejectionReason = notes;
                     break;
-                case LawyerVerificationStatus.Deactivated:
-                    user.IsActive = false;
-                    user.Status = AccountStatus.Deactivated;
-                    lawyerProfile.RejectionReason = notes;
-                    break;
                 case LawyerVerificationStatus.Pending:
                     user.IsActive = false;
                     user.Status = AccountStatus.Pending;
                     lawyerProfile.VerifiedAt = null;
                     break;
+                case LawyerVerificationStatus.Deactivated:
+                default:
+                    user.IsActive = false;
+                    user.Status = AccountStatus.Deactivated;
+                    lawyerProfile.RejectionReason = notes;
+                    break;
             }
 
             var currentUserId = GetCurrentUserId();
-            if (currentUserId.HasValue)
+            if (currentUserId.HasValue && status != LawyerVerificationStatus.Deactivated)
             {
                 var action = status switch
                 {
                     LawyerVerificationStatus.Active => AdminLogAction.Verify,
                     LawyerVerificationStatus.Suspended => AdminLogAction.Suspend,
-                    LawyerVerificationStatus.Deactivated => AdminLogAction.Reject,
                     _ => AdminLogAction.UpdateProfile
                 };
 
@@ -317,9 +313,70 @@ namespace LegalMateAI.BLL.Services.Service
             return await UpdateLawyerStatusAsync(userId, LawyerVerificationStatus.Active);
         }
 
+        /// <summary>
+        /// رفض المحامي - حذف نهائي من النظام مع تسجيل العملية في اللوجات
+        /// </summary>
         public async Task<bool> RejectLawyerAsync(Guid userId, string reason)
         {
-            return await UpdateLawyerStatusAsync(userId, LawyerVerificationStatus.Deactivated, reason);
+            _logger.LogInformation($"RejectLawyer - حذف نهائي للمحامي: {userId}, السبب: {reason}");
+
+            // جلب المحامي مع جميع البيانات المرتبطة
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Certificates)
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
+
+            if (user == null) return false;
+
+            // ✅ تسجيل الرفض في اللوجات قبل الحذف (لكي يظهر للأدمن الآخرين)
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId.HasValue)
+            {
+                await LogActionAsync(currentUserId.Value, AdminLogAction.Reject, "Lawyer", userId);
+            }
+
+            // 1. حذف التخصصات (LawyerProfileSpecialties)
+            if (user.LawyerProfile?.Specialties != null && user.LawyerProfile.Specialties.Any())
+            {
+                _context.LawyerProfileSpecialties.RemoveRange(user.LawyerProfile.Specialties);
+            }
+
+            // 2. حذف الشهادات (Certificates)
+            if (user.LawyerProfile?.Certificates != null && user.LawyerProfile.Certificates.Any())
+            {
+                _context.Certificates.RemoveRange(user.LawyerProfile.Certificates);
+            }
+
+            // 3. حذف الملف الشخصي للمحامي (LawyerProfile)
+            if (user.LawyerProfile != null)
+            {
+                _context.LawyerProfiles.Remove(user.LawyerProfile);
+            }
+
+            // 4. حذف الـ UserProfile إن وجد
+            if (user.UserProfile != null)
+            {
+                _context.UserProfiles.Remove(user.UserProfile);
+            }
+
+            // 5. حذف اللوجات التي يكون فيها هذا المحامي هو الفاعل (Actor)
+            var logsWhereActorIsUser = _context.AdminLogs.Where(l => l.ActorId == userId);
+            if (logsWhereActorIsUser.Any())
+            {
+                _context.AdminLogs.RemoveRange(logsWhereActorIsUser);
+            }
+
+            // 6. حذف المستخدم نفسه
+            _context.Users.Remove(user);
+
+            // حفظ جميع التغييرات
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ تم حذف المحامي {user.Email} نهائياً من النظام. السبب: {reason}");
+            return true;
         }
 
         public async Task<bool> SuspendLawyerAsync(Guid userId, string? reason = null)
@@ -597,8 +654,6 @@ namespace LegalMateAI.BLL.Services.Service
                 ProfilePicture = user.ProfilePicture,
                 AlternativePhone = user.UserProfile != null ? _encryptionService.Decrypt(user.UserProfile.AlternativePhone ?? "") : null,
                 NationalId = _encryptionService.Decrypt(user.NationalId ?? ""),
-                // City = user.UserProfile?.City?.Name,
-                // GovernorateId = user.UserProfile?.GovernorateId,
                 GovernorateName = user.UserProfile?.Governorate?.Name,
                 CityName = user.UserProfile?.City?.Name,
                 Address = user.UserProfile?.Address,
@@ -618,7 +673,11 @@ namespace LegalMateAI.BLL.Services.Service
         private async Task<LawyerResponseDto> MapLawyerToDtoAsync(User user)
         {
             var lawyer = user.LawyerProfile!;
-            var avgRating = lawyer.Reviews?.Any() == true ? lawyer.Reviews.Average(r => r.Rating) : 0;
+            
+       // حساب متوسط التقييم من LawyerReview
+   double avgRating = await _context.LawyerReviews
+    .Where(r => r.LawyerId == lawyer.Id)
+    .AverageAsync(r => (double?)r.Rating) ?? 0;
 
             return new LawyerResponseDto
             {
@@ -629,8 +688,8 @@ namespace LegalMateAI.BLL.Services.Service
                 PhoneNumber = _encryptionService.Decrypt(user.Phone ?? ""),
                 AlternativePhone = user.UserProfile != null ? _encryptionService.Decrypt(user.UserProfile.AlternativePhone ?? "") : null,
                 NationalId = _encryptionService.Decrypt(user.NationalId ?? ""),
-                Nationality = user?.Nationality ?? "",
-                ProfilePicture = user?.ProfilePicture ?? "",
+                Nationality = user.Nationality ?? "",
+                ProfilePicture = user.ProfilePicture ?? "",
                 LicenseNumber = lawyer.LicenseNumber ?? "",
                 BarAssociation = lawyer.BarAssociation ?? "",
                 YearsOfExperience = lawyer.YearsOfExperience ?? 0,
@@ -639,8 +698,7 @@ namespace LegalMateAI.BLL.Services.Service
                 VerifiedAt = lawyer.VerifiedAt,
                 RejectionReason = lawyer.RejectionReason,
                 Rating = (float)avgRating,
-                TotalReviews = lawyer.Reviews?.Count ?? 0,
-                // GovernorateId = lawyer.GovernorateId,
+                TotalReviews = 0, // يمكن حسابه من LawyerProfile.ReviewsCount
                 GovernorateName = lawyer.Governorate?.Name,
                 City = lawyer.City?.Name ?? "",
                 OfficeAddress = lawyer.OfficeAddress,
