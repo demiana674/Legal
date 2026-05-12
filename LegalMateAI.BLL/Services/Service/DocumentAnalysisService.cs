@@ -1,3 +1,4 @@
+// LegalMateAI.BLL/Services/Service/DocumentAnalysisService.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using LegalMateAI.DAL.DBContext;
@@ -6,7 +7,8 @@ using LegalMateAI.Domain.Enums;
 using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.BLL.Services.IService;
-using Microsoft.Extensions.Logging; 
+using Microsoft.Extensions.Logging;
+
 namespace LegalMateAI.BLL.Services.Service
 {
     public class DocumentAnalysisService : IDocumentAnalysisService
@@ -93,30 +95,37 @@ namespace LegalMateAI.BLL.Services.Service
                     analysis.Status = AnalysisStatus.Completed;
                     analysis.CompletedAt = DateTime.UtcNow;
                     
-                    foreach (var clause in aiResult.Clauses)
+                    // ✅ أضف Clauses و Risks لو موجودين فقط (مش هيضيف حاجة لو فاضيين)
+                    if (aiResult.Clauses?.Any() == true)
                     {
-                        _context.ClauseAnalyses.Add(new ClauseAnalysis
+                        foreach (var clause in aiResult.Clauses)
                         {
-                            Id = Guid.NewGuid(),
-                            AnalysisId = analysis.Id,
-                            ClauseTitle = clause.Title,
-                            ClauseText = clause.Text,
-                            PageNumber = clause.PageNumber,
-                            Interpretation = clause.Interpretation
-                        });
+                            _context.ClauseAnalyses.Add(new ClauseAnalysis
+                            {
+                                Id = Guid.NewGuid(),
+                                AnalysisId = analysis.Id,
+                                ClauseTitle = clause.Title,
+                                ClauseText = clause.Text,
+                                PageNumber = clause.PageNumber,
+                                Interpretation = clause.Interpretation
+                            });
+                        }
                     }
                     
-                    foreach (var risk in aiResult.Risks)
+                    if (aiResult.Risks?.Any() == true)
                     {
-                        _context.RiskAssessments.Add(new RiskAssessment
+                        foreach (var risk in aiResult.Risks)
                         {
-                            Id = Guid.NewGuid(),
-                            AnalysisId = analysis.Id,
-                            RiskType = risk.Type,
-                            Description = risk.Description,
-                            Level = RiskMapper.MapToRiskLevel(risk.Level),
-                            Suggestion = risk.Suggestion
-                        });
+                            _context.RiskAssessments.Add(new RiskAssessment
+                            {
+                                Id = Guid.NewGuid(),
+                                AnalysisId = analysis.Id,
+                                RiskType = risk.Type,
+                                Description = risk.Description,
+                                Level = RiskMapper.MapToRiskLevel(risk.Level),
+                                Suggestion = risk.Suggestion
+                            });
+                        }
                     }
                     
                     await _context.SaveChangesAsync();
@@ -168,22 +177,22 @@ namespace LegalMateAI.BLL.Services.Service
                 Status = analysis.Status,
                 RequestedAt = analysis.RequestedAt,
                 CompletedAt = analysis.CompletedAt,
-                Clauses = analysis.Clauses.Select(c => new ClauseAnalysisDto
+                Clauses = analysis.Clauses?.Select(c => new ClauseAnalysisDto
                 {
                     Id = c.Id,
                     ClauseTitle = c.ClauseTitle,
                     ClauseText = c.ClauseText,
                     PageNumber = c.PageNumber,
                     Interpretation = c.Interpretation
-                }).ToList(),
-                Risks = analysis.Risks.Select(r => new RiskAssessmentDto
+                }).ToList() ?? new(),
+                Risks = analysis.Risks?.Select(r => new RiskAssessmentDto
                 {
                     Id = r.Id,
                     RiskType = r.RiskType,
                     Description = r.Description,
                     Level = r.Level,
                     Suggestion = r.Suggestion
-                }).ToList()
+                }).ToList() ?? new()
             };
         }
 
@@ -210,22 +219,22 @@ namespace LegalMateAI.BLL.Services.Service
                 Status = a.Status,
                 RequestedAt = a.RequestedAt,
                 CompletedAt = a.CompletedAt,
-                Clauses = a.Clauses.Select(c => new ClauseAnalysisDto
+                Clauses = a.Clauses?.Select(c => new ClauseAnalysisDto
                 {
                     Id = c.Id,
                     ClauseTitle = c.ClauseTitle,
                     ClauseText = c.ClauseText,
                     PageNumber = c.PageNumber,
                     Interpretation = c.Interpretation
-                }).ToList(),
-                Risks = a.Risks.Select(r => new RiskAssessmentDto
+                }).ToList() ?? new(),
+                Risks = a.Risks?.Select(r => new RiskAssessmentDto
                 {
                     Id = r.Id,
                     RiskType = r.RiskType,
                     Description = r.Description,
                     Level = r.Level,
                     Suggestion = r.Suggestion
-                }).ToList()
+                }).ToList() ?? new()
             }).ToList();
         }
     }

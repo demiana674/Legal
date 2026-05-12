@@ -7,74 +7,29 @@ namespace LegalMateAI.BLL.Services.IService
 {
     public interface IContractService
     {
-        // ========== القوالب (للقراءة فقط) ==========
-        
-        /// <summary>
-        /// جلب القوالب المتاحة
-        /// </summary>
+        // ========== القوالب ==========
         Task<List<ContractTemplateResponseDto>> GetContractTemplatesAsync(ContractType? type = null, string? search = null);
-        
-        /// <summary>
-        /// جلب قالب محدد
-        /// </summary>
         Task<ContractTemplateResponseDto?> GetTemplateByIdAsync(Guid templateId);
         
-        /// <summary>
-        /// تحميل ملف القالب
-        /// </summary>
-        Task<byte[]?> DownloadTemplateAsync(Guid templateId);
-        
-        // ========== عقود المستخدم ==========
-        
-        /// <summary>
-        /// توليد عقد من قالب
-        /// </summary>
+        // ========== توليد العقود ==========
         Task<ContractResponseDto?> GenerateContractFromTemplateAsync(Guid userId, GenerateContractRequest request);
         
-        /// <summary>
-        /// جلب عقود المستخدم
-        /// </summary>
+        // ========== عقود المستخدم ==========
         Task<List<ContractResponseDto>> GetUserContractsAsync(Guid userId, string? status = null, string? search = null);
         
-        /// <summary>
-        /// جلب عقود المحامي
-        /// </summary>
-        Task<List<ContractResponseDto>> GetLawyerContractsAsync(Guid lawyerId, string? status = null, string? search = null);
+        // ========== بحث وعرض عام (Public) ==========
+        Task<List<ContractResponseDto>> SearchAllContractsAsync(string searchTerm);
+        Task<ContractResponseDto?> GetAnyContractByIdAsync(Guid contractId);
         
-        /// <summary>
-        /// البحث في العقود
-        /// </summary>
-        Task<List<ContractResponseDto>> SearchContractsAsync(Guid userId, string searchTerm, bool isLawyer);
-        
-        /// <summary>
-        /// جلب عقد محدد
-        /// </summary>
-        Task<ContractResponseDto?> GetContractByIdAsync(Guid userId, Guid contractId, bool isLawyer = false);
-        
-        /// <summary>
-        /// تحديث بيانات العقد
-        /// </summary>
+        // ========== تعديل وحذف (مالك العقد فقط) ==========
         Task<ContractResponseDto?> UpdateContractAsync(Guid userId, Guid contractId, UpdateContractDto request);
-        
-        /// <summary>
-        /// تحديث حالة العقد
-        /// </summary>
-        Task<bool> UpdateContractStatusAsync(Guid userId, Guid contractId, UpdateContractStatusDto request, bool isLawyer = false);
-        
-        /// <summary>
-        /// حذف عقد
-        /// </summary>
+        Task<bool> UpdateContractStatusAsync(Guid userId, Guid contractId, UpdateContractStatusDto request);
         Task<bool> DeleteContractAsync(Guid userId, Guid contractId);
         
-        /// <summary>
-        /// تحميل ملف العقد
-        /// </summary>
-        Task<byte[]?> DownloadContractAsync(Guid userId, Guid contractId);
+        // ========== تحميل ==========
+        Task<byte[]?> DownloadAnyContractAsync(Guid contractId);
     }
 
-    /// <summary>
-    /// نموذج طلب توليد عقد من قالب
-    /// </summary>
     public class GenerateContractRequest
     {
         public Guid TemplateId { get; set; }

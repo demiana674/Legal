@@ -5,23 +5,23 @@ using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
 using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.ReadDTO;
-using LegalMateAI.BLL.Services.IService;
+using LegalMateAI.BLL.Services.IService; // هااام جدا
 
 namespace LegalMateAI.BLL.Services.Service
 {
     public class ChatService : IChatService
     {
         private readonly LegalMateDbContext _context;
-        private readonly GeminiService _geminiService;
+        private readonly IAIService _aiService; // <-- استخدام ال Interface بدل GeminiService
         private readonly ILogger<ChatService> _logger;
 
         public ChatService(
             LegalMateDbContext context,
-            GeminiService geminiService,
+            IAIService aiService, // <-- التغيير هنا
             ILogger<ChatService> logger)
         {
             _context = context;
-            _geminiService = geminiService;
+            _aiService = aiService; // <-- وهنا
             _logger = logger;
         }
 
@@ -53,7 +53,8 @@ namespace LegalMateAI.BLL.Services.Service
                     })
                     .ToList();
 
-                var aiResponse = await _geminiService.ChatAsync(request.Message, chatHistory);
+                // استخدام ال Interface الجديد
+                var aiResponse = await _aiService.ChatAsync(request.Message, chatHistory);
 
                 var response = aiResponse ?? "عذراً، لم أتمكن من معالجة طلبك.";
 
@@ -130,7 +131,7 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<string?> GetQuickResponseAsync(string message)
         {
-            return await _geminiService.ChatAsync(message);
+            return await _aiService.ChatAsync(message);
         }
     }
 }

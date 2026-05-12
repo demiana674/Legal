@@ -1,96 +1,163 @@
-// LegalMateAI.API/Controllers/LawyerBranchController.cs
+// LegalMateAI.API/Controllers/LawyerController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
-using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.CreateDTO;
-using LegalMateAI.DTOs.UpdateDTO;
+using LegalMateAI.DTOs.ReadDTO;
 using System.Security.Claims;
 
 namespace LegalMateAI.API.Controllers
 {
-    [Authorize]
     [ApiController]
-    [Route("api/lawyer/branches")]
-    public class LawyerBranchController : ControllerBase
+    [Route("api/[controller]")]
+    public class LawyerController : ControllerBase
     {
-        private readonly ILawyerBranchService _branchService;
-        private readonly ILogger<LawyerBranchController> _logger;
+        private readonly ILawyerService _lawyerService;
+        private readonly ILogger<LawyerController> _logger;
 
-        public LawyerBranchController(ILawyerBranchService branchService, ILogger<LawyerBranchController> logger)
+        public LawyerController(
+            ILawyerService lawyerService,
+            ILogger<LawyerController> logger)
         {
-            _branchService = branchService;
+            _lawyerService = lawyerService;
             _logger = logger;
         }
 
         private Guid GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            return Guid.Parse(claim!.Value);
+            if (claim == null) claim = User.FindFirst("id");
+            if (claim == null) claim = User.FindFirst("sub");
+            return claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
         }
 
-        // ========== للجميع ==========
-        
+        /// <summary>
+        /// ✅ جلب جميع تخصصات المحامين
+        /// </summary>
         [AllowAnonymous]
-        [HttpGet("lawyer/{lawyerId}")]
-        public async Task<IActionResult> GetLawyerBranches(Guid lawyerId)
+        [HttpGet("specialties")]
+        [ProducesResponseType(typeof(List<LawyerSpecialtyResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSpecialties()
         {
-            var branches = await _branchService.GetLawyerBranchesAsync(lawyerId);
-            return Ok(branches);
+            var specialties = await _lawyerService.GetSpecialtiesAsync();
+            return Ok(specialties);
         }
 
+        /// <summary>
+        /// ✅ بحث عن محامين (يدعم فلترة متقدمة)
+        /// </summary>
         [AllowAnonymous]
-        [HttpGet("{branchId}/availability")]
-        public async Task<IActionResult> GetBranchAvailability(Guid branchId)
+        [HttpGet("search")]
+        [ProducesResponseType(typeof(List<LawyerResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchLawyers([FromQuery] LawyerSearchDto searchCriteria)
         {
-            var availability = await _branchService.GetBranchAvailabilityAsync(branchId);
-            return Ok(availability);
+            var lawyers = await _lawyerService.SearchLawyersAsync(searchCriteria);
+            
+            if (!lawyers.Any())
+                return Ok(new { message = "لا يوجد محامين متاحين حالياً", lawyers = new List<LawyerResponseDto>() });
+            
+            return Ok(new { message = $"تم العثور على {lawyers.Count} محامي", lawyers });
         }
 
+        /// <summary>
+        /// ✅ جلب محامي محدد بالـ ID
+        /// </summary>
         [AllowAnonymous]
-        [HttpGet("{branchId}/available-slots")]
-        public async Task<IActionResult> GetAvailableSlots(Guid branchId, [FromQuery] DateTime date)
+        [HttpGet("{lawyerId:guid}")]
+        [ProducesResponseType(typeof(LawyerResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetLawyerById(Guid lawyerId)
         {
-            var slots = await _branchService.GetAvailableTimeSlotsAsync(branchId, date);
-            return Ok(slots);
+            var lawyer = await _lawyerService.GetLawyerByIdAsync(lawyerId);
+            
+            if (lawyer == null)
+                return NotFound(new { message = "المحامي غير موجود" });
+            
+            return Ok(lawyer);
         }
 
-        // ========== للمحامي فقط ==========
-        
-        [Authorize(Roles = "Lawyer")]
-        [HttpPost]
-        public async Task<IActionResult> CreateBranch([FromBody] CreateLawyerBranchDto request)
+        /// <summary>
+        /// ✅ جلب تقييمات محامي
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("{lawyerId:guid}/reviews")]
+        [ProducesResponseType(typeof(List<ReviewDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetLawyerReviews(Guid lawyerId)
         {
-            var lawyerId = GetUserId();
-            var result = await _branchService.CreateBranchAsync(lawyerId, request);
-            return Ok(result);
+            var lawyer = await _lawyerService.GetLawyerByIdAsync(lawyerId);
+            if (lawyer == null)
+                return NotFound(new { message = "المحامي غير موجود" });
+
+            var reviews = await _lawyerService.GetLawyerReviewsAsync(lawyerId);
+            
+            return Ok(new 
+            { 
+                lawyerName = lawyer.FullName,
+                averageRating = lawyer.Rating,
+                totalReviews = reviews.Count,
+                reviews 
+            });
         }
 
-        [Authorize(Roles = "Lawyer")]
-        [HttpPut("{branchId}")]
-        public async Task<IActionResult> UpdateBranch(Guid branchId, [FromBody] UpdateLawyerBranchDto request)
+        /// <summary>
+        /// ✅ إضافة تقييم لمحامي (يحتاج تسجيل دخول)
+        /// </summary>
+        [Authorize]
+        [HttpPost("{lawyerId:guid}/reviews")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> AddReview(Guid lawyerId, [FromBody] AddReviewRequest request)
         {
-            var lawyerId = GetUserId();
-            var result = await _branchService.UpdateBranchAsync(lawyerId, branchId, request);
-            return Ok(result);
+            var userId = GetUserId();
+            
+            if (userId == Guid.Empty)
+                return Unauthorized(new { message = "يجب تسجيل الدخول لإضافة تقييم" });
+
+            if (request.Rating < 1 || request.Rating > 5)
+                return BadRequest(new { message = "التقييم يجب أن يكون بين 1 و 5" });
+
+            var lawyer = await _lawyerService.GetLawyerByIdAsync(lawyerId);
+            if (lawyer == null)
+                return NotFound(new { message = "المحامي غير موجود" });
+
+            var result = await _lawyerService.AddReviewAsync(
+                userId, 
+                lawyerId, 
+                request.Rating, 
+                request.Comment, 
+                request.AppointmentId);
+
+            if (result)
+                return BadRequest(new { message = "لقد قمت بتقييم هذا المحامي من قبل" });
+
+            _logger.LogInformation($"User {userId} added review for lawyer {lawyerId}");
+            
+            return Ok(new { message = "تم إضافة التقييم بنجاح" });
         }
 
-        [Authorize(Roles = "Lawyer")]
-        [HttpDelete("{branchId}")]
-        public async Task<IActionResult> DeleteBranch(Guid branchId)
+        /// <summary>
+        /// ✅ جلب محامين حسب التخصص
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("specialization/{specialization}")]
+        [ProducesResponseType(typeof(List<LawyerResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLawyersBySpecialization(
+            string specialization, 
+            [FromQuery] int limit = 5)
         {
-            var lawyerId = GetUserId();
-            var result = await _branchService.DeleteBranchAsync(lawyerId, branchId);
-            return Ok(new { message = "تم حذف الفرع بنجاح" });
-        }
-
-        [Authorize(Roles = "Lawyer")]
-        [HttpPut("{branchId}/availability")]
-        public async Task<IActionResult> UpdateAvailability(Guid branchId, [FromBody] List<CreateBranchAvailabilityDto> availabilities)
-        {
-            var lawyerId = GetUserId();
-            var result = await _branchService.UpdateBranchAvailabilityAsync(lawyerId, branchId, availabilities);
-            return Ok(new { message = "تم تحديث أوقات التوفر بنجاح" });
+            var lawyers = await _lawyerService.GetLawyersBySpecializationAsync(specialization, limit);
+            
+            if (!lawyers.Any())
+                return Ok(new { message = "لا يوجد محامين في هذا التخصص حالياً", lawyers = new List<LawyerResponseDto>() });
+            
+            return Ok(new 
+            { 
+                specialization,
+                count = lawyers.Count,
+                lawyers 
+            });
         }
     }
 }

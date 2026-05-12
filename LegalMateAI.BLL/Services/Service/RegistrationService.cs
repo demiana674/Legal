@@ -93,16 +93,19 @@ namespace LegalMateAI.BLL.Services.Service
                     Nationality = request.Nationality,
                     DateOfBirth = request.DateOfBirth,
                     Role = request.Role,
-                    IsActive = request.Role == UserRole.User,
-                    Status = AccountStatus.Pending,
+                    IsActive = false,  // ✅ كل المستخدمين يبدأوا غير نشطين
+                    Status = AccountStatus.Pending,  // ✅ الحالة الافتراضية: Pending
                     CreatedAt = DateTime.UtcNow,
                     JoinDate = DateTime.UtcNow,
                     EmailVerified = false
                 };
 
-                // ✅ تسجيل مستخدم عادي
+                // ✅ تسجيل مستخدم عادي - يتفعل فوراً
                 if (request.Role == UserRole.User)
                 {
+                    user.IsActive = true;  // المستخدم العادي يتفعل مباشرة
+                    user.Status = AccountStatus.Active;
+                    
                     var userProfile = new UserProfile
                     {
                         Id = Guid.NewGuid(),
@@ -115,7 +118,6 @@ namespace LegalMateAI.BLL.Services.Service
                         Nationality = request.Nationality,
                         DateOfBirth = request.DateOfBirth,
                         GovernorateId = request.GovernorateId,
-                        
                         CityId = request.CityId,
                         Address = request.Address,
                         CreatedAt = DateTime.UtcNow,
@@ -136,7 +138,7 @@ namespace LegalMateAI.BLL.Services.Service
                     };
                 }
                 
-                // ✅ تسجيل محامي
+                // ✅ تسجيل محامي - يحتاج موافقة الأدمن
                 else if (request.Role == UserRole.Lawyer)
                 {
                     if (string.IsNullOrEmpty(request.LicenseNumber))
@@ -167,6 +169,7 @@ namespace LegalMateAI.BLL.Services.Service
                         };
                     }
 
+                    // ✅ المحامي يبدأ غير نشط وفي حالة Pending
                     user.IsActive = false;
                     user.Status = AccountStatus.Pending;
                     
@@ -176,13 +179,13 @@ namespace LegalMateAI.BLL.Services.Service
                         UserId = user.UserID,
                         LicenseNumber = request.LicenseNumber,
                         BarAssociation = request.BarAssociation ?? "",
-                        LicenseIssueDate = request.LicenseIssueDate,      // ✅ تاريخ القيد
-                        PracticeDegree = request.PracticeDegree,           // ✅ درجة المزاولة
+                        LicenseIssueDate = request.LicenseIssueDate,
+                        PracticeDegree = request.PracticeDegree,
                         YearsOfExperience = request.YearsOfExperience ?? 0,
                         GovernorateId = request.GovernorateId,
-                        CityId= request.CityId,
+                        CityId = request.CityId,
                         OfficeAddress = request.Address,
-                        VerificationStatus = LawyerVerificationStatus.Pending,
+                        VerificationStatus = LawyerVerificationStatus.Pending,  // ✅ أهم سطر: حالة Pending
                         CreatedAt = DateTime.UtcNow
                     };
                     
@@ -197,7 +200,7 @@ namespace LegalMateAI.BLL.Services.Service
                         Success = true,
                         Message = "تم تقديم طلب تسجيل المحامي بنجاح، في انتظار موافقة الإدارة",
                         UserId = user.UserID,
-                        RequiresApproval = true
+                        RequiresApproval = true  // ✅ المحامي يحتاج موافقة
                     };
                 }
 

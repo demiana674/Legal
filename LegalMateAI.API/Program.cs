@@ -40,7 +40,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "🏛️ LegalMate AI",
         Version = "v1.0",
-        Description = "منصة المساعدة القانونية الذكية - Powered by Gemini AI",
+        Description = "منصة المساعدة القانونية الذكية - Powered by Local AI (Ollama/LM Studio)",
         Contact = new OpenApiContact { Name = "LegalMate Team", Email = "support@legalmate.com" }
     });
 
@@ -60,11 +60,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ===== HTTP Clients - Gemini Only =====
-builder.Services.AddHttpClient<GeminiService>(client =>
+// ===== HTTP Clients - Local AI Only =====
+builder.Services.AddHttpClient<LocalAIService>(client =>
 {
-    client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
-    client.Timeout = TimeSpan.FromSeconds(90);
+    var baseUrl = builder.Configuration["LocalAI:BaseUrl"] ?? "http://localhost:11434";
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(120);
 });
 
 // ===== Authentication =====
@@ -101,16 +102,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
-builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
+// ❌ builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>(); // شلناها
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 
 // AI Services
-builder.Services.AddScoped<GeminiService>();
-builder.Services.AddScoped<IAIService, GeminiService>();
+builder.Services.AddScoped<LocalAIService>();
+builder.Services.AddScoped<IAIService, LocalAIService>();
 builder.Services.AddScoped<IChatService, ChatService>();
-
-// ❌ INotificationService - Deleted
 
 builder.Services.AddScoped<ILawyerService, LawyerService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -119,17 +118,15 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ILawyerProfileService, LawyerProfileService>();
 builder.Services.AddScoped<IAdminProfileService, AdminProfileService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
-builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
+// ❌ builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>(); // شلناها
 builder.Services.AddScoped<ICaseService, CaseService>();
 builder.Services.AddScoped<PdfGenerationService>();
 builder.Services.AddScoped<ILawService, LawService>();
 builder.Services.AddScoped<ILawyerBranchService, LawyerBranchService>();
 builder.Services.AddScoped<LawParserService>();
-builder.Services.AddScoped<ILawService, LawService>();
-builder.Services.AddHttpContextAccessor();
-// تسجيل Log Service (للتسجيل التلقائي للإجراءات)
 builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddHttpContextAccessor();
+
 // ===== CORS =====
 builder.Services.AddCors(options =>
 {
@@ -161,7 +158,6 @@ using (var scope = app.Services.CreateScope())
     {
         await context.Database.EnsureCreatedAsync();
 
-        // Seed Governorates
         var governorates = EgyptData.GetGovernorates();
         foreach (var gov in governorates)
         {
@@ -171,7 +167,6 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation($"✅ Seeded {await context.Governorates.CountAsync()} governorates");
 
-        // Seed Cities
         var cities = EgyptData.GetCities();
         foreach (var city in cities)
         {
@@ -181,7 +176,6 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation($"✅ Seeded {await context.Cities.CountAsync()} cities");
 
-        // Admins
         var admins = AdminSeedData.GetDefaultAdmins(configuration, encryption);
         var addedAdmins = new List<Admin>();
         foreach (var admin in admins)
@@ -192,7 +186,6 @@ using (var scope = app.Services.CreateScope())
         }
         await context.SaveChangesAsync();
 
-        // Admin Profiles
         foreach (var profile in AdminSeedData.GetDefaultAdminProfiles(configuration, encryption, addedAdmins))
         {
             if (!await context.AdminProfiles.AnyAsync(p => p.AdminId == profile.AdminId))
@@ -201,7 +194,6 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation($"✅ Seeded admin profiles");
 
-        // Lawyer Specialties
         try
         {
             if (!await context.LawyerSpecialties.AnyAsync())
@@ -213,7 +205,6 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Lawyer specialties: {ex.Message}"); }
 
-        // Legal Specializations
         try
         {
             if (!await context.LegalSpecializations.AnyAsync())
@@ -225,22 +216,16 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Legal specializations: {ex.Message}"); }
 
-        // Laws from JSON
         try
         {
-            var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws.json");
+            var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws_complete.json");
             if (File.Exists(lawsPath))
-            {
                 await LawSeeder.SeedFromJsonFileAsync(context, logger, lawsPath);
-            }
             else
-            {
                 await LawSeeder.SeedEgyptianLawsAsync(context, logger);
-            }
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Laws: {ex.Message}"); }
 
-        // Contracts from JSON
         try
         {
             var contractsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "contracts.json");
@@ -256,7 +241,8 @@ using (var scope = app.Services.CreateScope())
                         {
                             Id = Guid.NewGuid(), Name = c.name ?? "عقد",
                             Type = Enum.TryParse<ContractType>(c.type, out var ct) ? ct : ContractType.Other,
-                            Description = c.description ?? "", TemplateContent = c.sourceUrl ?? "",
+                            Description = c.description ?? "",
+                            TemplateContent = c.pdfUrl ?? c.sourceUrl ?? "",
                             IsActive = true, CreatedAt = DateTime.UtcNow
                         };
                         await context.ContractTemplates.AddAsync(template);
@@ -271,7 +257,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("✅ Database seeding completed!");
         logger.LogInformation("👤 Admin 1: admin@legalmate.com / Admin@123");
         logger.LogInformation("👤 Admin 2: verifier@legalmate.com / Verifier@123");
-        logger.LogInformation("🤖 AI: Gemini API (gemini-1.5-flash)");
+        logger.LogInformation("🤖 AI: Local AI (Ollama/LM Studio)");
         logger.LogInformation("═══════════════════════════════════════");
     }
     catch (Exception ex)
@@ -286,7 +272,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "🏛️ LegalMate AI v1.0 - Gemini");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "🏛️ LegalMate AI v1.0 - Local AI");
         c.RoutePrefix = "swagger";
     });
 }
@@ -297,7 +283,7 @@ app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapControllers();
-app.MapGet("/api/health", () => new { status = "healthy", timestamp = DateTime.UtcNow, version = "1.0.0", ai = "Gemini API" });
+app.MapGet("/api/health", () => new { status = "healthy", timestamp = DateTime.UtcNow, version = "1.0.0", ai = "Local AI (Ollama/LM Studio)" });
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();

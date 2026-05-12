@@ -23,16 +23,12 @@ namespace LegalMateAI.API.Controllers
             _logger = logger;
         }
 
-        private Guid GetUserId()
+        private Guid? GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (claim == null) claim = User.FindFirst("id");
             if (claim == null) claim = User.FindFirst("sub");
-            
-            if (claim == null)
-                throw new UnauthorizedAccessException("لم يتم العثور على معرف المستخدم");
-            
-            return Guid.Parse(claim.Value);
+            return claim != null ? Guid.Parse(claim.Value) : null;
         }
 
         private bool IsLawyer() => User.IsInRole("Lawyer");
@@ -46,8 +42,10 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> CreateCase([FromBody] CreateCaseDto request)
         {
             var userId = GetUserId();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
             var isLawyer = IsLawyer();
-            var result = await _caseService.CreateCaseAsync(userId, request, isLawyer);
+            var result = await _caseService.CreateCaseAsync(userId.Value, request, isLawyer);
             if (result == null)
                 return BadRequest(new { message = "فشل إنشاء القضية" });
             return Ok(result);
@@ -59,8 +57,10 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> UpdateCase(Guid id, [FromBody] UpdateCaseDto request)
         {
             var userId = GetUserId();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
             var isLawyer = IsLawyer();
-            var result = await _caseService.UpdateCaseAsync(userId, id, request, isLawyer);
+            var result = await _caseService.UpdateCaseAsync(userId.Value, id, request, isLawyer);
             if (result == null)
                 return NotFound(new { message = "القضية غير موجودة أو غير مصرح لك بتعديلها" });
             return Ok(result);
@@ -72,21 +72,22 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> DeleteCase(Guid id)
         {
             var userId = GetUserId();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
             var isLawyer = IsLawyer();
-            var result = await _caseService.DeleteCaseAsync(userId, id, isLawyer);
+            var result = await _caseService.DeleteCaseAsync(userId.Value, id, isLawyer);
             if (!result)
                 return NotFound(new { message = "القضية غير موجودة أو لا يمكن حذفها" });
             return Ok(new { message = "تم حذف القضية بنجاح" });
         }
 
-        /// <summary>
-        /// الحصول على قائمة القضايا - مع فلترة: ClientId, LawyerId, Status, Priority, CaseType
-        /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<CaseResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCases([FromQuery] CaseFilterDto? filter)
         {
             var userId = GetUserId();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
             var isLawyer = IsLawyer();
             filter ??= new CaseFilterDto();
 
@@ -105,8 +106,10 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> GetCaseById(Guid id)
         {
             var userId = GetUserId();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
             var isLawyer = IsLawyer();
-            var caseEntity = await _caseService.GetCaseByIdAsync(userId, id, isLawyer);
+            var caseEntity = await _caseService.GetCaseByIdAsync(userId.Value, id, isLawyer);
             if (caseEntity == null)
                 return NotFound(new { message = "القضية غير موجودة أو غير مصرح لك بمشاهدتها" });
             return Ok(caseEntity);
@@ -120,7 +123,9 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> UploadDocument([FromForm] CreateCaseDocumentDto request)
         {
             var userId = GetUserId();
-            var result = await _caseService.UploadDocumentAsync(userId, request);
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _caseService.UploadDocumentAsync(userId.Value, request);
             if (result == null)
                 return BadRequest(new { message = "فشل رفع المستند" });
             return Ok(result);
@@ -132,24 +137,27 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> DeleteDocument(Guid documentId)
         {
             var userId = GetUserId();
-            var result = await _caseService.DeleteDocumentAsync(userId, documentId);
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _caseService.DeleteDocumentAsync(userId.Value, documentId);
             if (!result)
                 return NotFound(new { message = "المستند غير موجود أو لا يمكن حذفه" });
             return Ok(new { message = "تم حذف المستند بنجاح" });
         }
 
+        [AllowAnonymous]
         [HttpGet("documents/{documentId}/download")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DownloadDocument(Guid documentId)
         {
-            var userId = GetUserId();
-            var file = await _caseService.DownloadDocumentAsync(userId, documentId);
+            var file = await _caseService.DownloadDocumentAsync(documentId);
             if (file == null)
                 return NotFound(new { message = "المستند غير موجود" });
-            
+
             var document = await _caseService.GetDocumentByIdAsync(documentId);
-            return File(file, "application/octet-stream", document?.FileName ?? "document");
+            var contentType = GetContentType(document?.FileName ?? "document.pdf");
+            return File(file, contentType, document?.FileName ?? "document");
         }
 
         // ========== إدارة الملاحظات ==========
@@ -160,8 +168,10 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> AddNote([FromBody] CreateCaseNoteDto request)
         {
             var userId = GetUserId();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
             var isLawyer = IsLawyer();
-            var result = await _caseService.AddNoteAsync(userId, request, isLawyer);
+            var result = await _caseService.AddNoteAsync(userId.Value, request, isLawyer);
             if (result == null)
                 return BadRequest(new { message = "فشل إضافة الملاحظة" });
             return Ok(result);
@@ -173,7 +183,9 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> UpdateNote(Guid noteId, [FromBody] string content)
         {
             var userId = GetUserId();
-            var result = await _caseService.UpdateNoteAsync(userId, noteId, content);
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _caseService.UpdateNoteAsync(userId.Value, noteId, content);
             if (result == null)
                 return NotFound(new { message = "الملاحظة غير موجودة أو غير مصرح لك بتعديلها" });
             return Ok(result);
@@ -185,7 +197,9 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> DeleteNote(Guid noteId)
         {
             var userId = GetUserId();
-            var result = await _caseService.DeleteNoteAsync(userId, noteId);
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _caseService.DeleteNoteAsync(userId.Value, noteId);
             if (!result)
                 return NotFound(new { message = "الملاحظة غير موجودة أو لا يمكن حذفها" });
             return Ok(new { message = "تم حذف الملاحظة بنجاح" });
@@ -198,15 +212,33 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> GetCaseStats()
         {
             var userId = GetUserId();
-            var isLawyer = IsLawyer();
+            if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
+            var isLawyer = IsLawyer();
             CaseStatsDto stats;
             if (isLawyer)
-                stats = await _caseService.GetCaseStatsAsync(lawyerId: userId);
+                stats = await _caseService.GetCaseStatsAsync(lawyerId: userId.Value);
             else
-                stats = await _caseService.GetCaseStatsAsync(clientId: userId);
+                stats = await _caseService.GetCaseStatsAsync(clientId: userId.Value);
 
             return Ok(stats);
+        }
+
+        // ========== Helper ==========
+
+        private string GetContentType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            return extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".doc" => "application/msword",
+                ".txt" => "text/plain",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                _ => "application/octet-stream"
+            };
         }
     }
 }

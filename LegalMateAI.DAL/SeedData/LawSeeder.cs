@@ -84,7 +84,7 @@ namespace LegalMateAI.DAL.SeedData
                     LawNumber = d.lawNumber,
                     Year = d.year,
                     Category = ParseCategory(d.category),
-                    Description = d.description,
+                    Description = d.description != null && d.description.Length > 2000 ? d.description[..2000] : d.description,
                     SourceUrl = d.sourceUrl,
                     PdfFileUrl = d.pdfUrl,
                     SearchKeywords = d.searchKeywords,
@@ -103,18 +103,28 @@ namespace LegalMateAI.DAL.SeedData
             logger.LogInformation($"✅ Seeded {laws.Count} laws from JSON");
         }
 
-        private static LawCategory ParseCategory(string? category)
+        private static LawCategory ParseCategory(int? category)
         {
             return category switch
             {
-                "Constitutional" => LawCategory.Constitutional, "Civil" => LawCategory.Civil,
-                "Commercial" => LawCategory.Commercial, "Criminal" => LawCategory.Criminal,
-                "Family" => LawCategory.Family, "Labor" => LawCategory.Labor,
-                "Tax" => LawCategory.Tax, "Administrative" => LawCategory.Administrative,
-                "RealEstate" => LawCategory.RealEstate, "Investment" => LawCategory.Investment,
-                "Maritime" => LawCategory.Maritime, "Procedure" => LawCategory.Procedure,
-                "Financial" => LawCategory.Financial, "Educational" => LawCategory.Educational,
-                "Social" => LawCategory.Social, _ => LawCategory.Other
+                1 => LawCategory.Constitutional,
+                2 => LawCategory.Civil,
+                3 => LawCategory.Criminal,
+                4 => LawCategory.Commercial,
+                5 => LawCategory.Labor,
+                6 => LawCategory.Tax,
+                7 => LawCategory.Family,
+                8 => LawCategory.Procedure,
+                9 => LawCategory.RealEstate,
+                10 => LawCategory.Financial,
+                11 => LawCategory.Investment,
+                12 => LawCategory.Social,
+                13 => LawCategory.Educational,
+                14 => LawCategory.Economic,
+                15 => LawCategory.Maritime,
+                16 => LawCategory.Administrative,
+                17 => LawCategory.International,
+                _ => LawCategory.Other
             };
         }
 
@@ -123,7 +133,7 @@ namespace LegalMateAI.DAL.SeedData
             public string? name { get; set; }
             public string? lawNumber { get; set; }
             public int? year { get; set; }
-            public string? category { get; set; }
+            public int? category { get; set; }
             public string? description { get; set; }
             public string? sourceUrl { get; set; }
             public string? pdfUrl { get; set; }

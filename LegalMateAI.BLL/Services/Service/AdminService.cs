@@ -43,11 +43,9 @@ namespace LegalMateAI.BLL.Services.Service
             return new AdminDashboardDto
             {
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),
-                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer),
-                PendingVerifications = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
-                VerifiedToday = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerifiedAt.HasValue && l.VerifiedAt.Value.Date == today),
+                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null && u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Active),
+                PendingVerifications = await _context.LawyerProfiles.CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
+                VerifiedToday = await _context.LawyerProfiles.CountAsync(l => l.VerifiedAt.HasValue && l.VerifiedAt.Value.Date == today),
                 AdminName = admin?.FullName ?? "",
                 ProfilePicture = admin?.Profile?.ProfilePictureUrl,
                 JobTitle = admin?.Profile?.JobTitle ?? "مدير النظام",
@@ -144,6 +142,10 @@ namespace LegalMateAI.BLL.Services.Service
         }
 
         // ==================== Lawyer Management ====================
+
+        /// <summary>
+        /// ✅ جلب المحامين المعلقين (Pending) فقط للمراجعة
+        /// </summary>
         public async Task<List<PendingLawyerDto>> GetPendingLawyersAsync()
         {
             _logger.LogInformation("Getting pending lawyers...");
@@ -152,8 +154,8 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.LawyerProfile)
                 .Where(u => u.Role == UserRole.Lawyer &&
                        u.LawyerProfile != null &&
-                       u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Pending)
-                .OrderBy(u => u.CreatedAt)
+                       u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Pending)  // ✅ فقط المعلقين
+                .OrderByDescending(u => u.CreatedAt)
                 .Select(u => new PendingLawyerDto
                 {
                     UserId = u.UserID,
@@ -169,6 +171,9 @@ namespace LegalMateAI.BLL.Services.Service
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// ✅ جلب جميع المحامين المعتمدين (لما يكون الأدمن عايز يشوف اللي Active فقط)
+        /// </summary>
         public async Task<List<LawyerResponseDto>> GetAllLawyersAsync(LawyerFilterDto? filter = null)
         {
             var query = _context.Users
@@ -193,6 +198,9 @@ namespace LegalMateAI.BLL.Services.Service
                 if (!string.IsNullOrEmpty(filter.Status) &&
                     Enum.TryParse<LawyerVerificationStatus>(filter.Status, true, out var status))
                     query = query.Where(u => u.LawyerProfile!.VerificationStatus == status);
+                else
+                    // ✅ افتراضياً: جيب الـ Active فقط لو مفيش فلتر
+                    query = query.Where(u => u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active);
 
                 if (!string.IsNullOrEmpty(filter.SearchTerm))
                 {
@@ -212,6 +220,11 @@ namespace LegalMateAI.BLL.Services.Service
 
                 if (!string.IsNullOrEmpty(filter.City))
                     query = query.Where(u => u.LawyerProfile!.City != null && u.LawyerProfile.City.Name.Contains(filter.City));
+            }
+            else
+            {
+                // ✅ افتراضياً: جيب الـ Active فقط
+                query = query.Where(u => u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active);
             }
 
             int page = Math.Max(1, filter?.Page ?? 1);
@@ -250,6 +263,96 @@ namespace LegalMateAI.BLL.Services.Service
                 .FirstOrDefaultAsync(u => u.UserID == lawyerId && u.Role == UserRole.Lawyer);
 
             return user?.LawyerProfile == null ? null : await MapLawyerToDtoAsync(user);
+        }
+
+        /// <summary>
+        /// ✅ الموافقة على محامي - تغيير الحالة من Pending إلى Active
+        /// </summary>
+        public async Task<bool> ApproveLawyerAsync(Guid userId)
+        {
+            _logger.LogInformation($"ApproveLawyer - UserId: {userId}");
+
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
+
+            if (user?.LawyerProfile == null) return false;
+
+            var lawyerProfile = user.LawyerProfile;
+            
+            // ✅ الموافقة: تفعيل المحامي
+            lawyerProfile.VerificationStatus = LawyerVerificationStatus.Active;
+            user.IsActive = true;
+            user.Status = AccountStatus.Active;
+            lawyerProfile.VerifiedAt = DateTime.UtcNow;
+            lawyerProfile.RejectionReason = null;
+
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId.HasValue)
+            {
+                await LogActionAsync(currentUserId.Value, AdminLogAction.Verify, "Lawyer", userId);
+            }
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"✅ Lawyer approved: {userId}");
+            return true;
+        }
+
+        /// <summary>
+        /// ✅ رفض محامي - حذف نهائي من النظام
+        /// </summary>
+        public async Task<bool> RejectLawyerAsync(Guid userId, string reason)
+        {
+            _logger.LogInformation($"RejectLawyer - حذف نهائي للمحامي: {userId}, السبب: {reason}");
+
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.LawyerProfile)
+                    .ThenInclude(lp => lp!.Certificates)
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
+
+            if (user == null) return false;
+
+            // ✅ تسجيل الرفض في اللوجات قبل الحذف
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId.HasValue)
+            {
+                await LogActionAsync(currentUserId.Value, AdminLogAction.Reject, "Lawyer", userId);
+            }
+
+            // 1. حذف التخصصات
+            if (user.LawyerProfile?.Specialties != null && user.LawyerProfile.Specialties.Any())
+            {
+                _context.LawyerProfileSpecialties.RemoveRange(user.LawyerProfile.Specialties);
+            }
+
+            // 2. حذف الشهادات
+            if (user.LawyerProfile?.Certificates != null && user.LawyerProfile.Certificates.Any())
+            {
+                _context.Certificates.RemoveRange(user.LawyerProfile.Certificates);
+            }
+
+            // 3. حذف الملف الشخصي للمحامي
+            if (user.LawyerProfile != null)
+            {
+                _context.LawyerProfiles.Remove(user.LawyerProfile);
+            }
+
+            // 4. حذف الـ UserProfile
+            if (user.UserProfile != null)
+            {
+                _context.UserProfiles.Remove(user.UserProfile);
+            }
+
+            // 5. حذف المستخدم نفسه
+            _context.Users.Remove(user);
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ تم حذف المحامي {user.Email} نهائياً. السبب: {reason}");
+            return true;
         }
 
         public async Task<bool> UpdateLawyerStatusAsync(Guid userId, LawyerVerificationStatus status, string? notes = null)
@@ -305,77 +408,6 @@ namespace LegalMateAI.BLL.Services.Service
             }
 
             await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> ApproveLawyerAsync(Guid userId)
-        {
-            return await UpdateLawyerStatusAsync(userId, LawyerVerificationStatus.Active);
-        }
-
-        /// <summary>
-        /// رفض المحامي - حذف نهائي من النظام مع تسجيل العملية في اللوجات
-        /// </summary>
-        public async Task<bool> RejectLawyerAsync(Guid userId, string reason)
-        {
-            _logger.LogInformation($"RejectLawyer - حذف نهائي للمحامي: {userId}, السبب: {reason}");
-
-            // جلب المحامي مع جميع البيانات المرتبطة
-            var user = await _context.Users
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.UserProfile)
-                .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
-
-            if (user == null) return false;
-
-            // ✅ تسجيل الرفض في اللوجات قبل الحذف (لكي يظهر للأدمن الآخرين)
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId.HasValue)
-            {
-                await LogActionAsync(currentUserId.Value, AdminLogAction.Reject, "Lawyer", userId);
-            }
-
-            // 1. حذف التخصصات (LawyerProfileSpecialties)
-            if (user.LawyerProfile?.Specialties != null && user.LawyerProfile.Specialties.Any())
-            {
-                _context.LawyerProfileSpecialties.RemoveRange(user.LawyerProfile.Specialties);
-            }
-
-            // 2. حذف الشهادات (Certificates)
-            if (user.LawyerProfile?.Certificates != null && user.LawyerProfile.Certificates.Any())
-            {
-                _context.Certificates.RemoveRange(user.LawyerProfile.Certificates);
-            }
-
-            // 3. حذف الملف الشخصي للمحامي (LawyerProfile)
-            if (user.LawyerProfile != null)
-            {
-                _context.LawyerProfiles.Remove(user.LawyerProfile);
-            }
-
-            // 4. حذف الـ UserProfile إن وجد
-            if (user.UserProfile != null)
-            {
-                _context.UserProfiles.Remove(user.UserProfile);
-            }
-
-            // 5. حذف اللوجات التي يكون فيها هذا المحامي هو الفاعل (Actor)
-            var logsWhereActorIsUser = _context.AdminLogs.Where(l => l.ActorId == userId);
-            if (logsWhereActorIsUser.Any())
-            {
-                _context.AdminLogs.RemoveRange(logsWhereActorIsUser);
-            }
-
-            // 6. حذف المستخدم نفسه
-            _context.Users.Remove(user);
-
-            // حفظ جميع التغييرات
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation($"✅ تم حذف المحامي {user.Email} نهائياً من النظام. السبب: {reason}");
             return true;
         }
 
@@ -440,7 +472,6 @@ namespace LegalMateAI.BLL.Services.Service
             var currentAdminId = GetCurrentUserId();
             var query = _context.AdminLogs.AsQueryable();
 
-            // إخفاء نشاط الأدمن الحالي
             if (currentAdminId.HasValue)
             {
                 query = query.Where(l => l.ActorId != currentAdminId.Value);
@@ -509,13 +540,6 @@ namespace LegalMateAI.BLL.Services.Service
             var result = await GetAllLogsAsync(filter);
             var logs = result.Items;
             
-            var adminName = "مدير النظام";
-            if (filter?.UserId.HasValue == true)
-            {
-                var user = await _context.Users.FindAsync(filter.UserId.Value);
-                if (user != null) adminName = user.FullName;
-            }
-
             return format.ToLower() switch
             {
                 "pdf" => throw new NotImplementedException("PdfGenerationService needs to be added"),
@@ -559,13 +583,12 @@ namespace LegalMateAI.BLL.Services.Service
             return new SystemStatsDto
             {
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),
-                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer),
+                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null && u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Active),
                 TotalAdmins = await _context.Admins.CountAsync(),
                 TotalDocuments = await _context.Documents.CountAsync(),
                 TotalContracts = await _context.Contracts.CountAsync(),
                 TotalAppointments = await _context.Appointments.CountAsync(),
-                PendingVerifications = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
+                PendingVerifications = await _context.LawyerProfiles.CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
                 ActiveUsers = await _context.Users.CountAsync(u => u.IsActive && u.Role == UserRole.User),
                 ActiveLawyers = await _context.Users.CountAsync(u => u.IsActive && u.Role == UserRole.Lawyer),
                 TotalStorageUsed = 0,
@@ -635,11 +658,10 @@ namespace LegalMateAI.BLL.Services.Service
             return Guid.TryParse(userIdClaim.Value, out var userId) ? userId : null;
         }
 
-        // ==================== Mapping Methods with Full Data ====================
+        // ==================== Mapping Methods ====================
         
         private async Task<UserResponseDto> MapUserToDtoAsync(User user)
         {
-            // حساب الإحصائيات
             var documentsCount = await _context.Documents.CountAsync(d => d.UserId == user.UserID);
             var contractsCount = await _context.Contracts.CountAsync(c => c.UserId == user.UserID);
             var appointmentsCount = await _context.Appointments.CountAsync(a => a.UserID == user.UserID);
@@ -674,10 +696,9 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var lawyer = user.LawyerProfile!;
             
-       // حساب متوسط التقييم من LawyerReview
-   double avgRating = await _context.LawyerReviews
-    .Where(r => r.LawyerId == lawyer.Id)
-    .AverageAsync(r => (double?)r.Rating) ?? 0;
+            double avgRating = await _context.LawyerReviews
+                .Where(r => r.LawyerId == lawyer.Id)
+                .AverageAsync(r => (double?)r.Rating) ?? 0;
 
             return new LawyerResponseDto
             {
@@ -698,7 +719,7 @@ namespace LegalMateAI.BLL.Services.Service
                 VerifiedAt = lawyer.VerifiedAt,
                 RejectionReason = lawyer.RejectionReason,
                 Rating = (float)avgRating,
-                TotalReviews = 0, // يمكن حسابه من LawyerProfile.ReviewsCount
+                TotalReviews = 0,
                 GovernorateName = lawyer.Governorate?.Name,
                 City = lawyer.City?.Name ?? "",
                 OfficeAddress = lawyer.OfficeAddress,

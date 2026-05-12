@@ -19,9 +19,7 @@ namespace LegalMateAI.BLL.Services.IService
         // ========== إدارة المستندات ==========
         Task<CaseDocumentResponseDto?> UploadDocumentAsync(Guid userId, CreateCaseDocumentDto request);
         Task<bool> DeleteDocumentAsync(Guid userId, Guid documentId);
-        Task<byte[]?> DownloadDocumentAsync(Guid userId, Guid documentId);
-        
-        // ✅ إضافة هذه الدالة
+        Task<byte[]?> DownloadDocumentAsync(Guid documentId);
         Task<CaseDocumentResponseDto?> GetDocumentByIdAsync(Guid documentId);
         
         // ========== إدارة الملاحظات ==========

@@ -200,6 +200,10 @@ namespace LegalMateAI.BLL.Services.Service
             var user = await _context.Users.FindAsync(userId);
             if (user == null || user.Role != UserRole.Lawyer) return null;
 
+            // ✅ التحقق من أن المحامي Active
+            if (user.LawyerProfile?.VerificationStatus != LawyerVerificationStatus.Active)
+                return null;
+
             var uploadsFolder = Path.Combine(_env.WebRootPath, "profiles", "lawyers");
             Directory.CreateDirectory(uploadsFolder);
 

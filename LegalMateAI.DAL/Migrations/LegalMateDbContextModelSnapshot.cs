@@ -2033,7 +2033,7 @@ namespace LegalMateAI.DAL.Migrations
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", null)
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
                         .WithMany("Users")
                         .HasForeignKey("GovernorateId");
 
@@ -2044,6 +2044,8 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
+
+                    b.Navigation("Governorate");
 
                     b.Navigation("User");
                 });
