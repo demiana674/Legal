@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/LawService.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -33,7 +32,7 @@ namespace LegalMateAI.BLL.Services.Service
 
         // ========== للجميع ==========
 
-        public async Task<List<LawDto>> GetLawsAsync(LawCategory? category = null, string? search = null)
+        public async Task<List<LawCompleteDto>> GetLawsAsync(LawCategory? category = null, string? search = null)
         {
             var query = _context.Laws
                 .Include(l => l.AddedByAdmin)
@@ -62,12 +61,12 @@ namespace LegalMateAI.BLL.Services.Service
             foreach (var law in laws) law.ViewCount++;
             await _context.SaveChangesAsync();
 
-            return laws.Select(MapToDto).ToList();
+            return laws.Select(MapToCompleteDto).ToList();
         }
 
-        public async Task<List<LawDto>> SearchLawsAsync(string searchTerm)
+        public async Task<List<LawCompleteDto>> SearchLawsAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm)) return new List<LawDto>();
+            if (string.IsNullOrWhiteSpace(searchTerm)) return new List<LawCompleteDto>();
             searchTerm = searchTerm.ToLower().Trim();
             var searchWords = searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
@@ -81,11 +80,11 @@ namespace LegalMateAI.BLL.Services.Service
                 .Select(l => new { Law = l, Score = CalculateMatchScore(l, searchTerm, searchWords) })
                 .Where(x => x.Score > 0)
                 .OrderByDescending(x => x.Score)
-                .Select(x => MapToDto(x.Law))
+                .Select(x => MapToCompleteDto(x.Law))
                 .ToList();
         }
 
-        public async Task<LawDto?> GetLawByIdAsync(Guid id)
+        public async Task<LawCompleteDto?> GetLawByIdAsync(Guid id)
         {
             var law = await _context.Laws
                 .Include(l => l.AddedByAdmin)
@@ -95,7 +94,7 @@ namespace LegalMateAI.BLL.Services.Service
             if (law == null) return null;
             law.ViewCount++;
             await _context.SaveChangesAsync();
-            return MapToDto(law);
+            return MapToCompleteDto(law);
         }
 
         public async Task<byte[]?> DownloadLawAsync(Guid id)
@@ -145,9 +144,46 @@ namespace LegalMateAI.BLL.Services.Service
             }).OrderBy(c => c.Name).ToList();
         }
 
+        // ========== أجزاء منفصلة (جديد) ==========
+
+        public async Task<LawCoreInfoDto?> GetLawCoreInfoAsync(Guid id)
+        {
+            var law = await _context.Laws.FindAsync(id);
+            if (law == null || !law.IsActive || !law.IsApproved) return null;
+            return MapToCompleteDto(law).CoreInfo;
+        }
+
+        public async Task<LawFileLinksDto?> GetLawFileLinksAsync(Guid id)
+        {
+            var law = await _context.Laws.FindAsync(id);
+            if (law == null || !law.IsActive || !law.IsApproved) return null;
+            return MapToCompleteDto(law).FileLinks;
+        }
+
+        public async Task<LawMetricsDto?> GetLawMetricsAsync(Guid id)
+        {
+            var law = await _context.Laws.FindAsync(id);
+            if (law == null || !law.IsActive || !law.IsApproved) return null;
+            return MapToCompleteDto(law).Metrics;
+        }
+
+        public async Task<LawAuditDto?> GetLawAuditAsync(Guid id)
+        {
+            var law = await _context.Laws.FindAsync(id);
+            if (law == null) return null;
+            return MapToCompleteDto(law).Audit;
+        }
+
+        public async Task<LawContentDto?> GetLawContentAsync(Guid id)
+        {
+            var law = await _context.Laws.FindAsync(id);
+            if (law == null || !law.IsActive || !law.IsApproved) return null;
+            return MapToCompleteDto(law).Content;
+        }
+
         // ========== رفع القوانين (للمستخدمين المسجلين فقط) ==========
 
-        public async Task<LawDto?> UploadLawByUserAsync(Guid? userId, AddLawDto request)
+        public async Task<LawCompleteDto?> UploadLawByUserAsync(Guid? userId, AddLawDto request)
         {
             if (!userId.HasValue) return null;
 
@@ -189,10 +225,10 @@ namespace LegalMateAI.BLL.Services.Service
             await _context.SaveChangesAsync();
 
             _logger.LogInformation($"Law uploaded: {law.Name} (Pending Approval)");
-            return MapToDto(law);
+            return MapToCompleteDto(law);
         }
 
-        public async Task<List<LawDto>> GetUserUploadedLawsAsync(Guid userId)
+        public async Task<List<LawCompleteDto>> GetUserUploadedLawsAsync(Guid userId)
         {
             var laws = await _context.Laws
                 .Include(l => l.AddedByAdmin)
@@ -201,12 +237,12 @@ namespace LegalMateAI.BLL.Services.Service
                 .OrderByDescending(l => l.CreatedAt)
                 .ToListAsync();
 
-            return laws.Select(MapToDto).ToList();
+            return laws.Select(MapToCompleteDto).ToList();
         }
 
         // ========== للأدمن فقط ==========
 
-        public async Task<List<LawDto>> GetPendingLawsAsync()
+        public async Task<List<LawCompleteDto>> GetPendingLawsAsync()
         {
             var laws = await _context.Laws
                 .Include(l => l.AddedByAdmin)
@@ -215,7 +251,7 @@ namespace LegalMateAI.BLL.Services.Service
                 .OrderByDescending(l => l.CreatedAt)
                 .ToListAsync();
 
-            return laws.Select(MapToDto).ToList();
+            return laws.Select(MapToCompleteDto).ToList();
         }
 
         public async Task<bool> ApproveLawAsync(Guid adminId, Guid lawId)
@@ -234,9 +270,6 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ رفض قانون - حذف نهائي من النظام
-        /// </summary>
         public async Task<bool> RejectLawAsync(Guid adminId, Guid lawId, string reason)
         {
             var law = await _context.Laws.FindAsync(lawId);
@@ -244,14 +277,12 @@ namespace LegalMateAI.BLL.Services.Service
 
             _logger.LogInformation($"Law rejected and deleted by admin {adminId}: {lawId}, Reason: {reason}");
 
-            // حذف الملف الفعلي لو موجود
             if (!string.IsNullOrEmpty(law.PdfFileUrl) && law.PdfFileUrl.StartsWith("/uploads/"))
             {
                 var filePath = Path.Combine(_env.WebRootPath ?? "wwwroot", law.PdfFileUrl.TrimStart('/'));
                 if (File.Exists(filePath)) File.Delete(filePath);
             }
 
-            // حذف القانون من الداتابيز
             _context.Laws.Remove(law);
             await _context.SaveChangesAsync();
 
@@ -325,32 +356,47 @@ namespace LegalMateAI.BLL.Services.Service
             _ => category.ToString()
         };
 
-        private LawDto MapToDto(Law law)
+        private LawCompleteDto MapToCompleteDto(Law law)
         {
             var request = _httpContextAccessor.HttpContext?.Request;
             var baseUrl = $"{request?.Scheme}://{request?.Host}";
 
-            return new LawDto
+            return new LawCompleteDto
             {
-                Id = law.Id,
-                Name = law.Name,
-                LawNumber = law.LawNumber,
-                Year = law.Year,
-                Category = law.Category,
-                CategoryName = GetCategoryName(law.Category),
-                Description = law.Description,
-                PdfFileUrl = law.PdfFileUrl?.StartsWith("/uploads/") == true ? $"{baseUrl}{law.PdfFileUrl}" : law.PdfFileUrl,
-                SourceUrl = law.SourceUrl,
-                SearchKeywords = law.SearchKeywords?.Split(',').Select(k => k.Trim()).ToList() ?? new(),
-                DownloadCount = law.DownloadCount,
-                ViewCount = law.ViewCount,
-                IsActive = law.IsActive,
-                IsApproved = law.IsApproved,
-                CreatedAt = law.CreatedAt,
-                AddedByAdminName = law.AddedByAdmin?.FullName ?? (law.UploadedByUser?.FullName ?? "غير معروف"),
-                UploadedByUserName = law.UploadedByUser?.FullName,
-                RejectionReason = law.RejectionReason,
-                ApprovedAt = law.ApprovedAt
+                CoreInfo = new LawCoreInfoDto
+                {
+                    Id = law.Id,
+                    Name = law.Name,
+                    LawNumber = law.LawNumber,
+                    Year = law.Year,
+                    Category = law.Category,
+                    CategoryName = GetCategoryName(law.Category),
+                    CreatedAt = law.CreatedAt
+                },
+                FileLinks = new LawFileLinksDto
+                {
+                    PdfFileUrl = law.PdfFileUrl?.StartsWith("/uploads/") == true ? $"{baseUrl}{law.PdfFileUrl}" : law.PdfFileUrl,
+                    SourceUrl = law.SourceUrl
+                },
+                Metrics = new LawMetricsDto
+                {
+                    DownloadCount = law.DownloadCount,
+                    ViewCount = law.ViewCount,
+                    IsActive = law.IsActive,
+                    IsApproved = law.IsApproved
+                },
+                Audit = new LawAuditDto
+                {
+                    AddedByAdminName = law.AddedByAdmin?.FullName ?? (law.UploadedByUser?.FullName ?? "غير معروف"),
+                    UploadedByUserName = law.UploadedByUser?.FullName,
+                    RejectionReason = law.RejectionReason,
+                    ApprovedAt = law.ApprovedAt
+                },
+                Content = new LawContentDto
+                {
+                    Description = law.Description,
+                    SearchKeywords = law.SearchKeywords?.Split(',').Select(k => k.Trim()).ToList() ?? new()
+                }
             };
         }
     }

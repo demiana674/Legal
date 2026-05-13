@@ -1,4 +1,3 @@
-// LegalMateAI.API/Controllers/LawController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
@@ -61,6 +60,52 @@ namespace LegalMateAI.API.Controllers
             return Ok(law);
         }
 
+        // ✅ أكشنز جديدة لجلب أجزاء منفصلة
+        [AllowAnonymous]
+        [HttpGet("{id}/core")]
+        public async Task<IActionResult> GetLawCoreInfo(Guid id)
+        {
+            var info = await _lawService.GetLawCoreInfoAsync(id);
+            if (info == null) return NotFound(new { message = "القانون غير موجود" });
+            return Ok(info);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{id}/links")]
+        public async Task<IActionResult> GetLawLinks(Guid id)
+        {
+            var links = await _lawService.GetLawFileLinksAsync(id);
+            if (links == null) return NotFound(new { message = "القانون غير موجود" });
+            return Ok(links);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{id}/metrics")]
+        public async Task<IActionResult> GetLawMetrics(Guid id)
+        {
+            var metrics = await _lawService.GetLawMetricsAsync(id);
+            if (metrics == null) return NotFound(new { message = "القانون غير موجود" });
+            return Ok(metrics);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{id}/content")]
+        public async Task<IActionResult> GetLawContent(Guid id)
+        {
+            var content = await _lawService.GetLawContentAsync(id);
+            if (content == null) return NotFound(new { message = "القانون غير موجود" });
+            return Ok(content);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("{id}/audit")]
+        public async Task<IActionResult> GetLawAudit(Guid id)
+        {
+            var audit = await _lawService.GetLawAuditAsync(id);
+            if (audit == null) return NotFound(new { message = "القانون غير موجود" });
+            return Ok(audit);
+        }
+
         [AllowAnonymous]
         [HttpGet("{id}/download")]
         public async Task<IActionResult> DownloadLaw(Guid id)
@@ -71,12 +116,12 @@ namespace LegalMateAI.API.Controllers
 
             var fileBytes = await _lawService.DownloadLawAsync(id);
             if (fileBytes != null)
-                return File(fileBytes, "application/pdf", $"{law.Name}.pdf");
+                return File(fileBytes, "application/pdf", $"{law.CoreInfo.Name}.pdf");
 
-            if (!string.IsNullOrEmpty(law.PdfFileUrl))
-                return Redirect(law.PdfFileUrl);
-            if (!string.IsNullOrEmpty(law.SourceUrl))
-                return Redirect(law.SourceUrl);
+            if (!string.IsNullOrEmpty(law.FileLinks.PdfFileUrl))
+                return Redirect(law.FileLinks.PdfFileUrl);
+            if (!string.IsNullOrEmpty(law.FileLinks.SourceUrl))
+                return Redirect(law.FileLinks.SourceUrl);
 
             return NotFound(new { message = "الملف غير متوفر" });
         }

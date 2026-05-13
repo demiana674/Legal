@@ -1,9 +1,9 @@
 {
   "info": {
     "name": "🏛️ LegalMate AI API - Complete Collection vFinal",
-    "description": "# LegalMate AI API - Full System\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد | كلمة المرور |\n|-------|--------|-------------|\n| **Admin** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط API: `http://localhost:5101`\n- Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Local AI (Ollama)**",
+    "description": "# LegalMate AI API - Full System\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد | كلمة المرور |\n|-------|--------|-------------|\n| **Admin** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط API: `http://localhost:5101`\n- Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Local AI (Ollama)**\n\n## 🆕 Laws API - New Structure (v2)\n\nالـ Law API دلوقتي بترجع `LawCompleteDto` مقسمة كالتالي:\n- `coreInfo`: البيانات الأساسية (الاسم، الرقم، السنة، التصنيف)\n- `fileLinks`: روابط PDF و Source\n- `metrics`: الإحصائيات (مشاهدات، تحميلات، حالة)\n- `audit`: بيانات الإدارة (للأدمن فقط)\n- `content`: الوصف والكلمات المفتاحية\n\n## 🆕 Endpoints جديدة:\n- `GET /api/laws/{id}/core` - بيانات أساسية فقط\n- `GET /api/laws/{id}/links` - روابط فقط\n- `GET /api/laws/{id}/metrics` - إحصائيات فقط\n- `GET /api/laws/{id}/content` - وصف فقط\n- `GET /api/laws/{id}/audit` - بيانات إدارة (لأدمن فقط)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "legal-mate-ai-final-v9"
+    "_postman_id": "legal-mate-ai-final-v10"
   },
   "variable": [
     {"key": "base_url", "value": "http://localhost:5101", "type": "string"},
@@ -166,13 +166,30 @@
       "item": [
         {"name": "GET All Laws", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws", "host": ["{{base_url}}"], "path": ["api", "laws"]}}},
         {"name": "GET Search Laws", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/search?q=مدني", "host": ["{{base_url}}"], "path": ["api", "laws", "search"]}}},
-        {"name": "GET Law by ID", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}"]}}},
+        {
+          "name": "GET Law by ID",
+          "event": [{"listen": "test", "script": {"exec": ["const r = pm.response.json(); if(r && r.coreInfo) { pm.environment.set('law_core_name', r.coreInfo.name); pm.environment.set('law_core_id', r.coreInfo.id); console.log('✅ Law loaded - Core Info:', r.coreInfo); console.log('📊 Metrics:', r.metrics); console.log('🔗 Links:', r.fileLinks); }"], "type": "text/javascript"}}],
+          "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}"]}}
+        },
+        {"name": "GET Law Core Info", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/core", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "core"]}}},
+        {"name": "GET Law Links", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/links", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "links"]}}},
+        {"name": "GET Law Metrics", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/metrics", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "metrics"]}}},
+        {"name": "GET Law Content", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/content", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "content"]}}},
+        {"name": "GET Law Audit (Admin Only)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/audit", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "audit"]}}},
         {"name": "GET Download Law", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/download", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "download"]}}},
         {"name": "GET Download URL", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/download-url", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "download-url"]}}},
         {"name": "GET Categories", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/categories", "host": ["{{base_url}}"], "path": ["api", "laws", "categories"]}}},
         {"name": "POST Upload Law", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "formdata", "formdata": [{"key": "PdfFile", "type": "file", "src": []}, {"key": "Name", "value": "قانون جديد", "type": "text"}, {"key": "Category", "value": "2", "type": "text"}]}, "url": {"raw": "{{base_url}}/api/laws/upload", "host": ["{{base_url}}"], "path": ["api", "laws", "upload"]}}},
-        {"name": "GET My Uploads", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/my-uploads", "host": ["{{base_url}}"], "path": ["api", "laws", "my-uploads"]}}},
-        {"name": "GET Admin Pending Laws", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/admin/pending", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "pending"]}}},
+        {
+          "name": "GET My Uploads",
+          "event": [{"listen": "test", "script": {"exec": ["const r = pm.response.json(); if(Array.isArray(r)) { console.log(`✅ Found ${r.length} uploaded laws`); r.forEach((law, i) => { console.log(`  ${i+1}. ${law.coreInfo?.name || 'N/A'} - Approved: ${law.metrics?.isApproved}`); }); }"], "type": "text/javascript"}}],
+          "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/my-uploads", "host": ["{{base_url}}"], "path": ["api", "laws", "my-uploads"]}}
+        },
+        {
+          "name": "GET Admin Pending Laws",
+          "event": [{"listen": "test", "script": {"exec": ["const r = pm.response.json(); if(Array.isArray(r)) { console.log(`⏳ Found ${r.length} pending laws for approval`); r.forEach((law, i) => { console.log(`  ${i+1}. ${law.coreInfo?.name} - Uploaded: ${law.coreInfo?.createdAtFormatted}`); }); }"], "type": "text/javascript"}}],
+          "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/admin/pending", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "pending"]}}
+        },
         {"name": "POST Admin Approve Law", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/admin/{{law_id}}/approve", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "{{law_id}}", "approve"]}}},
         {"name": "POST Admin Reject Law", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"reason\":\"غير مكتمل\"}"}, "url": {"raw": "{{base_url}}/api/laws/admin/{{law_id}}/reject", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "{{law_id}}", "reject"]}}}
       ]

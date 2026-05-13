@@ -143,9 +143,6 @@ namespace LegalMateAI.BLL.Services.Service
 
         // ==================== Lawyer Management ====================
 
-        /// <summary>
-        /// ✅ جلب المحامين المعلقين (Pending) فقط للمراجعة
-        /// </summary>
         public async Task<List<PendingLawyerDto>> GetPendingLawyersAsync()
         {
             _logger.LogInformation("Getting pending lawyers...");
@@ -154,7 +151,7 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.LawyerProfile)
                 .Where(u => u.Role == UserRole.Lawyer &&
                        u.LawyerProfile != null &&
-                       u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Pending)  // ✅ فقط المعلقين
+                       u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Pending)
                 .OrderByDescending(u => u.CreatedAt)
                 .Select(u => new PendingLawyerDto
                 {
@@ -171,9 +168,6 @@ namespace LegalMateAI.BLL.Services.Service
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// ✅ جلب جميع المحامين المعتمدين (لما يكون الأدمن عايز يشوف اللي Active فقط)
-        /// </summary>
         public async Task<List<LawyerResponseDto>> GetAllLawyersAsync(LawyerFilterDto? filter = null)
         {
             var query = _context.Users
@@ -199,7 +193,6 @@ namespace LegalMateAI.BLL.Services.Service
                     Enum.TryParse<LawyerVerificationStatus>(filter.Status, true, out var status))
                     query = query.Where(u => u.LawyerProfile!.VerificationStatus == status);
                 else
-                    // ✅ افتراضياً: جيب الـ Active فقط لو مفيش فلتر
                     query = query.Where(u => u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active);
 
                 if (!string.IsNullOrEmpty(filter.SearchTerm))
@@ -223,7 +216,6 @@ namespace LegalMateAI.BLL.Services.Service
             }
             else
             {
-                // ✅ افتراضياً: جيب الـ Active فقط
                 query = query.Where(u => u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active);
             }
 
@@ -265,9 +257,6 @@ namespace LegalMateAI.BLL.Services.Service
             return user?.LawyerProfile == null ? null : await MapLawyerToDtoAsync(user);
         }
 
-        /// <summary>
-        /// ✅ الموافقة على محامي - تغيير الحالة من Pending إلى Active
-        /// </summary>
         public async Task<bool> ApproveLawyerAsync(Guid userId)
         {
             _logger.LogInformation($"ApproveLawyer - UserId: {userId}");
@@ -280,7 +269,6 @@ namespace LegalMateAI.BLL.Services.Service
 
             var lawyerProfile = user.LawyerProfile;
             
-            // ✅ الموافقة: تفعيل المحامي
             lawyerProfile.VerificationStatus = LawyerVerificationStatus.Active;
             user.IsActive = true;
             user.Status = AccountStatus.Active;
@@ -298,9 +286,6 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ رفض محامي - حذف نهائي من النظام
-        /// </summary>
         public async Task<bool> RejectLawyerAsync(Guid userId, string reason)
         {
             _logger.LogInformation($"RejectLawyer - حذف نهائي للمحامي: {userId}, السبب: {reason}");
@@ -315,38 +300,32 @@ namespace LegalMateAI.BLL.Services.Service
 
             if (user == null) return false;
 
-            // ✅ تسجيل الرفض في اللوجات قبل الحذف
             var currentUserId = GetCurrentUserId();
             if (currentUserId.HasValue)
             {
                 await LogActionAsync(currentUserId.Value, AdminLogAction.Reject, "Lawyer", userId);
             }
 
-            // 1. حذف التخصصات
             if (user.LawyerProfile?.Specialties != null && user.LawyerProfile.Specialties.Any())
             {
                 _context.LawyerProfileSpecialties.RemoveRange(user.LawyerProfile.Specialties);
             }
 
-            // 2. حذف الشهادات
             if (user.LawyerProfile?.Certificates != null && user.LawyerProfile.Certificates.Any())
             {
                 _context.Certificates.RemoveRange(user.LawyerProfile.Certificates);
             }
 
-            // 3. حذف الملف الشخصي للمحامي
             if (user.LawyerProfile != null)
             {
                 _context.LawyerProfiles.Remove(user.LawyerProfile);
             }
 
-            // 4. حذف الـ UserProfile
             if (user.UserProfile != null)
             {
                 _context.UserProfiles.Remove(user.UserProfile);
             }
 
-            // 5. حذف المستخدم نفسه
             _context.Users.Remove(user);
 
             await _context.SaveChangesAsync();
@@ -459,75 +438,6 @@ namespace LegalMateAI.BLL.Services.Service
             );
         }
 
-        private async Task<PaginatedLogsDto<AdminLogDto>> GetAllLogsInternalAsync(
-            Guid? userId,
-            AdminLogAction? action,
-            string? targetType,
-            DateTime? fromDate,
-            DateTime? toDate,
-            string? searchTerm,
-            int page,
-            int pageSize)
-        {
-            var currentAdminId = GetCurrentUserId();
-            var query = _context.AdminLogs.AsQueryable();
-
-            if (currentAdminId.HasValue)
-            {
-                query = query.Where(l => l.ActorId != currentAdminId.Value);
-            }
-
-            if (userId.HasValue && userId.Value != Guid.Empty)
-                query = query.Where(l => l.ActorId == userId.Value || l.TargetId == userId.Value);
-
-            if (action.HasValue)
-                query = query.Where(l => l.Action == action.Value);
-
-            if (!string.IsNullOrWhiteSpace(targetType))
-                query = query.Where(l => l.TargetType == targetType);
-
-            if (fromDate.HasValue)
-                query = query.Where(l => l.Timestamp >= fromDate.Value);
-
-            if (toDate.HasValue)
-            {
-                var endDate = toDate.Value.Date.AddDays(1);
-                query = query.Where(l => l.Timestamp < endDate);
-            }
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                var term = searchTerm.Trim().ToLower();
-                query = query.Where(l =>
-                    l.ActorName.ToLower().Contains(term) ||
-                    l.ActorRole.ToLower().Contains(term) ||
-                    l.Action.ToString().ToLower().Contains(term) ||
-                    l.TargetType.ToLower().Contains(term));
-            }
-
-            var totalCount = await query.CountAsync();
-
-            page = Math.Max(1, page);
-            pageSize = Math.Max(1, Math.Min(500, pageSize));
-
-            var logs = await query
-                .OrderByDescending(l => l.Timestamp)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var result = logs.Select(l => MapLogToDto(l)).ToList();
-
-            return new PaginatedLogsDto<AdminLogDto>
-            {
-                Items = result,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
-            };
-        }
-
         public async Task<PaginatedLogsDto<AdminLogDto>> GetUserLogsAsync(Guid userId, LogFilterDto? filter = null)
         {
             filter ??= new LogFilterDto();
@@ -604,6 +514,7 @@ namespace LegalMateAI.BLL.Services.Service
         }
 
         // ==================== Private Helpers ====================
+        
         private async Task<List<AdminLogDto>> GetRecentActivityAsync(int count, Guid? excludeActorId = null)
         {
             var query = _context.AdminLogs.AsQueryable();
@@ -616,27 +527,58 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(count)
                 .ToListAsync();
 
-            return logs.Select(l => MapLogToDto(l)).ToList();
+            var result = new List<AdminLogDto>();
+            foreach (var log in logs)
+            {
+                result.Add(await MapLogToDto(log));
+            }
+            return result;
         }
 
+        /// <summary>
+        /// ✅ تسجيل الإجراء مع تخزين الاسم والدور
+        /// </summary>
         private async Task LogActionAsync(Guid userId, AdminLogAction action, string targetType, Guid? targetId = null)
         {
             try
             {
+                // جلب اسم المستخدم اللي عمل العملية
+                string actorName = "غير معروف";
+                string actorRole = "Unknown";
+
+                var admin = await _context.Admins.FirstOrDefaultAsync(a => a.Id == userId);
+                if (admin != null)
+                {
+                    actorName = admin.FullName;
+                    actorRole = "Admin";
+                }
+                else
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId);
+                    if (user != null)
+                    {
+                        actorName = user.FullName;
+                        actorRole = user.Role.ToString();
+                    }
+                }
+
                 var log = new AdminLog
                 {
                     Id = Guid.NewGuid(),
                     ActorId = userId,
+                    ActorName = actorName,      // ✅ تخزين الاسم
+                    ActorRole = actorRole,      // ✅ تخزين الدور
                     Action = action,
                     TargetType = targetType,
                     TargetId = targetId ?? Guid.Empty,
                     Timestamp = DateTime.UtcNow
                 };
+                
                 _context.AdminLogs.Add(log);
                 await _context.SaveChangesAsync();
                 
-                _logger.LogInformation("✅ تم تسجيل الإجراء: {Action} - المستخدم: {UserId} - النوع: {TargetType}", 
-                    action, userId, targetType);
+                _logger.LogInformation("✅ تم تسجيل الإجراء: {Action} - المستخدم: {ActorName} - النوع: {TargetType}", 
+                    action, actorName, targetType);
             }
             catch (Exception ex)
             {
@@ -656,6 +598,157 @@ namespace LegalMateAI.BLL.Services.Service
             if (userIdClaim == null) return null;
 
             return Guid.TryParse(userIdClaim.Value, out var userId) ? userId : null;
+        }
+
+        private async Task<PaginatedLogsDto<AdminLogDto>> GetAllLogsInternalAsync(
+            Guid? userId,
+            AdminLogAction? action,
+            string? targetType,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string? searchTerm,
+            int page,
+            int pageSize)
+        {
+            var currentAdminId = GetCurrentUserId();
+            var query = _context.AdminLogs.AsQueryable();
+
+            if (currentAdminId.HasValue)
+                query = query.Where(l => l.ActorId != currentAdminId.Value);
+
+            if (userId.HasValue && userId.Value != Guid.Empty)
+                query = query.Where(l => l.ActorId == userId.Value || l.TargetId == userId.Value);
+
+            if (action.HasValue)
+                query = query.Where(l => l.Action == action.Value);
+
+            if (!string.IsNullOrWhiteSpace(targetType))
+                query = query.Where(l => l.TargetType == targetType);
+
+            if (fromDate.HasValue)
+                query = query.Where(l => l.Timestamp >= fromDate.Value);
+
+            if (toDate.HasValue)
+            {
+                var endDate = toDate.Value.Date.AddDays(1);
+                query = query.Where(l => l.Timestamp < endDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.Trim().ToLower();
+                query = query.Where(l =>
+                    (l.ActorName != null && l.ActorName.ToLower().Contains(term)) ||
+                    (l.ActorRole != null && l.ActorRole.ToLower().Contains(term)) ||
+                    l.Action.ToString().ToLower().Contains(term) ||
+                    l.TargetType.ToLower().Contains(term));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            page = Math.Max(1, page);
+            pageSize = Math.Max(1, Math.Min(500, pageSize));
+
+            var logs = await query
+                .OrderByDescending(l => l.Timestamp)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var result = new List<AdminLogDto>();
+            foreach (var log in logs)
+            {
+                result.Add(await MapLogToDto(log));
+            }
+
+            return new PaginatedLogsDto<AdminLogDto>
+            {
+                Items = result,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
+
+        /// <summary>
+        /// ✅ تحويل اللوج إلى DTO مع جلب الاسم والتاريخ بشكل صحيح
+        /// </summary>
+        private async Task<AdminLogDto> MapLogToDto(AdminLog log)
+        {
+            object? targetDetails = null;
+
+            // جلب اسم الشخص اللي عمل العملية من اللوج نفسه
+            string actorName = log.ActorName ?? "غير معروف";
+            string actorRole = log.ActorRole ?? "Unknown";
+
+            // حل احتياطي: لو الاسم فاضي، نحاول نجيب من الداتابيز
+            if (string.IsNullOrWhiteSpace(actorName) || actorName == "غير معروف")
+            {
+                var adminActor = await _context.Admins.FirstOrDefaultAsync(a => a.Id == log.ActorId);
+                if (adminActor != null)
+                {
+                    actorName = adminActor.FullName;
+                    actorRole = "Admin";
+                }
+                else
+                {
+                    var userActor = await _context.Users.FirstOrDefaultAsync(u => u.UserID == log.ActorId);
+                    if (userActor != null)
+                    {
+                        actorName = userActor.FullName;
+                        actorRole = userActor.Role.ToString();
+                    }
+                }
+            }
+
+            // جلب بيانات المستهدف (Target)
+            if (log.TargetType == "User" || log.TargetType == "Lawyer")
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == log.TargetId);
+                if (user != null)
+                {
+                    targetDetails = new
+                    {
+                        Id = user.UserID,
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        Phone = _encryptionService.Decrypt(user.Phone ?? ""),
+                        Role = user.Role.ToString(),
+                        Status = user.Status.ToString(),
+                        IsActive = user.IsActive,
+                        CreatedAt = user.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                        LastLogin = user.LastLogin?.ToString("yyyy-MM-dd HH:mm")
+                    };
+                }
+            }
+            else if (log.TargetType == "Admin")
+            {
+                var admin = await _context.Admins.FirstOrDefaultAsync(a => a.Id == log.TargetId);
+                if (admin != null)
+                {
+                    targetDetails = new
+                    {
+                        Id = admin.Id,
+                        FullName = admin.FullName,
+                        Email = admin.Email,
+                        Phone = _encryptionService.Decrypt(admin.PhoneNumber ?? "")
+                    };
+                }
+            }
+
+            return new AdminLogDto
+            {
+                Id = log.Id,
+                Name = actorName,                           // ✅ الاسم دايماً موجود
+                ActorId = log.ActorId == Guid.Empty ? null : log.ActorId,
+                ActorRole = actorRole,                      // ✅ الدور دايماً موجود
+                Action = log.Action,
+                TargetType = log.TargetType,
+                TargetId = log.TargetId,
+                TargetDetails = targetDetails,
+                Timestamp = log.Timestamp
+            };
         }
 
         // ==================== Mapping Methods ====================
@@ -738,78 +831,6 @@ namespace LegalMateAI.BLL.Services.Service
                     Year = c.Year,
                     FileUrl = c.FileUrl
                 }).ToList() ?? new()
-            };
-        }
-
-        private AdminLogDto MapLogToDto(AdminLog log)
-        {
-            object? targetDetails = null;
-
-            string actorName = log.ActorName ?? "";
-
-            if (string.IsNullOrWhiteSpace(actorName))
-            {
-                var adminActor = _context.Admins.FirstOrDefault(a => a.Id == log.ActorId);
-                if (adminActor != null)
-                {
-                    actorName = adminActor.FullName;
-                }
-                else
-                {
-                    var userActor = _context.Users.FirstOrDefault(u => u.UserID == log.ActorId);
-                    if (userActor != null)
-                        actorName = userActor.FullName;
-                }
-            }
-
-            if (log.TargetType == "User" || log.TargetType == "Lawyer")
-            {
-                var user = _context.Users.FirstOrDefault(u => u.UserID == log.TargetId);
-                if (user != null)
-                {
-                    targetDetails = new
-                    {
-                        Id = user.UserID,
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        FullName = user.FullName,
-                        Email = user.Email,
-                        Phone = _encryptionService.Decrypt(user.Phone ?? ""),
-                        NationalId = _encryptionService.Decrypt(user.NationalId ?? ""),
-                        Role = user.Role.ToString(),
-                        Status = user.Status.ToString(),
-                        IsActive = user.IsActive,
-                        CreatedAt = user.CreatedAt,
-                        LastLogin = user.LastLogin
-                    };
-                }
-            }
-            else if (log.TargetType == "Admin")
-            {
-                var admin = _context.Admins.FirstOrDefault(a => a.Id == log.TargetId);
-                if (admin != null)
-                {
-                    targetDetails = new
-                    {
-                        Id = admin.Id,
-                        FullName = admin.FullName,
-                        Phone = _encryptionService.Decrypt(admin.PhoneNumber ?? ""),
-                        Email = admin.Email
-                    };
-                }
-            }
-
-            return new AdminLogDto
-            {
-                Id = log.Id,
-                Name = string.IsNullOrWhiteSpace(actorName) ? null : actorName,
-                ActorId = log.ActorId == Guid.Empty ? null : log.ActorId,
-                ActorRole = string.IsNullOrWhiteSpace(log.ActorRole) ? null : log.ActorRole,
-                Action = log.Action,
-                TargetType = log.TargetType,
-                TargetId = log.TargetId,
-                TargetDetails = targetDetails,
-                Timestamp = log.Timestamp
             };
         }
     }
