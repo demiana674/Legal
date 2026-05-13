@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegalMateAI.DAL.Migrations
 {
     [DbContext(typeof(LegalMateDbContext))]
-    [Migration("20260509164808_InitialCreate16")]
-    partial class InitialCreate16
+    [Migration("20260513011044_InitialCreate24")]
+    partial class InitialCreate24
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegalMateAI.DAL.Migrations
 {
     [DbContext(typeof(LegalMateDbContext))]
-    [Migration("20260501155709_InitialCreate1")]
-    partial class InitialCreate1
+    [Migration("20260513005828_InitialCreate21")]
+    partial class InitialCreate21
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -72,7 +72,18 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("AdminId")
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("AdminId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TargetId")
@@ -1536,9 +1547,6 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Gender")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("GovernorateId")
                         .HasColumnType("int");
 
@@ -1581,13 +1589,9 @@ namespace LegalMateAI.DAL.Migrations
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.AdminLog", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.Admin", "Admin")
+                    b.HasOne("LegalMateAI.Domain.Entities.Admin", null)
                         .WithMany("AdminLogs")
-                        .HasForeignKey("AdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Admin");
+                        .HasForeignKey("AdminId");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.AdminProfile", b =>
@@ -2032,7 +2036,7 @@ namespace LegalMateAI.DAL.Migrations
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", null)
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
                         .WithMany("Users")
                         .HasForeignKey("GovernorateId");
 
@@ -2043,6 +2047,8 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
+
+                    b.Navigation("Governorate");
 
                     b.Navigation("User");
                 });

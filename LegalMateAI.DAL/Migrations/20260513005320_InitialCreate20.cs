@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LegalMateAI.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreate20 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -122,11 +122,14 @@ namespace LegalMateAI.DAL.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ActorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ActorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActorRole = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TargetType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TargetId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -135,8 +138,7 @@ namespace LegalMateAI.DAL.Migrations
                         name: "FK_AdminLogs_Admins_AdminId",
                         column: x => x.AdminId,
                         principalTable: "Admins",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(

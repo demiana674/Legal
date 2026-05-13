@@ -4,6 +4,8 @@ using LegalMateAI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace LegalMateAI.DAL.SeedData
 {
@@ -13,9 +15,10 @@ namespace LegalMateAI.DAL.SeedData
         {
             logger.LogInformation("🌱 Seeding basic Egyptian Laws...");
 
-            if (await context.Laws.AnyAsync())
+            var existingCount = await context.Laws.CountAsync();
+            if (existingCount > 0)
             {
-                logger.LogInformation("⏭️ Laws already exist, skipping...");
+                logger.LogInformation($"⏭️ Laws already exist ({existingCount} records), skipping...");
                 return;
             }
 
@@ -50,9 +53,11 @@ namespace LegalMateAI.DAL.SeedData
 
         public static async Task SeedFromJsonFileAsync(LegalMateDbContext context, ILogger logger, string jsonFilePath)
         {
-            if (await context.Laws.AnyAsync())
+            // التحقق من وجود بيانات فعلية
+            var existingCount = await context.Laws.CountAsync();
+            if (existingCount > 0)
             {
-                logger.LogInformation("⏭️ Laws already exist, skipping...");
+                logger.LogInformation($"⏭️ Laws already exist ({existingCount} records), skipping...");
                 return;
             }
 
@@ -64,27 +69,66 @@ namespace LegalMateAI.DAL.SeedData
             }
 
             var json = await File.ReadAllTextAsync(jsonFilePath);
-            var lawData = JsonSerializer.Deserialize<List<ManshuratLaw>>(json);
+            
+            // استخدام خيارات إضافية لتفادي مشاكل التحويل
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
+            
+            var lawData = JsonSerializer.Deserialize<List<ManshuratLaw>>(json, options);
 
             if (lawData == null || !lawData.Any())
             {
+                logger.LogWarning("⚠️ JSON file is empty or invalid");
                 await SeedEgyptianLawsAsync(context, logger);
                 return;
             }
 
+            logger.LogInformation($"📄 Found {lawData.Count} laws in JSON file");
+
             var laws = new List<Law>();
+            int skipped = 0;
+            int added = 0;
+
             foreach (var d in lawData)
             {
-                if (string.IsNullOrWhiteSpace(d.name) || d.name.Length < 3) continue;
+                if (string.IsNullOrWhiteSpace(d.name) || d.name.Length < 3)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                // بناء الوصف من الحقول المتاحة
+                string description = BuildDescription(d);
+
+                // استخراج رقم القانون
+                string lawNumber = !string.IsNullOrEmpty(d.lawNumber) ? d.lawNumber : d.description?.documentNumber;
+                if (string.IsNullOrEmpty(lawNumber))
+                {
+                    var match = Regex.Match(d.name ?? "", @"رقم\s*(\d+)");
+                    if (match.Success)
+                        lawNumber = match.Groups[1].Value;
+                }
+
+                // استخراج السنة
+                int year = d.year ?? 0;
+                if (year == 0 && !string.IsNullOrEmpty(d.description?.dateIssued))
+                {
+                    var yearMatch = Regex.Match(d.description.dateIssued, @"\d{4}");
+                    if (yearMatch.Success)
+                        year = int.Parse(yearMatch.Value);
+                }
 
                 laws.Add(new Law
                 {
                     Id = Guid.NewGuid(),
                     Name = d.name.Length > 200 ? d.name[..200] : d.name,
-                    LawNumber = d.lawNumber,
-                    Year = d.year,
+                    LawNumber = lawNumber ?? "",
+                    Year = year,
                     Category = ParseCategory(d.category),
-                    Description = d.description != null && d.description.Length > 2000 ? d.description[..2000] : d.description,
+                    Description = description?.Length > 2000 ? description[..2000] : description ?? "",
                     SourceUrl = d.sourceUrl,
                     PdfFileUrl = d.pdfUrl,
                     SearchKeywords = d.searchKeywords,
@@ -92,15 +136,85 @@ namespace LegalMateAI.DAL.SeedData
                     IsApproved = true,
                     CreatedAt = DateTime.UtcNow
                 });
+                added++;
             }
+
+            logger.LogInformation($"📝 Preparing to insert {added} laws (skipped {skipped} invalid)");
 
             if (laws.Any())
             {
-                await context.Laws.AddRangeAsync(laws);
-                await context.SaveChangesAsync();
+                const int batchSize = 500;
+                for (int i = 0; i < laws.Count; i += batchSize)
+                {
+                    var batch = laws.Skip(i).Take(batchSize);
+                    await context.Laws.AddRangeAsync(batch);
+                    await context.SaveChangesAsync();
+                    logger.LogInformation($"   ✅ Inserted {Math.Min(i + batchSize, laws.Count)}/{laws.Count} laws");
+                }
             }
 
-            logger.LogInformation($"✅ Seeded {laws.Count} laws from JSON");
+            logger.LogInformation($"✅ Successfully seeded {added} laws from JSON!");
+        }
+
+        private static string BuildDescription(ManshuratLaw d)
+        {
+            var parts = new List<string>();
+
+            if (d.description == null)
+                return d.name ?? "";
+
+            if (!string.IsNullOrWhiteSpace(d.description.title))
+                parts.Add($"العنوان: {d.description.title}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.docType))
+                parts.Add($"نوع الوثيقة: {d.description.docType}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.sector))
+                parts.Add($"القطاع: {d.description.sector}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.issuer))
+                parts.Add($"جهة الإصدار: {d.description.issuer}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.issuerRole)
+                && d.description.issuerRole.ToLower() != "other")
+            {
+                parts.Add($"الدور: {d.description.issuerRole}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(d.description.documentNumber))
+                parts.Add($"رقم الوثيقة: {d.description.documentNumber}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.dateIssued))
+                parts.Add($"تاريخ الإصدار: {d.description.dateIssued}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.datePublished))
+                parts.Add($"تاريخ النشر: {d.description.datePublished}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.dateEffective))
+                parts.Add($"تاريخ العمل به: {d.description.dateEffective}");
+
+            if (!string.IsNullOrWhiteSpace(d.description.summary))
+            {
+                var summary = d.description.summary;
+
+                // حذف Facebook / Twitter
+                summary = summary.Replace("Facebook", "");
+                summary = summary.Replace("Twitter", "");
+
+                // حذف الرموز الغريبة
+                summary = summary.Replace("::::", "");
+                summary = summary.Replace("›", " - ");
+
+                // تنظيف المسافات
+                summary = Regex.Replace(summary, @"\s+", " ").Trim();
+
+                parts.Add($"الملخص: {summary}");
+            }
+
+            if (parts.Count == 0)
+                return d.name ?? "";
+
+            return string.Join(" | ", parts);
         }
 
         private static LawCategory ParseCategory(int? category)
@@ -134,10 +248,24 @@ namespace LegalMateAI.DAL.SeedData
             public string? lawNumber { get; set; }
             public int? year { get; set; }
             public int? category { get; set; }
-            public string? description { get; set; }
+            public DescriptionData? description { get; set; }
             public string? sourceUrl { get; set; }
             public string? pdfUrl { get; set; }
             public string? searchKeywords { get; set; }
+        }
+
+        public class DescriptionData
+        {
+            public string? title { get; set; }
+            public string? docType { get; set; }
+            public string? sector { get; set; }
+            public string? issuer { get; set; }
+            public string? issuerRole { get; set; }
+            public string? documentNumber { get; set; }
+            public string? dateIssued { get; set; }
+            public string? datePublished { get; set; }
+            public string? dateEffective { get; set; }
+            public string? summary { get; set; }
         }
     }
 }

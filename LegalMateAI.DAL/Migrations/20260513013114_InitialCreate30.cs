@@ -5,7 +5,7 @@
 namespace LegalMateAI.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate18 : Migration
+    public partial class InitialCreate30 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

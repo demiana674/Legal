@@ -96,7 +96,6 @@ builder.Services.AddDbContext<LegalMateDbContext>(options =>
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-
 // ===== Services =====
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -218,7 +217,8 @@ using (var scope = app.Services.CreateScope())
 
         try
         {
-            var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws_complete.json");
+            // var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws_complete.json");
+            var lawsPath = Path.Combine(app.Environment.ContentRootPath,  "SeedData", "manshurat_laws_final_clean.json");
             if (File.Exists(lawsPath))
                 await LawSeeder.SeedFromJsonFileAsync(context, logger, lawsPath);
             else

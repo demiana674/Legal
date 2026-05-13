@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegalMateAI.DAL.Migrations
 {
     [DbContext(typeof(LegalMateDbContext))]
-    [Migration("20260503034156_InitialCreate11")]
-    partial class InitialCreate11
+    [Migration("20260513005320_InitialCreate20")]
+    partial class InitialCreate20
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2036,7 +2036,7 @@ namespace LegalMateAI.DAL.Migrations
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", null)
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
                         .WithMany("Users")
                         .HasForeignKey("GovernorateId");
 
@@ -2047,6 +2047,8 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
+
+                    b.Navigation("Governorate");
 
                     b.Navigation("User");
                 });
