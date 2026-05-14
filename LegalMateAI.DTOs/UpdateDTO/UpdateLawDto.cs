@@ -1,51 +1,29 @@
 // LegalMateAI.DTOs/UpdateDTO/UpdateLawDto.cs
 using LegalMateAI.Domain.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace LegalMateAI.DTOs.UpdateDTO
 {
-    /// <summary>
-    /// نموذج تحديث قانون
-    /// </summary>
     public class UpdateLawDto
     {
-        /// <summary>
-        /// اسم القانون
-        /// </summary>
         public string? Name { get; set; }
-        
-        /// <summary>
-        /// تصنيف القانون
-        /// </summary>
-        public LawCategory? Category { get; set; }
-        
-        /// <summary>
-        /// رقم القانون
-        /// </summary>
         public string? LawNumber { get; set; }
-        
-        /// <summary>
-        /// سنة الإصدار
-        /// </summary>
         public int? Year { get; set; }
-        
-        /// <summary>
-        /// وصف القانون
-        /// </summary>
+        public LawCategory? Category { get; set; }
         public string? Description { get; set; }
-        
-        /// <summary>
-        /// رابط المصدر
-        /// </summary>
         public string? SourceUrl { get; set; }
-        
-        /// <summary>
-        /// كلمات مفتاحية للبحث
-        /// </summary>
         public string? SearchKeywords { get; set; }
+        public bool? IsActive { get; set; }
+        public bool? IsApproved { get; set; }
         
         /// <summary>
-        /// هل القانون نشط؟
+        /// ملف PDF جديد (اختياري - لاستبدال الملف القديم)
         /// </summary>
-        public bool? IsActive { get; set; }
+        public IFormFile? PdfFile { get; set; }
+        
+        /// <summary>
+        /// رابط PDF خارجي جديد
+        /// </summary>
+        public string? PdfFileUrl { get; set; }
     }
 }

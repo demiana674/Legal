@@ -33,7 +33,6 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<AppointmentReschedule> AppointmentReschedules { get; set; }
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<ContractTemplate> ContractTemplates { get; set; }
-        // public DbSet<Session> Sessions { get; set; }
         public DbSet<SearchQuery> SearchQueries { get; set; }
         public DbSet<Law> Laws { get; set; }
         public DbSet<LawyerBranch> LawyerBranches { get; set; }
@@ -47,6 +46,14 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<PredefinedContractTemplate> PredefinedContractTemplates { get; set; }
         public DbSet<GeneratedContract> GeneratedContracts { get; set; }
 
+        // ===== إضافات Data Warehouse & Analytics =====
+        public DbSet<DataWarehouseFact> DataWarehouseFacts { get; set; }
+        public DbSet<TimeDimension> TimeDimensions { get; set; }
+        public DbSet<UserDimension> UserDimensions { get; set; }
+        public DbSet<CaseDimension> CaseDimensions { get; set; }
+        public DbSet<LocationDimension> LocationDimensions { get; set; }
+        public DbSet<RecommendationLog> RecommendationLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -58,19 +65,16 @@ namespace LegalMateAI.DAL.DBContext
             modelBuilder.Entity<Governorate>().Property(g => g.Id).ValueGeneratedNever();
             modelBuilder.Entity<City>().Property(c => c.Id).ValueGeneratedNever();
 
-            // ===== 3. Relationships =====
+            // ===== 3. TimeDimension Identity off =====
+            modelBuilder.Entity<TimeDimension>().Property(t => t.Id).ValueGeneratedNever();
+
+            // ===== 4. Relationships =====
 
             modelBuilder.Entity<Admin>()
                 .HasOne(a => a.Profile)
                 .WithOne(ap => ap.Admin)
                 .HasForeignKey<AdminProfile>(ap => ap.AdminId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // modelBuilder.Entity<Admin>()
-            //     .HasMany(a => a.AdminLogs)
-            //     .WithOne(al => al.Admin)
-            //     .HasForeignKey(al => al.AdminId)
-            //     .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.LawyerProfile)
@@ -166,7 +170,7 @@ namespace LegalMateAI.DAL.DBContext
                 .HasForeignKey(r => r.AnalysisId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ===== UserProfile Relationships (بدون Governorate مباشر) =====
+            // ===== UserProfile Relationships =====
             modelBuilder.Entity<UserProfile>()
                 .HasOne(up => up.City)
                 .WithMany()
@@ -179,8 +183,7 @@ namespace LegalMateAI.DAL.DBContext
                 .HasForeignKey<UserProfile>(up => up.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ===== Appointment Relationships (بدون User Navigation Property) =====
-            // ملاحظة: Appointment ليه UserID بس من غير Navigation Property
+            // ===== Appointment Relationships =====
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Lawyer)
                 .WithMany()
@@ -235,16 +238,30 @@ namespace LegalMateAI.DAL.DBContext
                 .HasForeignKey(ap => ap.CityId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // // ===== Session Entity =====
-            // modelBuilder.Entity<Session>()
-            //     .HasOne(s => s.User)
-            //     .WithMany()
-            //     .HasForeignKey(s => s.UserId)
-            //     .OnDelete(DeleteBehavior.Cascade);
+            // ===== Data Warehouse Relationships =====
+            modelBuilder.Entity<DataWarehouseFact>()
+                .HasOne(f => f.TimeDim)
+                .WithMany()
+                .HasForeignKey(f => f.TimeDimId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // modelBuilder.Entity<Session>()
-            //     .HasIndex(s => s.SessionToken)
-            //     .IsUnique();
+            modelBuilder.Entity<DataWarehouseFact>()
+                .HasOne(f => f.UserDim)
+                .WithMany()
+                .HasForeignKey(f => f.UserDimId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DataWarehouseFact>()
+                .HasOne(f => f.CaseDim)
+                .WithMany()
+                .HasForeignKey(f => f.CaseDimId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DataWarehouseFact>()
+                .HasOne(f => f.LocationDim)
+                .WithMany()
+                .HasForeignKey(f => f.LocationDimId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ===== Case Relationships =====
             modelBuilder.Entity<Case>()
@@ -296,6 +313,16 @@ namespace LegalMateAI.DAL.DBContext
             modelBuilder.Entity<BranchAvailability>()
                 .HasIndex(a => new { a.BranchId, a.DayOfWeek });
 
+            // ===== Data Warehouse Indexes =====
+            modelBuilder.Entity<DataWarehouseFact>()
+                .HasIndex(f => new { f.TimeDimId, f.CaseDimId, f.LocationDimId });
+
+            modelBuilder.Entity<RecommendationLog>()
+                .HasIndex(r => r.UserId);
+            
+            modelBuilder.Entity<RecommendationLog>()
+                .HasIndex(r => r.CreatedAt);
+
             // ===== Default Values =====
             modelBuilder.Entity<User>().Property(u => u.Status).HasDefaultValue(AccountStatus.Pending);
             modelBuilder.Entity<User>().Property(u => u.IsActive).HasDefaultValue(false);
@@ -315,8 +342,9 @@ namespace LegalMateAI.DAL.DBContext
 
             modelBuilder.Entity<GeneratedContract>().Property(g => g.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             modelBuilder.Entity<GeneratedContract>().Property(g => g.Status).HasDefaultValue(ContractStatus.Draft);
-            
-            // modelBuilder.Entity<Session>().Property(s => s.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<DataWarehouseFact>().Property(f => f.RecordedAt).HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity<RecommendationLog>().Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         }
     }
 }

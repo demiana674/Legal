@@ -1,9 +1,9 @@
 {
   "info": {
-    "name": "🏛️ LegalMate AI API - Complete Collection vFinal",
-    "description": "# LegalMate AI API - Full System\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد | كلمة المرور |\n|-------|--------|-------------|\n| **Admin** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 📝 ملاحظات\n\n- رابط API: `http://localhost:5101`\n- Swagger: `http://localhost:5101/swagger`\n- 🤖 AI: **Local AI (Ollama)**\n\n## 🆕 Laws API - New Structure (v2)\n\nالـ Law API دلوقتي بترجع `LawCompleteDto` مقسمة كالتالي:\n- `coreInfo`: البيانات الأساسية (الاسم، الرقم، السنة، التصنيف)\n- `fileLinks`: روابط PDF و Source\n- `metrics`: الإحصائيات (مشاهدات، تحميلات، حالة)\n- `audit`: بيانات الإدارة (للأدمن فقط)\n- `content`: الوصف والكلمات المفتاحية\n\n## 🆕 Endpoints جديدة:\n- `GET /api/laws/{id}/core` - بيانات أساسية فقط\n- `GET /api/laws/{id}/links` - روابط فقط\n- `GET /api/laws/{id}/metrics` - إحصائيات فقط\n- `GET /api/laws/{id}/content` - وصف فقط\n- `GET /api/laws/{id}/audit` - بيانات إدارة (لأدمن فقط)",
+    "name": "🏛️ LegalMate AI API - Complete v3.0",
+    "description": "# LegalMate AI API - Full System with ML & Analytics\n\n## 🔐 حسابات تجريبية\n\n| الدور | البريد | كلمة المرور |\n|-------|--------|-------------|\n| **Admin** | `admin@legalmate.com` | `Admin@123` |\n| **Admin 2** | `verifier@legalmate.com` | `Verifier@123` |\n| **User** | `ahmed.new@example.com` | `Test@123456` |\n| **Lawyer** | `karim.law@example.com` | `Test@123456` |\n\n## 🤖 الميزات الجديدة\n\n### Recommendation System\n- `POST /api/Recommendation/from-document/{id}` - توصية من مستند محلل\n- `POST /api/Recommendation/from-case-description` - توصية من وصف القضية\n- `GET /api/Recommendation/for-me` - توصية من تاريخ المستخدم\n\n### Analytics & Data Mining\n- `GET /api/Analytics/dashboard/executive` - لوحة تحكم تنفيذية\n- `GET /api/Analytics/trends/{metric}` - الاتجاهات الزمنية\n- `GET /api/Analytics/forecast/{metric}` - التوقعات المستقبلية\n- `GET /api/Analytics/olap/cases` - تحليل OLAP للقضايا\n- `GET /api/Analytics/mining/association-rules` - قواعد الارتباط\n- `GET /api/Analytics/mining/clusters/users` - تجميع المستخدمين\n- `GET /api/Analytics/mining/anomalies` - كشف الشذوذ\n- `GET /api/Analytics/classify/case/{id}` - تصنيف مخاطر القضية\n\n## 📝 ملاحظات\n\n- رابط API: `http://localhost:5101`\n- Swagger: `http://localhost:5101/swagger`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "legal-mate-ai-final-v10"
+    "_postman_id": "legal-mate-ai-v3"
   },
   "variable": [
     {"key": "base_url", "value": "http://localhost:5101", "type": "string"},
@@ -66,6 +66,8 @@
       "item": [
         {"name": "GET User Profile", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/user/profile", "host": ["{{base_url}}"], "path": ["api", "user", "profile"]}}},
         {"name": "PUT User Profile", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"phoneNumber\":\"01012345678\",\"alternativePhone\":\"01012345679\",\"governorateId\":1,\"cityId\":103,\"address\":\"المعادي، القاهرة\"}"}, "url": {"raw": "{{base_url}}/api/user/profile", "host": ["{{base_url}}"], "path": ["api", "user", "profile"]}}},
+        {"name": "POST Upload Profile Picture", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "formdata", "formdata": [{"key": "ProfilePicture", "type": "file", "src": []}]}, "url": {"raw": "{{base_url}}/api/user/profile/picture", "host": ["{{base_url}}"], "path": ["api", "user", "profile", "picture"]}}},
+        {"name": "DELETE Profile Picture", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/user/profile/picture", "host": ["{{base_url}}"], "path": ["api", "user", "profile", "picture"]}}},
         {"name": "GET Lawyer Profile", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/lawyer/profile", "host": ["{{base_url}}"], "path": ["api", "lawyer", "profile"]}}},
         {"name": "PUT Lawyer Profile", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"phone\":\"01098765432\",\"alternativePhone\":\"01098765433\",\"governorateId\":1,\"city\":\"المهندسين\",\"officeAddress\":\"المهندسين، القاهرة\",\"specialtyIds\":[1,3]}"}, "url": {"raw": "{{base_url}}/api/lawyer/profile", "host": ["{{base_url}}"], "path": ["api", "lawyer", "profile"]}}},
         {"name": "GET Admin Profile", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/admin/profile", "host": ["{{base_url}}"], "path": ["api", "admin", "profile"]}}},
@@ -162,39 +164,6 @@
       ]
     },
     {
-      "name": "📜 Laws",
-      "item": [
-        {"name": "GET All Laws", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws", "host": ["{{base_url}}"], "path": ["api", "laws"]}}},
-        {"name": "GET Search Laws", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/search?q=مدني", "host": ["{{base_url}}"], "path": ["api", "laws", "search"]}}},
-        {
-          "name": "GET Law by ID",
-          "event": [{"listen": "test", "script": {"exec": ["const r = pm.response.json(); if(r && r.coreInfo) { pm.environment.set('law_core_name', r.coreInfo.name); pm.environment.set('law_core_id', r.coreInfo.id); console.log('✅ Law loaded - Core Info:', r.coreInfo); console.log('📊 Metrics:', r.metrics); console.log('🔗 Links:', r.fileLinks); }"], "type": "text/javascript"}}],
-          "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}"]}}
-        },
-        {"name": "GET Law Core Info", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/core", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "core"]}}},
-        {"name": "GET Law Links", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/links", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "links"]}}},
-        {"name": "GET Law Metrics", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/metrics", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "metrics"]}}},
-        {"name": "GET Law Content", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/content", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "content"]}}},
-        {"name": "GET Law Audit (Admin Only)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/audit", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "audit"]}}},
-        {"name": "GET Download Law", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/download", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "download"]}}},
-        {"name": "GET Download URL", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/{{law_id}}/download-url", "host": ["{{base_url}}"], "path": ["api", "laws", "{{law_id}}", "download-url"]}}},
-        {"name": "GET Categories", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/laws/categories", "host": ["{{base_url}}"], "path": ["api", "laws", "categories"]}}},
-        {"name": "POST Upload Law", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "formdata", "formdata": [{"key": "PdfFile", "type": "file", "src": []}, {"key": "Name", "value": "قانون جديد", "type": "text"}, {"key": "Category", "value": "2", "type": "text"}]}, "url": {"raw": "{{base_url}}/api/laws/upload", "host": ["{{base_url}}"], "path": ["api", "laws", "upload"]}}},
-        {
-          "name": "GET My Uploads",
-          "event": [{"listen": "test", "script": {"exec": ["const r = pm.response.json(); if(Array.isArray(r)) { console.log(`✅ Found ${r.length} uploaded laws`); r.forEach((law, i) => { console.log(`  ${i+1}. ${law.coreInfo?.name || 'N/A'} - Approved: ${law.metrics?.isApproved}`); }); }"], "type": "text/javascript"}}],
-          "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/my-uploads", "host": ["{{base_url}}"], "path": ["api", "laws", "my-uploads"]}}
-        },
-        {
-          "name": "GET Admin Pending Laws",
-          "event": [{"listen": "test", "script": {"exec": ["const r = pm.response.json(); if(Array.isArray(r)) { console.log(`⏳ Found ${r.length} pending laws for approval`); r.forEach((law, i) => { console.log(`  ${i+1}. ${law.coreInfo?.name} - Uploaded: ${law.coreInfo?.createdAtFormatted}`); }); }"], "type": "text/javascript"}}],
-          "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/admin/pending", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "pending"]}}
-        },
-        {"name": "POST Admin Approve Law", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/laws/admin/{{law_id}}/approve", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "{{law_id}}", "approve"]}}},
-        {"name": "POST Admin Reject Law", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"reason\":\"غير مكتمل\"}"}, "url": {"raw": "{{base_url}}/api/laws/admin/{{law_id}}/reject", "host": ["{{base_url}}"], "path": ["api", "laws", "admin", "{{law_id}}", "reject"]}}}
-      ]
-    },
-    {
       "name": "📅 Appointments",
       "item": [
         {"name": "POST Book Appointment", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"lawyerId\":\"{{lawyer_id}}\",\"branchId\":\"{{branch_id}}\",\"appointmentType\":\"استشارة\",\"date\":\"2026-05-20\",\"time\":\"10:00\",\"durationMinutes\":60,\"location\":\"فرع مدينة نصر\",\"notes\":\"استشارة قانونية\"}"}, "url": {"raw": "{{base_url}}/api/Appointments", "host": ["{{base_url}}"], "path": ["api", "Appointments"]}}},
@@ -212,16 +181,58 @@
       ]
     },
     {
+      "name": "📜 Laws",
+      "item": [
+        {"name": "GET All Laws", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Laws", "host": ["{{base_url}}"], "path": ["api", "Laws"]}}},
+        {"name": "GET Search Laws", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Laws/search?q=مدني", "host": ["{{base_url}}"], "path": ["api", "Laws", "search"]}}},
+        {"name": "GET Law by ID", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Laws/{{law_id}}", "host": ["{{base_url}}"], "path": ["api", "Laws", "{{law_id}}"]}}},
+        {"name": "GET Download Law", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Laws/{{law_id}}/download", "host": ["{{base_url}}"], "path": ["api", "Laws", "{{law_id}}", "download"]}}},
+        {"name": "GET Categories", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Laws/categories", "host": ["{{base_url}}"], "path": ["api", "Laws", "categories"]}}},
+        {"name": "POST Upload Law (User)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "formdata", "formdata": [{"key": "PdfFile", "type": "file", "src": []}, {"key": "Name", "value": "قانون جديد", "type": "text"}, {"key": "Category", "value": "2", "type": "text"}]}, "url": {"raw": "{{base_url}}/api/Laws/upload", "host": ["{{base_url}}"], "path": ["api", "Laws", "upload"]}}},
+        {"name": "GET My Uploads", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Laws/my-uploads", "host": ["{{base_url}}"], "path": ["api", "Laws", "my-uploads"]}}},
+        {"name": "POST Create Law (Admin)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"name\":\"قانون جديد من الأدمن\",\"lawNumber\":\"123\",\"year\":2024,\"category\":2,\"description\":\"وصف القانون\",\"sourceUrl\":\"https://example.com\"}"}, "url": {"raw": "{{base_url}}/api/Laws", "host": ["{{base_url}}"], "path": ["api", "Laws"]}}},
+        {"name": "PUT Update Law (Admin)", "request": {"method": "PUT", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"name\":\"قانون محدث\",\"isActive\":true}"}, "url": {"raw": "{{base_url}}/api/Laws/{{law_id}}", "host": ["{{base_url}}"], "path": ["api", "Laws", "{{law_id}}"]}}},
+        {"name": "DELETE Law (Admin)", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Laws/{{law_id}}", "host": ["{{base_url}}"], "path": ["api", "Laws", "{{law_id}}"]}}},
+        {"name": "GET Pending Laws (Admin)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Laws/pending", "host": ["{{base_url}}"], "path": ["api", "Laws", "pending"]}}},
+        {"name": "POST Approve Law (Admin)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Laws/{{law_id}}/approve", "host": ["{{base_url}}"], "path": ["api", "Laws", "{{law_id}}", "approve"]}}},
+        {"name": "POST Reject Law (Admin)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"reason\":\"غير مكتمل\"}"}, "url": {"raw": "{{base_url}}/api/Laws/{{law_id}}/reject", "host": ["{{base_url}}"], "path": ["api", "Laws", "{{law_id}}", "reject"]}}}
+      ]
+    },
+    {
+      "name": "🤖 Recommendation (ML)",
+      "item": [
+        {"name": "Recommend from Document", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Recommendation/from-document/{{document_id}}?topK=5", "host": ["{{base_url}}"], "path": ["api", "Recommendation", "from-document", "{{document_id}}"]}}},
+        {"name": "Recommend from Case Description", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"description\":\"أحتاج محامي متخصص في قضايا الإيجار\",\"caseType\":\"مدني\",\"governorateId\":1}"}, "url": {"raw": "{{base_url}}/api/Recommendation/from-case-description?topK=5", "host": ["{{base_url}}"], "path": ["api", "Recommendation", "from-case-description"]}}},
+        {"name": "Recommend For Me (Based on History)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Recommendation/for-me?topK=5", "host": ["{{base_url}}"], "path": ["api", "Recommendation", "for-me"]}}},
+        {"name": "Train Recommendation Model (Admin)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Recommendation/train", "host": ["{{base_url}}"], "path": ["api", "Recommendation", "train"]}}}
+      ]
+    },
+    {
+      "name": "📊 Analytics (Admin Only)",
+      "item": [
+        {"name": "Executive Dashboard", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/dashboard/executive", "host": ["{{base_url}}"], "path": ["api", "Analytics", "dashboard", "executive"]}}},
+        {"name": "Get Trends", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/trends/cases?months=12", "host": ["{{base_url}}"], "path": ["api", "Analytics", "trends", "cases"]}}},
+        {"name": "Get Forecast", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/forecast/cases?periods=6", "host": ["{{base_url}}"], "path": ["api", "Analytics", "forecast", "cases"]}}},
+        {"name": "OLAP Case Analysis", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/olap/cases?timeDimension=month", "host": ["{{base_url}}"], "path": ["api", "Analytics", "olap", "cases"]}}},
+        {"name": "Association Rules", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/mining/association-rules?minConfidence=0.5", "host": ["{{base_url}}"], "path": ["api", "Analytics", "mining", "association-rules"]}}},
+        {"name": "User Clusters", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/mining/clusters/users?k=5", "host": ["{{base_url}}"], "path": ["api", "Analytics", "mining", "clusters", "users"]}}},
+        {"name": "Detect Anomalies", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/mining/anomalies", "host": ["{{base_url}}"], "path": ["api", "Analytics", "mining", "anomalies"]}}},
+        {"name": "Classify Case Risk", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/classify/case/{{case_id}}", "host": ["{{base_url}}"], "path": ["api", "Analytics", "classify", "case", "{{case_id}}"]}}},
+        {"name": "Classify Document Type", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/classify/document/{{document_id}}", "host": ["{{base_url}}"], "path": ["api", "Analytics", "classify", "document", "{{document_id}}"]}}},
+        {"name": "Run ETL", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Analytics/etl/run", "host": ["{{base_url}}"], "path": ["api", "Analytics", "etl", "run"]}}}
+      ]
+    },
+    {
       "name": "🤖 AI",
       "item": [
-        {"name": "GET Health", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/AI/health", "host": ["{{base_url}}"], "path": ["api", "AI", "health"]}}},
-        {"name": "POST Chat", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"message\":\"ما هي أنواع المحاكم في مصر؟\"}"}, "url": {"raw": "{{base_url}}/api/AI/chat", "host": ["{{base_url}}"], "path": ["api", "AI", "chat"]}}}
+        {"name": "Health Check", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/AI/health", "host": ["{{base_url}}"], "path": ["api", "AI", "health"]}}},
+        {"name": "Chat", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"message\":\"ما هي أنواع المحاكم في مصر؟\"}"}, "url": {"raw": "{{base_url}}/api/AI/chat", "host": ["{{base_url}}"], "path": ["api", "AI", "chat"]}}}
       ]
     },
     {
       "name": "🏥 Health",
       "item": [
-        {"name": "GET API Health", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api", "health"]}}}
+        {"name": "API Health", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api", "health"]}}}
       ]
     }
   ]

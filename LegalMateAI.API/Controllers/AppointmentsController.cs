@@ -1,4 +1,3 @@
-// LegalMateAI.API/Controllers/AppointmentsController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
@@ -30,6 +29,8 @@ namespace LegalMateAI.API.Controllers
         private Guid GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim == null) claim = User.FindFirst("id");
+            if (claim == null) claim = User.FindFirst("sub");
             return claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
         }
 
@@ -63,7 +64,7 @@ namespace LegalMateAI.API.Controllers
 
         [HttpGet("user")]
         [ProducesResponseType(typeof(ApiResponse<List<AppointmentResponseDto>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUserAppointments([FromQuery] string? status)
+        public async Task<IActionResult> GetUserAppointments([FromQuery] string? status = null)
         {
             var userId = GetUserId();
             if (userId == Guid.Empty)
@@ -80,13 +81,13 @@ namespace LegalMateAI.API.Controllers
         [HttpGet("lawyer")]
         [ProducesResponseType(typeof(ApiResponse<List<AppointmentResponseDto>>), StatusCodes.Status200OK)]
         [Authorize(Roles = "Lawyer")]
-        public async Task<IActionResult> GetLawyerAppointments([FromQuery] string? status)
+        public async Task<IActionResult> GetLawyerAppointments([FromQuery] string? status = null)
         {
-            var lawyerId = GetUserId();
-            if (lawyerId == Guid.Empty)
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
                 return Unauthorized(ApiResponse<object>.Unauthorized());
 
-            var appointments = await _appointmentService.GetLawyerAppointmentsAsync(lawyerId, status);
+            var appointments = await _appointmentService.GetLawyerAppointmentsAsync(userId, status);
             return Ok(ApiResponse<List<AppointmentResponseDto>>.Ok(appointments));
         }
 
@@ -99,11 +100,11 @@ namespace LegalMateAI.API.Controllers
         [Authorize(Roles = "Lawyer")]
         public async Task<IActionResult> GetPendingAppointments()
         {
-            var lawyerId = GetUserId();
-            if (lawyerId == Guid.Empty)
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
                 return Unauthorized(ApiResponse<object>.Unauthorized());
 
-            var appointments = await _appointmentService.GetLawyerAppointmentsAsync(lawyerId, "Pending");
+            var appointments = await _appointmentService.GetLawyerAppointmentsAsync(userId, "Pending");
             return Ok(ApiResponse<List<AppointmentResponseDto>>.Ok(appointments));
         }
 
@@ -116,11 +117,11 @@ namespace LegalMateAI.API.Controllers
         [Authorize(Roles = "Lawyer")]
         public async Task<IActionResult> ApproveAppointment(Guid id)
         {
-            var lawyerId = GetUserId();
-            if (lawyerId == Guid.Empty)
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
                 return Unauthorized(ApiResponse<object>.Unauthorized());
 
-            var result = await _appointmentService.ApproveAppointmentAsync(lawyerId, id);
+            var result = await _appointmentService.ApproveAppointmentAsync(userId, id);
             if (!result)
                 return NotFound(ApiResponse<object>.NotFound("الموعد غير موجود أو غير مصرح لك"));
 
@@ -136,11 +137,11 @@ namespace LegalMateAI.API.Controllers
         [Authorize(Roles = "Lawyer")]
         public async Task<IActionResult> RejectAppointment(Guid id, [FromBody] string? reason)
         {
-            var lawyerId = GetUserId();
-            if (lawyerId == Guid.Empty)
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
                 return Unauthorized(ApiResponse<object>.Unauthorized());
 
-            var result = await _appointmentService.RejectAppointmentAsync(lawyerId, id, reason);
+            var result = await _appointmentService.RejectAppointmentAsync(userId, id, reason);
             if (!result)
                 return NotFound(ApiResponse<object>.NotFound("الموعد غير موجود أو غير مصرح لك"));
 
@@ -177,7 +178,7 @@ namespace LegalMateAI.API.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> CancelAppointment(Guid id, [FromBody] string? reason)
+        public async Task<IActionResult> CancelAppointment(Guid id, [FromBody] string? reason = null)
         {
             var userId = GetUserId();
             var userRole = GetUserRole();
@@ -191,7 +192,8 @@ namespace LegalMateAI.API.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Unauthorized("غير مصرح لك بإلغاء هذا الموعد"));
 
             var result = await _appointmentService.CancelAppointmentAsync(id, userId, reason);
-            if (!result) return NotFound(ApiResponse<object>.NotFound("الموعد غير موجود أو لا يمكن إلغاؤه"));
+            if (!result) 
+                return BadRequest(ApiResponse<object>.BadRequest("لا يمكن إلغاء هذا الموعد"));
 
             return Ok(ApiResponse<object>.Ok("تم إلغاء الموعد بنجاح"));
         }

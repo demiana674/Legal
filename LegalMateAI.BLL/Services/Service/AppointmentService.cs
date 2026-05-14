@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/AppointmentService.cs
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -32,7 +31,6 @@ namespace LegalMateAI.BLL.Services.Service
 
             if (lawyerProfile == null) return null;
 
-            // التحقق من توفر الوقت
             var isAvailable = await IsTimeSlotAvailableAsync(lawyerProfile.Id, request.Date, request.Time, request.DurationMinutes);
             if (!isAvailable) return null;
 
@@ -48,7 +46,7 @@ namespace LegalMateAI.BLL.Services.Service
                 DurationMinutes = request.DurationMinutes,
                 Location = request.Location,
                 Notes = request.Notes,
-                Status = AppointmentStatus.Pending, // Pending حتى يوافق المحامي
+                Status = AppointmentStatus.Pending,
                 RequestedAt = DateTime.UtcNow
             };
 
@@ -93,11 +91,17 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<List<AppointmentResponseDto>> GetUserAppointmentsAsync(Guid userId, string? status = null)
         {
-            var query = _context.Appointments.Include(a => a.Lawyer).ThenInclude(l => l!.User).Where(a => a.UserID == userId);
+            var query = _context.Appointments
+                .Include(a => a.Lawyer)
+                .ThenInclude(l => l!.User)
+                .Where(a => a.UserID == userId);
+
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<AppointmentStatus>(status, true, out var s))
                 query = query.Where(a => a.Status == s);
 
-            return (await query.OrderByDescending(a => a.Date).ToListAsync()).Select(a => MapToDto(a, null)).ToList();
+            return (await query.OrderByDescending(a => a.Date).ToListAsync())
+                .Select(a => MapToDto(a, null))
+                .ToList();
         }
 
         public async Task<List<AppointmentResponseDto>> GetLawyerAppointmentsAsync(Guid lawyerId, string? status = null)
@@ -105,16 +109,26 @@ namespace LegalMateAI.BLL.Services.Service
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == lawyerId);
             if (lawyerProfile == null) return new List<AppointmentResponseDto>();
 
-            var query = _context.Appointments.Include(a => a.Lawyer).ThenInclude(l => l!.User).Where(a => a.LawyerId == lawyerProfile.Id);
+            var query = _context.Appointments
+                .Include(a => a.Lawyer)
+                .ThenInclude(l => l!.User)
+                .Where(a => a.LawyerId == lawyerProfile.Id);
+
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<AppointmentStatus>(status, true, out var s))
                 query = query.Where(a => a.Status == s);
 
-            return (await query.OrderByDescending(a => a.Date).ToListAsync()).Select(a => MapToDto(a, null)).ToList();
+            return (await query.OrderByDescending(a => a.Date).ToListAsync())
+                .Select(a => MapToDto(a, null))
+                .ToList();
         }
 
         public async Task<AppointmentResponseDto?> GetAppointmentByIdAsync(Guid appointmentId)
         {
-            var appointment = await _context.Appointments.Include(a => a.Lawyer).ThenInclude(l => l!.User).FirstOrDefaultAsync(a => a.Id == appointmentId);
+            var appointment = await _context.Appointments
+                .Include(a => a.Lawyer)
+                .ThenInclude(l => l!.User)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+
             if (appointment == null) return null;
 
             var user = await _context.Users.FindAsync(appointment.UserID);
@@ -126,11 +140,17 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<bool> CancelAppointmentAsync(Guid appointmentId, Guid userId, string? reason = null)
         {
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == appointmentId);
-            if (appointment == null || appointment.Status == AppointmentStatus.Completed) return false;
+            if (appointment == null) return false;
+            
+            if (appointment.Status == AppointmentStatus.Completed || appointment.Status == AppointmentStatus.Cancelled)
+                return false;
 
-            // لازم يكون المستخدم مشارك في الموعد
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
-            if (appointment.UserID != userId && (lawyerProfile == null || appointment.LawyerId != lawyerProfile.Id))
+            
+            bool isParticipant = appointment.UserID == userId;
+            bool isLawyer = lawyerProfile != null && appointment.LawyerId == lawyerProfile.Id;
+            
+            if (!isParticipant && !isLawyer)
                 return false;
 
             appointment.Status = AppointmentStatus.Cancelled;
@@ -144,11 +164,15 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<RescheduleResponseDto?> RequestRescheduleAsync(Guid userId, CreateRescheduleRequestDto request, bool isLawyer = false)
         {
-            var appointment = await _context.Appointments.Include(a => a.Reschedules).FirstOrDefaultAsync(a => a.Id == request.AppointmentId);
+            var appointment = await _context.Appointments
+                .Include(a => a.Reschedules)
+                .FirstOrDefaultAsync(a => a.Id == request.AppointmentId);
+
             if (appointment == null || appointment.Status == AppointmentStatus.Completed || appointment.Status == AppointmentStatus.Cancelled)
                 return null;
 
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
+            
             if (!isLawyer && appointment.UserID != userId) return null;
             if (isLawyer && (lawyerProfile == null || appointment.LawyerId != lawyerProfile.Id)) return null;
 
@@ -178,11 +202,15 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<bool> RespondToRescheduleAsync(Guid userId, Guid rescheduleId, UpdateRescheduleRequestDto request, bool isLawyer = false)
         {
-            var reschedule = await _context.AppointmentReschedules.Include(r => r.Appointment).FirstOrDefaultAsync(r => r.Id == rescheduleId);
+            var reschedule = await _context.AppointmentReschedules
+                .Include(r => r.Appointment)
+                .FirstOrDefaultAsync(r => r.Id == rescheduleId);
+
             if (reschedule == null) return false;
 
             var appointment = reschedule.Appointment;
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
+
             if (!isLawyer && appointment.UserID != userId) return false;
             if (isLawyer && (lawyerProfile == null || appointment.LawyerId != lawyerProfile.Id)) return false;
 
@@ -209,16 +237,22 @@ namespace LegalMateAI.BLL.Services.Service
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == lawyerId);
             if (lawyerProfile == null) return new List<RescheduleResponseDto>();
 
-            return await _context.AppointmentReschedules.Include(r => r.Appointment)
+            return await _context.AppointmentReschedules
+                .Include(r => r.Appointment)
                 .Where(r => r.Appointment.LawyerId == lawyerProfile.Id && r.Status == RescheduleStatus.Pending)
-                .OrderBy(r => r.RequestedAt).Select(r => MapRescheduleToDto(r)).ToListAsync();
+                .OrderBy(r => r.RequestedAt)
+                .Select(r => MapRescheduleToDto(r))
+                .ToListAsync();
         }
 
         public async Task<List<RescheduleResponseDto>> GetRescheduleRequestsForUserAsync(Guid userId)
         {
-            return await _context.AppointmentReschedules.Include(r => r.Appointment)
+            return await _context.AppointmentReschedules
+                .Include(r => r.Appointment)
                 .Where(r => r.Appointment.UserID == userId && r.Status == RescheduleStatus.Pending)
-                .OrderBy(r => r.RequestedAt).Select(r => MapRescheduleToDto(r)).ToListAsync();
+                .OrderBy(r => r.RequestedAt)
+                .Select(r => MapRescheduleToDto(r))
+                .ToListAsync();
         }
 
         // ========== Helpers ==========
@@ -229,9 +263,11 @@ namespace LegalMateAI.BLL.Services.Service
             var endTime = startTime.Add(TimeSpan.FromMinutes(duration));
 
             var appointments = await _context.Appointments
-                .Where(a => a.LawyerId == lawyerProfileId && a.Date.Date == date.Date &&
-                       a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Completed &&
-                       (!excludeAppointmentId.HasValue || a.Id != excludeAppointmentId.Value))
+                .Where(a => a.LawyerId == lawyerProfileId && 
+                           a.Date.Date == date.Date &&
+                           a.Status != AppointmentStatus.Cancelled && 
+                           a.Status != AppointmentStatus.Completed &&
+                           (!excludeAppointmentId.HasValue || a.Id != excludeAppointmentId.Value))
                 .ToListAsync();
 
             return !appointments.Any(a =>
@@ -267,21 +303,44 @@ namespace LegalMateAI.BLL.Services.Service
 
         private AppointmentResponseDto MapToDto(Appointment a, User? user) => new()
         {
-            Id = a.Id, AppointmentNumber = a.AppointmentNumber, AppointmentType = a.AppointmentType,
-            Date = a.Date, DateFormatted = a.Date.ToString("dd MMM yyyy"), Time = a.Time,
-            DurationMinutes = a.DurationMinutes, Location = a.Location, Notes = a.Notes,
-            Status = a.Status, RequestedAt = a.RequestedAt, ConfirmedAt = a.ConfirmedAt,
-            UserId = a.UserID, LawyerId = a.LawyerId,
-            User = new UserBriefDto { Id = a.UserID, FullName = user?.FullName ?? "غير معروف", Email = user?.Email ?? "" },
-            Lawyer = new LawyerBriefDto { Id = a.Lawyer?.UserId ?? Guid.Empty, FullName = a.Lawyer?.User?.FullName ?? "" }
+            Id = a.Id,
+            AppointmentNumber = a.AppointmentNumber,
+            AppointmentType = a.AppointmentType,
+            Date = a.Date,
+            DateFormatted = a.Date.ToString("dd MMM yyyy"),
+            Time = a.Time,
+            DurationMinutes = a.DurationMinutes,
+            Location = a.Location,
+            Notes = a.Notes,
+            Status = a.Status,
+            RequestedAt = a.RequestedAt,
+            ConfirmedAt = a.ConfirmedAt,
+            UserId = a.UserID,
+            LawyerId = a.LawyerId,
+            User = new UserBriefDto 
+            { 
+                Id = a.UserID, 
+                FullName = user?.FullName ?? "غير معروف", 
+                Email = user?.Email ?? "" 
+            },
+            Lawyer = new LawyerBriefDto 
+            { 
+                Id = a.Lawyer?.UserId ?? Guid.Empty, 
+                FullName = a.Lawyer?.User?.FullName ?? "" 
+            }
         };
 
         private RescheduleResponseDto MapRescheduleToDto(AppointmentReschedule r) => new()
         {
-            Id = r.Id, OldDate = r.OldDate, OldTime = r.OldTime,
-            NewDate = r.NewDate, NewTime = r.NewTime,
-            InitiatedBy = r.InitiatedBy, Status = r.Status,
-            Reason = r.Reason, RequestedAt = r.RequestedAt
+            Id = r.Id,
+            OldDate = r.OldDate,
+            OldTime = r.OldTime,
+            NewDate = r.NewDate,
+            NewTime = r.NewTime,
+            InitiatedBy = r.InitiatedBy,
+            Status = r.Status,
+            Reason = r.Reason,
+            RequestedAt = r.RequestedAt
         };
     }
 }

@@ -10,6 +10,10 @@ using LegalMateAI.DAL.SeedData;
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.Infrastructure.Services.IService;
 using LegalMateAI.Infrastructure.Services.Service;
+using LegalMateAI.BLL.ML.DeepLearning;
+using LegalMateAI.BLL.ML.DataMining;
+using LegalMateAI.BLL.ML.DataWarehouse;
+using LegalMateAI.BLL.ML.Recommendation;
 using Microsoft.OpenApi.Models;
 using LegalMateAI.API.Middleware;
 using LegalMateAI.Domain.Entities;
@@ -96,12 +100,12 @@ builder.Services.AddDbContext<LegalMateDbContext>(options =>
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+
 // ===== Services =====
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
-// ❌ builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>(); // شلناها
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 
@@ -117,13 +121,34 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ILawyerProfileService, LawyerProfileService>();
 builder.Services.AddScoped<IAdminProfileService, AdminProfileService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
-// ❌ builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>(); // شلناها
 builder.Services.AddScoped<ICaseService, CaseService>();
 builder.Services.AddScoped<PdfGenerationService>();
 builder.Services.AddScoped<ILawService, LawService>();
 builder.Services.AddScoped<ILawyerBranchService, LawyerBranchService>();
 builder.Services.AddScoped<LawParserService>();
 builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
+builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
+
+// ===== ML & Analytics Services (NEW) =====
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IDataWarehouseService, DataWarehouseService>();
+builder.Services.AddScoped<IDataMiningService, DataMiningService>();
+builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
+
+// ===== ML Models (Singleton for performance) =====
+builder.Services.AddSingleton<ContractClassifier>();
+builder.Services.AddSingleton<RiskPredictor>();
+builder.Services.AddSingleton<LawyerEmbedding>();
+builder.Services.AddScoped<AssociationRules>();
+builder.Services.AddScoped<ClusteringService>();
+builder.Services.AddScoped<ETLService>();
+builder.Services.AddScoped<OLAPService>();
+builder.Services.AddScoped<CubeBuilder>();
+builder.Services.AddScoped<HybridRecommender>();
+builder.Services.AddScoped<ContentBasedFilter>();
+builder.Services.AddScoped<CollaborativeFilter>();
+
 builder.Services.AddHttpContextAccessor();
 
 // ===== CORS =====
@@ -217,8 +242,7 @@ using (var scope = app.Services.CreateScope())
 
         try
         {
-            // var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws_complete.json");
-            var lawsPath = Path.Combine(app.Environment.ContentRootPath,  "SeedData", "manshurat_laws_final_clean.json");
+            var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws_final_clean.json");
             if (File.Exists(lawsPath))
                 await LawSeeder.SeedFromJsonFileAsync(context, logger, lawsPath);
             else
@@ -258,6 +282,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("👤 Admin 1: admin@legalmate.com / Admin@123");
         logger.LogInformation("👤 Admin 2: verifier@legalmate.com / Verifier@123");
         logger.LogInformation("🤖 AI: Local AI (Ollama/LM Studio)");
+        logger.LogInformation("📊 ML & Analytics Services Loaded");
         logger.LogInformation("═══════════════════════════════════════");
     }
     catch (Exception ex)

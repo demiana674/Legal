@@ -3,19 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.CreateDTO;
+using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.Domain.Enums;
 using System.Security.Claims;
 
 namespace LegalMateAI.API.Controllers
 {
     [ApiController]
-    [Route("api/laws")]
-    public class LawController : ControllerBase
+    [Route("api/[controller]")]
+    public class LawsController : ControllerBase
     {
         private readonly ILawService _lawService;
-        private readonly ILogger<LawController> _logger;
+        private readonly ILogger<LawsController> _logger;
 
-        public LawController(ILawService lawService, ILogger<LawController> logger)
+        public LawsController(ILawService lawService, ILogger<LawsController> logger)
         {
             _lawService = lawService;
             _logger = logger;
@@ -29,18 +30,28 @@ namespace LegalMateAI.API.Controllers
             return claim != null ? Guid.Parse(claim.Value) : null;
         }
 
-        // ========== للجميع ==========
+        // ==================== للجميع (3 Endpoints فقط) ====================
 
+        /// <summary>
+        /// جلب جميع القوانين (مع فلترة حسب التصنيف أو البحث)
+        /// </summary>
         [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetLaws([FromQuery] LawCategory? category = null, [FromQuery] string? search = null)
+        [ProducesResponseType(typeof(List<LawCoreInfoDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllLaws(
+            [FromQuery] LawCategory? category = null,
+            [FromQuery] string? search = null)
         {
-            var laws = await _lawService.GetLawsAsync(category, search);
+            var laws = await _lawService.GetAllLawsAsync(category, search);
             return Ok(laws);
         }
 
+        /// <summary>
+        /// البحث في القوانين
+        /// </summary>
         [AllowAnonymous]
         [HttpGet("search")]
+        [ProducesResponseType(typeof(List<LawCoreInfoDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchLaws([FromQuery] string q)
         {
             if (string.IsNullOrWhiteSpace(q))
@@ -50,9 +61,14 @@ namespace LegalMateAI.API.Controllers
             return Ok(laws);
         }
 
+        /// <summary>
+        /// جلب قانون محدد بالـ ID
+        /// </summary>
         [AllowAnonymous]
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetLaw(Guid id)
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(LawCoreInfoDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetLawById(Guid id)
         {
             var law = await _lawService.GetLawByIdAsync(id);
             if (law == null)
@@ -60,54 +76,11 @@ namespace LegalMateAI.API.Controllers
             return Ok(law);
         }
 
-        // ✅ أكشنز جديدة لجلب أجزاء منفصلة
+        /// <summary>
+        /// تحميل ملف القانون
+        /// </summary>
         [AllowAnonymous]
-        [HttpGet("{id}/core")]
-        public async Task<IActionResult> GetLawCoreInfo(Guid id)
-        {
-            var info = await _lawService.GetLawCoreInfoAsync(id);
-            if (info == null) return NotFound(new { message = "القانون غير موجود" });
-            return Ok(info);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("{id}/links")]
-        public async Task<IActionResult> GetLawLinks(Guid id)
-        {
-            var links = await _lawService.GetLawFileLinksAsync(id);
-            if (links == null) return NotFound(new { message = "القانون غير موجود" });
-            return Ok(links);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("{id}/metrics")]
-        public async Task<IActionResult> GetLawMetrics(Guid id)
-        {
-            var metrics = await _lawService.GetLawMetricsAsync(id);
-            if (metrics == null) return NotFound(new { message = "القانون غير موجود" });
-            return Ok(metrics);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("{id}/content")]
-        public async Task<IActionResult> GetLawContent(Guid id)
-        {
-            var content = await _lawService.GetLawContentAsync(id);
-            if (content == null) return NotFound(new { message = "القانون غير موجود" });
-            return Ok(content);
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpGet("{id}/audit")]
-        public async Task<IActionResult> GetLawAudit(Guid id)
-        {
-            var audit = await _lawService.GetLawAuditAsync(id);
-            if (audit == null) return NotFound(new { message = "القانون غير موجود" });
-            return Ok(audit);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("{id}/download")]
+        [HttpGet("{id:guid}/download")]
         public async Task<IActionResult> DownloadLaw(Guid id)
         {
             var law = await _lawService.GetLawByIdAsync(id);
@@ -116,31 +89,31 @@ namespace LegalMateAI.API.Controllers
 
             var fileBytes = await _lawService.DownloadLawAsync(id);
             if (fileBytes != null)
-                return File(fileBytes, "application/pdf", $"{law.CoreInfo.Name}.pdf");
+                return File(fileBytes, "application/pdf", $"{law.Name}.pdf");
 
-            if (!string.IsNullOrEmpty(law.FileLinks.PdfFileUrl))
-                return Redirect(law.FileLinks.PdfFileUrl);
-            if (!string.IsNullOrEmpty(law.FileLinks.SourceUrl))
-                return Redirect(law.FileLinks.SourceUrl);
+            var downloadUrl = await _lawService.GetLawDownloadUrlAsync(id);
+            if (!string.IsNullOrEmpty(downloadUrl))
+                return Redirect(downloadUrl);
 
             return NotFound(new { message = "الملف غير متوفر" });
         }
 
+        /// <summary>
+        /// جلب رابط تحميل القانون
+        /// </summary>
         [AllowAnonymous]
-        [HttpGet("{id}/download-url")]
+        [HttpGet("{id:guid}/download-url")]
         public async Task<IActionResult> GetDownloadUrl(Guid id)
         {
-            var law = await _lawService.GetLawByIdAsync(id);
-            if (law == null)
-                return NotFound(new { message = "القانون غير موجود" });
-
             var url = await _lawService.GetLawDownloadUrlAsync(id);
             if (string.IsNullOrEmpty(url))
                 return NotFound(new { message = "رابط التحميل غير متوفر" });
-
             return Ok(new { downloadUrl = url });
         }
 
+        /// <summary>
+        /// جلب تصنيفات القوانين مع الإحصائيات
+        /// </summary>
         [AllowAnonymous]
         [HttpGet("categories")]
         public async Task<IActionResult> GetCategories()
@@ -149,8 +122,11 @@ namespace LegalMateAI.API.Controllers
             return Ok(categories);
         }
 
-        // ========== للمستخدمين المسجلين ==========
+        // ==================== للمستخدمين المسجلين ====================
 
+        /// <summary>
+        /// رفع قانون جديد (يحتاج موافقة الأدمن)
+        /// </summary>
         [Authorize]
         [HttpPost("upload")]
         public async Task<IActionResult> UploadLaw([FromForm] AddLawDto request)
@@ -171,6 +147,9 @@ namespace LegalMateAI.API.Controllers
             });
         }
 
+        /// <summary>
+        /// جلب القوانين التي رفعها المستخدم
+        /// </summary>
         [Authorize]
         [HttpGet("my-uploads")]
         public async Task<IActionResult> GetMyUploads()
@@ -183,18 +162,78 @@ namespace LegalMateAI.API.Controllers
             return Ok(laws);
         }
 
-        // ========== للأدمن فقط ==========
+        // ==================== للأدمن فقط (CRUD كامل) ====================
 
+        /// <summary>
+        /// إنشاء قانون جديد (مباشر بدون انتظار موافقة)
+        /// </summary>
         [Authorize(Roles = "Admin")]
-        [HttpGet("admin/pending")]
+        [HttpPost]
+        public async Task<IActionResult> CreateLaw([FromForm] CreateLawDto request)
+        {
+            var adminId = GetUserId();
+            if (!adminId.HasValue)
+                return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _lawService.CreateLawAsync(adminId.Value, request);
+            if (result == null)
+                return BadRequest(new { message = "فشل إنشاء القانون" });
+
+            return Ok(new { success = true, message = "تم إنشاء القانون بنجاح", law = result });
+        }
+
+        /// <summary>
+        /// تحديث قانون موجود
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateLaw(Guid id, [FromForm] UpdateLawDto request)
+        {
+            var adminId = GetUserId();
+            if (!adminId.HasValue)
+                return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _lawService.UpdateLawAsync(adminId.Value, id, request);
+            if (result == null)
+                return NotFound(new { message = "القانون غير موجود" });
+
+            return Ok(new { success = true, message = "تم تحديث القانون بنجاح", law = result });
+        }
+
+        /// <summary>
+        /// حذف قانون
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteLaw(Guid id)
+        {
+            var adminId = GetUserId();
+            if (!adminId.HasValue)
+                return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var result = await _lawService.DeleteLawAsync(adminId.Value, id);
+            if (!result)
+                return NotFound(new { message = "القانون غير موجود" });
+
+            return Ok(new { success = true, message = "تم حذف القانون بنجاح" });
+        }
+
+        /// <summary>
+        /// جلب القوانين المعلقة (التي تحتاج موافقة)
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpGet("pending")]
         public async Task<IActionResult> GetPendingLaws()
         {
             var laws = await _lawService.GetPendingLawsAsync();
             return Ok(laws);
         }
 
+        /// <summary>
+        /// الموافقة على قانون
+        /// </summary>
         [Authorize(Roles = "Admin")]
-        [HttpPost("admin/{id}/approve")]
+        [HttpPost("{id:guid}/approve")]
         public async Task<IActionResult> ApproveLaw(Guid id)
         {
             var adminId = GetUserId() ?? Guid.Empty;
@@ -206,8 +245,11 @@ namespace LegalMateAI.API.Controllers
             return Ok(new { success = true, message = "تمت الموافقة على القانون بنجاح" });
         }
 
+        /// <summary>
+        /// رفض قانون (مع ذكر السبب)
+        /// </summary>
         [Authorize(Roles = "Admin")]
-        [HttpPost("admin/{id}/reject")]
+        [HttpPost("{id:guid}/reject")]
         public async Task<IActionResult> RejectLaw(Guid id, [FromBody] RejectLawRequest request)
         {
             var adminId = GetUserId() ?? Guid.Empty;
@@ -216,7 +258,7 @@ namespace LegalMateAI.API.Controllers
             if (!result)
                 return NotFound(new { message = "القانون غير موجود" });
 
-            return Ok(new { success = true, message = "تم رفض وحذف القانون بنجاح" });
+            return Ok(new { success = true, message = "تم رفض القانون وحذفه بنجاح" });
         }
     }
 
