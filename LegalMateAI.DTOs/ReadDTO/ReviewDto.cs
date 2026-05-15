@@ -1,12 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LegalMateAI.Domain.Enums;
-using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
-using LegalMateAI.DTOs.ReadDTO;
 
 namespace LegalMateAI.DTOs.ReadDTO
 {
@@ -21,7 +13,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string CreatedAtFormatted => CreatedAt.ToString("dd MMM yyyy");
         public string TimeAgo => GetRelativeTime(CreatedAt);
 
-        private string GetRelativeTime(DateTime dateTime)
+        private static string GetRelativeTime(DateTime dateTime)
         {
             var diff = DateTime.UtcNow - dateTime;
             if (diff.TotalMinutes < 1) return "الآن";

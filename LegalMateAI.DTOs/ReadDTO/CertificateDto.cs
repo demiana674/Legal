@@ -1,7 +1,4 @@
 using System;
-using LegalMateAI.Domain.Enums;
-using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
 
 namespace LegalMateAI.DTOs.ReadDTO
 {
@@ -14,4 +11,3 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? FileUrl { get; set; }
     }
 }
-

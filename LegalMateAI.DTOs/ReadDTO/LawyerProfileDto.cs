@@ -15,6 +15,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? AlternativePhone { get; set; }
         public string? ProfilePicture { get; set; }
         public string? NationalId { get; set; }
+         public string? DateOfBirth { get; set; }
         
         // بيانات مهنية
         public string LicenseNumber { get; set; } = string.Empty;

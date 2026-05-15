@@ -1,13 +1,13 @@
-// LegalMateAI.DTOs/ReadDTO/LawyerSpecialtyResponseDto.cs
+using System;
+
 namespace LegalMateAI.DTOs.ReadDTO
 {
-    public class LawyerSpecialtyResponseDto
+    public class LawyerProfileSpecialtyDto
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
-        public string? Description { get; set; }
+        public bool IsPrimary { get; set; }
+        public int YearsOfExperience { get; set; }
     }
-    
-    
 }

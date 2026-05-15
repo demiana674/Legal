@@ -1,4 +1,8 @@
-// LegalMateAI.BLL/Services/Service/LawyerProfileService.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -17,6 +21,7 @@ namespace LegalMateAI.BLL.Services.Service
     {
         private readonly LegalMateDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEncryptionService _encryption;
         private readonly ILogger<LawyerProfileService> _logger;
 
@@ -24,11 +29,13 @@ namespace LegalMateAI.BLL.Services.Service
             LegalMateDbContext context,
             IWebHostEnvironment env,
             IEncryptionService encryption,
+            IHttpContextAccessor httpContextAccessor,
             ILogger<LawyerProfileService> logger)
         {
             _context = context;
             _env = env;
             _encryption = encryption;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
 
@@ -44,6 +51,7 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
+                .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
             if (user == null || user.LawyerProfile == null) return null;
@@ -52,9 +60,11 @@ namespace LegalMateAI.BLL.Services.Service
 
             // فك تشفير البيانات
             string? decryptedLicense = Decrypt(lawyerProfile.LicenseNumber);
-            string? decryptedPhone = Decrypt(lawyerProfile.PhoneNumber ?? user.Phone);
-            string? decryptedAltPhone = Decrypt(lawyerProfile.AlternativePhone);
+            string? decryptedPhone = Decrypt(user.Phone);
+            string? decryptedAltPhone = Decrypt(user.UserProfile?.AlternativePhone);
             string? decryptedNationalId = Decrypt(user.NationalId);
+            string? decryptedDateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd");
+            string? decryptedLicenseIssueDate = lawyerProfile.LicenseIssueDate?.ToString("yyyy-MM-dd");
 
             // إحصائيات
             var activeCases = await _context.Cases
@@ -80,8 +90,10 @@ namespace LegalMateAI.BLL.Services.Service
                 LastName = user.LastName,
                 Email = user.Email,
                 Phone = decryptedPhone,
-                NationalId = decryptedNationalId,
+                AlternativePhone = decryptedAltPhone,
+                NationalId = decryptedNationalId ?? "",
                 ProfilePicture = user.ProfilePicture,
+                DateOfBirth = decryptedDateOfBirth ?? "",
                 LicenseNumber = decryptedLicense ?? "",
                 BarAssociation = lawyerProfile.BarAssociation ?? "",
                 YearsOfExperience = lawyerProfile.YearsOfExperience ?? 0,
@@ -91,7 +103,6 @@ namespace LegalMateAI.BLL.Services.Service
                 GovernorateName = lawyerProfile.Governorate?.Name,
                 City = lawyerProfile.City?.Name,
                 OfficeAddress = lawyerProfile.OfficeAddress,
-                AlternativePhone = decryptedAltPhone,
                 VerificationStatus = lawyerProfile.VerificationStatus.ToString(),
                 VerifiedAt = lawyerProfile.VerifiedAt,
                 IsActive = user.IsActive,
@@ -117,6 +128,7 @@ namespace LegalMateAI.BLL.Services.Service
             var user = await _context.Users
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
             if (user == null || user.LawyerProfile == null) return false;
@@ -124,6 +136,7 @@ namespace LegalMateAI.BLL.Services.Service
             var lawyerProfile = user.LawyerProfile;
             bool hasChanges = false;
 
+            // تحديث رقم الهاتف
             if (!string.IsNullOrEmpty(request.Phone))
             {
                 user.Phone = _encryption.Encrypt(request.Phone);
@@ -131,12 +144,30 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            if (!string.IsNullOrEmpty(request.AlternativePhone))
+            // تحديث الهاتف البديل
+            if (request.AlternativePhone != null)
             {
-                lawyerProfile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
+                if (user.UserProfile == null)
+                {
+                    user.UserProfile = new UserProfile { Id = Guid.NewGuid(), UserId = userId };
+                }
+                user.UserProfile.AlternativePhone = string.IsNullOrEmpty(request.AlternativePhone) 
+                    ? null 
+                    : _encryption.Encrypt(request.AlternativePhone);
                 hasChanges = true;
             }
 
+            // تحديث تاريخ الميلاد
+            if (!string.IsNullOrEmpty(request.DateOfBirth))
+            {
+                if (DateTime.TryParse(request.DateOfBirth, out var dob))
+                {
+                    user.DateOfBirth = dob;
+                    hasChanges = true;
+                }
+            }
+
+            // تحديث التخصصات
             if (request.SpecialtyIds != null && request.SpecialtyIds.Any())
             {
                 if (lawyerProfile.Specialties.Any())
@@ -162,6 +193,7 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
+            // تحديث الموقع
             if (request.GovernorateId.HasValue)
             {
                 lawyerProfile.GovernorateId = request.GovernorateId;
@@ -170,7 +202,9 @@ namespace LegalMateAI.BLL.Services.Service
 
             if (!string.IsNullOrEmpty(request.City))
             {
-                lawyerProfile.CityId = int.TryParse(request.City, out var cityId) ? cityId : null;
+                var city = await _context.Cities.FirstOrDefaultAsync(c => c.Name == request.City);
+                if (city != null)
+                    lawyerProfile.CityId = city.Id;
                 hasChanges = true;
             }
 
@@ -193,6 +227,7 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<string?> UploadProfilePictureAsync(Guid userId, IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
+            
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (!allowedExtensions.Contains(extension) || file.Length > 2 * 1024 * 1024) return null;
@@ -200,16 +235,15 @@ namespace LegalMateAI.BLL.Services.Service
             var user = await _context.Users.FindAsync(userId);
             if (user == null || user.Role != UserRole.Lawyer) return null;
 
-            // ✅ التحقق من أن المحامي Active
             if (user.LawyerProfile?.VerificationStatus != LawyerVerificationStatus.Active)
                 return null;
 
-            var uploadsFolder = Path.Combine(_env.WebRootPath, "profiles", "lawyers");
+            var uploadsFolder = Path.Combine(_env.WebRootPath ?? "wwwroot", "profiles", "lawyers");
             Directory.CreateDirectory(uploadsFolder);
 
             if (!string.IsNullOrEmpty(user.ProfilePicture))
             {
-                var oldFile = Path.Combine(_env.WebRootPath, user.ProfilePicture.TrimStart('/'));
+                var oldFile = Path.Combine(_env.WebRootPath ?? "wwwroot", user.ProfilePicture.TrimStart('/'));
                 if (File.Exists(oldFile)) File.Delete(oldFile);
             }
 
@@ -220,7 +254,10 @@ namespace LegalMateAI.BLL.Services.Service
             var pictureUrl = $"/profiles/lawyers/{fileName}";
             user.ProfilePicture = pictureUrl;
             await _context.SaveChangesAsync();
-            return pictureUrl;
+            
+            var request = _httpContextAccessor.HttpContext?.Request;
+            var baseUrl = $"{request?.Scheme}://{request?.Host}";
+            return $"{baseUrl}{pictureUrl}";
         }
 
         public async Task<bool> RemoveProfilePictureAsync(Guid userId)
@@ -228,7 +265,7 @@ namespace LegalMateAI.BLL.Services.Service
             var user = await _context.Users.FindAsync(userId);
             if (user == null || string.IsNullOrEmpty(user.ProfilePicture)) return false;
 
-            var filePath = Path.Combine(_env.WebRootPath, user.ProfilePicture.TrimStart('/'));
+            var filePath = Path.Combine(_env.WebRootPath ?? "wwwroot", user.ProfilePicture.TrimStart('/'));
             if (File.Exists(filePath)) File.Delete(filePath);
 
             user.ProfilePicture = null;

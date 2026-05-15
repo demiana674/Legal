@@ -1,4 +1,3 @@
-// LegalMateAI.API/Controllers/LawyerController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
@@ -68,6 +67,8 @@ namespace LegalMateAI.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetLawyerById(Guid lawyerId)
         {
+            _logger.LogInformation($"Fetching lawyer by ID: {lawyerId}");
+            
             var lawyer = await _lawyerService.GetLawyerByIdAsync(lawyerId);
             
             if (lawyer == null)
@@ -85,11 +86,13 @@ namespace LegalMateAI.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetLawyerReviews(Guid lawyerId)
         {
+            _logger.LogInformation($"Fetching reviews for lawyer ID: {lawyerId}");
+            
             var lawyer = await _lawyerService.GetLawyerByIdAsync(lawyerId);
             if (lawyer == null)
                 return NotFound(new { message = "المحامي غير موجود" });
 
-            var reviews = await _lawyerService.GetLawyerReviewsAsync(lawyerId);
+            var reviews = await _lawyerService.GetLawyerReviewsAsync(lawyer.Id);
             
             return Ok(new 
             { 
@@ -124,12 +127,12 @@ namespace LegalMateAI.API.Controllers
 
             var result = await _lawyerService.AddReviewAsync(
                 userId, 
-                lawyerId, 
+                lawyer.Id, 
                 request.Rating, 
                 request.Comment, 
                 request.AppointmentId);
 
-            if (result)
+            if (!result)
                 return BadRequest(new { message = "لقد قمت بتقييم هذا المحامي من قبل" });
 
             _logger.LogInformation($"User {userId} added review for lawyer {lawyerId}");
@@ -158,6 +161,45 @@ namespace LegalMateAI.API.Controllers
                 count = lawyers.Count,
                 lawyers 
             });
+        }
+
+        /// <summary>
+        /// ✅ جلب أوقات توفر المحامي
+        /// </summary>
+        [Authorize(Roles = "Lawyer")]
+        [HttpGet("availability")]
+        [ProducesResponseType(typeof(List<AvailabilityDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAvailability()
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+                return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            var availability = await _lawyerService.GetLawyerAvailabilityAsync(userId);
+            return Ok(availability);
+        }
+
+        /// <summary>
+        /// ✅ تحديث أوقات توفر المحامي
+        /// </summary>
+        [Authorize(Roles = "Lawyer")]
+        [HttpPut("availability")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateAvailability([FromBody] List<CreateLawyerAvailabilityDto> availabilities)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+                return Unauthorized(new { message = "يجب تسجيل الدخول" });
+
+            if (availabilities == null || !availabilities.Any())
+                return BadRequest(new { message = "بيانات أوقات التوفر مطلوبة" });
+
+            var result = await _lawyerService.UpdateAvailabilityAsync(userId, availabilities);
+            if (!result)
+                return BadRequest(new { message = "فشل تحديث أوقات التوفر" });
+
+            return Ok(new { message = "تم تحديث أوقات التوفر بنجاح" });
         }
     }
 }

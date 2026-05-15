@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/LawyerService.cs
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -56,6 +55,7 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
+                .Include(u => u.UserProfile)  // ✅ مهم عشان نجيب NationalId و Nationality
                 .Where(u => u.Role == UserRole.Lawyer &&
                             u.IsActive == true &&
                             u.LawyerProfile != null &&
@@ -103,6 +103,7 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.Certificates)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
+                .Include(u => u.UserProfile)  // ✅ مهم عشان نجيب NationalId و Nationality
                 .FirstOrDefaultAsync(u => u.UserID == lawyerId && 
                                           u.Role == UserRole.Lawyer &&
                                           u.LawyerProfile != null &&
@@ -165,19 +166,34 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<List<ReviewDto>> GetLawyerReviewsAsync(Guid lawyerId)
         {
-            return await _context.LawyerReviews
+            _logger.LogInformation($"Getting reviews for lawyer: {lawyerId}");
+
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.Id == lawyerId);
+            
+            if (lawyerProfile == null)
+            {
+                _logger.LogWarning($"Lawyer not found: {lawyerId}");
+                return new List<ReviewDto>();
+            }
+
+            var reviews = await _context.LawyerReviews
                 .Include(r => r.User)
-                .Where(r => r.LawyerId == lawyerId)
+                .Where(r => r.LawyerId == lawyerProfile.Id)
                 .OrderByDescending(r => r.CreatedAt)
                 .Select(r => new ReviewDto
                 {
                     Id = r.Id,
-                    UserName = r.User.FullName ?? "",
+                    UserName = r.User.FullName ?? "مستخدم",
                     UserImage = r.User.ProfilePicture,
                     Rating = r.Rating,
-                    Comment = r.Comment,
+                    Comment = r.Comment ?? "",
                     CreatedAt = r.CreatedAt
-                }).ToListAsync();
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"Found {reviews.Count} reviews for lawyer {lawyerId}");
+            return reviews;
         }
 
         public async Task<bool> AddReviewAsync(Guid userId, Guid lawyerId, int rating, string? comment, Guid? appointmentId)
@@ -199,7 +215,8 @@ namespace LegalMateAI.BLL.Services.Service
                 Rating = rating,
                 Comment = comment,
                 AppointmentId = appointmentId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsVerified = true
             });
 
             await _context.SaveChangesAsync();
@@ -208,7 +225,6 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<List<LawyerResponseDto>> GetLawyersBySpecializationAsync(string specialization, int limit = 5)
         {
-            // ✅ نجيب البيانات الأول من الداتابيز
             var users = await _context.Users
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Specialties)
@@ -217,6 +233,7 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Reviews)
+                .Include(u => u.UserProfile)  // ✅ مهم
                 .Where(u => u.Role == UserRole.Lawyer && 
                             u.IsActive &&
                             u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active &&
@@ -224,7 +241,6 @@ namespace LegalMateAI.BLL.Services.Service
                 .Take(limit)
                 .ToListAsync();
 
-            // ✅ وبعدين نحول لـ DTO في الذاكرة (مش في الداتابيز)
             return users.OrderByDescending(u => 
                 u.LawyerProfile!.Reviews?.Any() == true 
                     ? u.LawyerProfile.Reviews.Average(r => r.Rating) 
@@ -232,6 +248,8 @@ namespace LegalMateAI.BLL.Services.Service
                 .Select(u => MapToDto(u, _encryption))
                 .ToList();
         }
+
+        // ========== Helper Methods ==========
 
         private static string GetDayNameAr(DayOfWeek day) => day switch
         {
@@ -252,10 +270,33 @@ namespace LegalMateAI.BLL.Services.Service
             catch { return encrypted; }
         }
 
+        private static DateTime? DecryptDate(string? encrypted, IEncryptionService encryption)
+        {
+            if (string.IsNullOrEmpty(encrypted)) return null;
+            try 
+            { 
+                var dateStr = encryption.Decrypt(encrypted);
+                if (DateTime.TryParse(dateStr, out var date))
+                    return date;
+                return null;
+            }
+            catch { return null; }
+        }
+
         private static LawyerResponseDto MapToDto(User user, IEncryptionService encryption)
         {
             var lawyer = user.LawyerProfile!;
             var avgRating = lawyer.Reviews?.Any() == true ? lawyer.Reviews.Average(r => r.Rating) : 0;
+
+            // ✅ فك تشفير البيانات
+            string? decryptedPhone = Decrypt(user.Phone, encryption);
+            string? decryptedNationalId = Decrypt(user.NationalId, encryption);
+            string? decryptedLicense = Decrypt(lawyer.LicenseNumber, encryption);
+            string? decryptedLicenseIssueDate = lawyer.LicenseIssueDate?.ToString("yyyy-MM-dd");
+            string? decryptedDateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd");
+            string? decryptedCreatedAt = user.CreatedAt.ToString("yyyy-MM-dd");
+            string? decryptedVerifiedAt = lawyer.VerifiedAt?.ToString("yyyy-MM-dd");
+            string? decryptedNationality = user.Nationality;
 
             return new LawyerResponseDto
             {
@@ -263,21 +304,27 @@ namespace LegalMateAI.BLL.Services.Service
                 UserId = user.UserID,
                 FullName = user.FullName,
                 Email = user.Email,
-                PhoneNumber = Decrypt(user.Phone, encryption) ?? "",
+                PhoneNumber = decryptedPhone ?? "",
+                AlternativePhone = user.UserProfile != null ? Decrypt(user.UserProfile.AlternativePhone, encryption) : null,
+                NationalId = decryptedNationalId ?? "",
+                Nationality = decryptedNationality ?? "",
                 ProfilePicture = user.ProfilePicture ?? "",
-                LicenseNumber = Decrypt(lawyer.LicenseNumber, encryption) ?? "",
+                LicenseNumber = decryptedLicense ?? "",
                 BarAssociation = lawyer.BarAssociation ?? "",
                 YearsOfExperience = lawyer.YearsOfExperience ?? 0,
                 VerificationStatus = lawyer.VerificationStatus.ToString(),
                 IsActive = user.IsActive,
                 VerifiedAt = lawyer.VerifiedAt,
+                VerifiedAtFormatted = decryptedVerifiedAt,
                 RejectionReason = lawyer.RejectionReason,
                 Rating = Math.Round(avgRating, 1),
                 TotalReviews = lawyer.Reviews?.Count ?? 0,
                 GovernorateId = lawyer.GovernorateId,
                 GovernorateName = lawyer.Governorate?.Name,
-                City = lawyer.City?.Name,
+                City = lawyer.City?.Name ?? "",
                 OfficeAddress = lawyer.OfficeAddress,
+                DateOfBirth = decryptedDateOfBirth,
+                CreatedAt = decryptedCreatedAt,
                 Specialties = lawyer.Specialties?.Select(s => new LawyerProfileSpecialtyDto
                 {
                     Id = s.SpecialtyId,

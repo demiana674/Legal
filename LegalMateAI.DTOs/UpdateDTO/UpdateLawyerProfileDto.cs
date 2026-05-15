@@ -11,6 +11,8 @@ namespace LegalMateAI.DTOs.UpdateDTO
         public string? Phone { get; set; }
         public string? AlternativePhone { get; set; }
         public string? NationalId { get; set; }
+        public string? Nationality { get; set; }
+         public string? DateOfBirth { get; set; }
         
         // البيانات المهنية
         public string? LicenseNumber { get; set; }
