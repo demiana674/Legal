@@ -16,8 +16,15 @@ namespace LegalMateAI.BLL.Services.IService
         Task<List<AppointmentResponseDto>> GetLawyerAppointmentsAsync(Guid lawyerId, string? status = null);
         Task<AppointmentResponseDto?> GetAppointmentByIdAsync(Guid appointmentId);
         
-        // ========== إلغاء ==========
+        // ========== المواعيد المعلقة فقط ==========
+        Task<List<AppointmentResponseDto>> GetPendingAppointmentsForLawyerAsync(Guid lawyerId);
+        Task<List<AppointmentResponseDto>> GetPendingAppointmentsForUserAsync(Guid userId);
+        
+        // ========== الإلغاء (بموافقة الطرفين) ==========
         Task<bool> CancelAppointmentAsync(Guid appointmentId, Guid userId, string? reason = null);
+        Task<bool> RespondToCancelRequestAsync(Guid userId, Guid cancelRequestId, bool approve, string? responseReason = null);
+        Task<List<CancelRequestResponseDto>> GetPendingCancelRequestsForUserAsync(Guid userId);
+        Task<List<CancelRequestResponseDto>> GetPendingCancelRequestsForLawyerAsync(Guid lawyerId);
         
         // ========== إعادة الجدولة ==========
         Task<RescheduleResponseDto?> RequestRescheduleAsync(Guid userId, CreateRescheduleRequestDto request, bool isLawyer = false);

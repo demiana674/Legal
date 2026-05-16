@@ -122,21 +122,195 @@
         {"name": "DELETE Branch", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/lawyer/branches/{{branch_id}}", "host": ["{{base_url}}"], "path": ["api", "lawyer", "branches", "{{branch_id}}"]}}}
       ]
     },
+    
+{
+  "name": "📋 Contracts",
+  "item": [
     {
-      "name": "📋 Contracts",
-      "item": [
-        {"name": "GET Templates", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Contracts/templates", "host": ["{{base_url}}"], "path": ["api", "Contracts", "templates"]}}},
-        {"name": "GET Template by ID", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Contracts/templates/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "templates", "{{contract_id}}"]}}},
-        {"name": "POST Generate Contract", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"templateId\":\"{{contract_id}}\",\"contractTitle\":\"عقد إيجار شقة\",\"filledData\":{\"PartyName\":\"شركة مصر\"}}"}, "url": {"raw": "{{base_url}}/api/Contracts/generate", "host": ["{{base_url}}"], "path": ["api", "Contracts", "generate"]}}},
-        {"name": "GET My Contracts", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Contracts", "host": ["{{base_url}}"], "path": ["api", "Contracts"]}}},
-        {"name": "GET Search Contracts (Public)", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Contracts/search?q=إيجار", "host": ["{{base_url}}"], "path": ["api", "Contracts", "search"]}}},
-        {"name": "GET Contract Details (Public)", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}"]}}},
-        {"name": "PUT Update Contract", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"title\":\"عقد إيجار - محدث\"}"}, "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}"]}}},
-        {"name": "PATCH Update Status", "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"status\":3}"}, "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}/status", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}", "status"]}}},
-        {"name": "DELETE Contract", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}"]}}},
-        {"name": "GET Download Contract (Public)", "request": {"method": "GET", "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}/download", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}", "download"]}}}
-      ]
+      "name": "GET Templates",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{base_url}}/api/Contracts/templates", "host": ["{{base_url}}"], "path": ["api", "Contracts", "templates"]}
+      }
     },
+    {
+      "name": "GET Template by ID",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{base_url}}/api/Contracts/templates/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "templates", "{{contract_id}}"]}
+      }
+    },
+    {
+  "name": "Analyze Template (Get Form Fields)",
+  "request": {
+    "method": "GET",
+    "header": [
+      {"key": "Authorization", "value": "Bearer {{access_token}}"}
+    ],
+    "url": {
+      "raw": "{{base_url}}/api/Contracts/templates/{{contract_id}}/analyze",
+      "host": ["{{base_url}}"],
+      "path": ["api", "Contracts", "templates", "{{contract_id}}", "analyze"]
+    }
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const r = pm.response.json();",
+          "if(r.placeholders && r.placeholders.length > 0) {",
+          "    console.log('📋 Required Fields:', r.placeholders.length);",
+          "    r.placeholders.forEach((f, i) => {",
+          "        console.log(`${i+1}. ${f.label} (${f.type}) - Field: ${f.name}`);",
+          "    });",
+          "    pm.environment.set('contract_analysis', JSON.stringify(r.placeholders));",
+          "} else {",
+          "    console.log('No placeholders found in this template');",
+          "}",
+          "pm.test('Analysis successful', () => pm.response.to.have.status(200));"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ]
+},
+
+{
+  "name": " Add Placeholders to All Templates (Admin)",
+  "request": {
+    "method": "POST",
+    "header": [
+      {"key": "Authorization", "value": "Bearer {{access_token}}"}
+    ],
+    "url": {
+      "raw": "{{base_url}}/api/Contracts/templates/add-placeholders-to-all",
+      "host": ["{{base_url}}"],
+      "path": ["api", "Contracts", "templates", "add-placeholders-to-all"]
+    }
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const r = pm.response.json();",
+          "console.log('Processed:', r.processedCount);",
+          "pm.test('Success', () => pm.response.to.have.status(200));"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ]
+},
+    {
+      "name": "GET Template Placeholders",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {"raw": "{{base_url}}/api/Contracts/templates/{{contract_id}}/placeholders", "host": ["{{base_url}}"], "path": ["api", "Contracts", "templates", "{{contract_id}}", "placeholders"]}
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "const r = pm.response.json();",
+            "if(r.placeholders) pm.environment.set('placeholders', JSON.stringify(r.placeholders));",
+            "pm.test('Success', () => pm.response.to.have.status(200));"
+          ],
+          "type": "text/javascript"
+        }
+      }]
+    },
+    {
+      "name": "POST Generate Contract",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"templateId\": \"{{contract_id}}\",\n    \"lawyerId\": \"{{lawyer_id}}\",\n    \"contractTitle\": \"عقد إيجار شقة\",\n    \"filledData\": {\n        \"ContractDate\": \"2026-05-16\",\n        \"PartyFullName\": \"أحمد محمد علي\",\n        \"PartyNationalId\": \"29512345678901\",\n        \"PartyAddress\": \"القاهرة الجديدة\",\n        \"SecondPartyFullName\": \"شركة النيل للاستثمار\",\n        \"TotalPrice\": \"500000\",\n        \"ContractDuration\": \"12\",\n        \"StartDate\": \"2026-06-01\",\n        \"EndDate\": \"2027-05-31\",\n        \"Notes\": \"هذا عقد تجريبي\"\n    }\n}"
+        },
+        "url": {"raw": "{{base_url}}/api/Contracts/generate", "host": ["{{base_url}}"], "path": ["api", "Contracts", "generate"]}
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "const r = pm.response.json();",
+            "if(r.data?.id) pm.environment.set('contract_id', r.data.id);",
+            "pm.test('Contract created', () => pm.response.to.have.status(200));"
+          ],
+          "type": "text/javascript"
+        }
+      }]
+    },
+    {
+      "name": "GET My Contracts",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {"raw": "{{base_url}}/api/Contracts", "host": ["{{base_url}}"], "path": ["api", "Contracts"]}
+      }
+    },
+    {
+      "name": "GET Search Contracts",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{base_url}}/api/Contracts/search?q=إيجار", "host": ["{{base_url}}"], "path": ["api", "Contracts", "search"]}
+      }
+    },
+    {
+      "name": "GET Contract Details",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}"]}
+      }
+    },
+    {
+      "name": "PUT Update Contract",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {"mode": "raw", "raw": "{\"title\":\"عقد إيجار - محدث\"}"},
+        "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}"]}
+      }
+    },
+    {
+      "name": "PATCH Update Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {"mode": "raw", "raw": "{\"status\":3}"},
+        "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}/status", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}", "status"]}
+      }
+    },
+    {
+      "name": "DELETE Contract",
+      "request": {
+        "method": "DELETE",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}"]}
+      }
+    },
+    {
+      "name": "GET Download Contract (Public)",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{base_url}}/api/Contracts/{{contract_id}}/download", "host": ["{{base_url}}"], "path": ["api", "Contracts", "{{contract_id}}", "download"]}
+      }
+    }
+  ]
+},
     {
       "name": "⚖️ Cases",
       "item": [
@@ -163,23 +337,249 @@
         {"name": "DELETE Document", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Documents/{{document_id}}", "host": ["{{base_url}}"], "path": ["api", "Documents", "{{document_id}}"]}}}
       ]
     },
+    
+      {
+  "name": "📅 Appointments",
+  "item": [
     {
-      "name": "📅 Appointments",
-      "item": [
-        {"name": "POST Book Appointment", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"lawyerId\":\"{{lawyer_id}}\",\"branchId\":\"{{branch_id}}\",\"appointmentType\":\"استشارة\",\"date\":\"2026-05-20\",\"time\":\"10:00\",\"durationMinutes\":60,\"location\":\"فرع مدينة نصر\",\"notes\":\"استشارة قانونية\"}"}, "url": {"raw": "{{base_url}}/api/Appointments", "host": ["{{base_url}}"], "path": ["api", "Appointments"]}}},
-        {"name": "GET My Appointments (User)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Appointments/user", "host": ["{{base_url}}"], "path": ["api", "Appointments", "user"]}}},
-        {"name": "GET My Appointments (Lawyer)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Appointments/lawyer", "host": ["{{base_url}}"], "path": ["api", "Appointments", "lawyer"]}}},
-        {"name": "GET Pending Appointments (Lawyer)", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Appointments/lawyer/pending", "host": ["{{base_url}}"], "path": ["api", "Appointments", "lawyer", "pending"]}}},
-        {"name": "GET Appointment by ID", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Appointments/{{appointment_id}}", "host": ["{{base_url}}"], "path": ["api", "Appointments", "{{appointment_id}}"]}}},
-        {"name": "POST Approve Appointment (Lawyer)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Appointments/{{appointment_id}}/approve", "host": ["{{base_url}}"], "path": ["api", "Appointments", "{{appointment_id}}", "approve"]}}},
-        {"name": "POST Reject Appointment (Lawyer)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "\"الوقت غير مناسب\""}, "url": {"raw": "{{base_url}}/api/Appointments/{{appointment_id}}/reject", "host": ["{{base_url}}"], "path": ["api", "Appointments", "{{appointment_id}}", "reject"]}}},
-        {"name": "DELETE Cancel Appointment", "request": {"method": "DELETE", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "\"ظروف طارئة\""}, "url": {"raw": "{{base_url}}/api/Appointments/{{appointment_id}}", "host": ["{{base_url}}"], "path": ["api", "Appointments", "{{appointment_id}}"]}}},
-        {"name": "POST Request Reschedule", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"newDate\":\"2026-05-25\",\"newTime\":\"14:00\",\"reason\":\"ظروف طارئة\"}"}, "url": {"raw": "{{base_url}}/api/Appointments/{{appointment_id}}/reschedule", "host": ["{{base_url}}"], "path": ["api", "Appointments", "{{appointment_id}}", "reschedule"]}}},
-        {"name": "PUT Respond Reschedule (Approve)", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"status\":2}"}, "url": {"raw": "{{base_url}}/api/Appointments/reschedule/{{reschedule_id}}", "host": ["{{base_url}}"], "path": ["api", "Appointments", "reschedule", "{{reschedule_id}}"]}}},
-        {"name": "PUT Respond Reschedule (Reject)", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{access_token}}"}], "body": {"mode": "raw", "raw": "{\"status\":3}"}, "url": {"raw": "{{base_url}}/api/Appointments/reschedule/{{reschedule_id}}", "host": ["{{base_url}}"], "path": ["api", "Appointments", "reschedule", "{{reschedule_id}}"]}}},
-        {"name": "GET Pending Reschedules", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}], "url": {"raw": "{{base_url}}/api/Appointments/reschedule/pending", "host": ["{{base_url}}"], "path": ["api", "Appointments", "reschedule", "pending"]}}}
-      ]
+      "name": "POST Book Appointment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"lawyerId\":\"{{lawyer_id}}\",\"branchId\":\"{{branch_id}}\",\"appointmentType\":\"استشارة\",\"date\":\"2026-05-20\",\"time\":\"10:00\",\"durationMinutes\":60,\"location\":\"فرع مدينة نصر\",\"notes\":\"استشارة قانونية\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments"]
+        }
+      }
     },
+    {
+      "name": "GET My Appointments (User)",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/user",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "user"]
+        }
+      }
+    },
+    {
+      "name": "GET My Appointments (Lawyer)",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/lawyer",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "lawyer"]
+        }
+      }
+    },
+    {
+      "name": "GET Pending Appointments (Lawyer)",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/lawyer/pending",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "lawyer", "pending"]
+        }
+      }
+    },
+    {
+      "name": "GET Appointment by ID",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/{{appointment_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "{{appointment_id}}"]
+        }
+      }
+    },
+    {
+      "name": "POST Approve Appointment (Lawyer)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/{{appointment_id}}/approve",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "{{appointment_id}}", "approve"]
+        }
+      }
+    },
+    {
+      "name": "POST Reject Appointment (Lawyer)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "\"الوقت غير مناسب\""
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/{{appointment_id}}/reject",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "{{appointment_id}}", "reject"]
+        }
+      }
+    },
+    {
+      "name": "POST Request Cancel Appointment (Requires Approval)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "\"ظروف طارئة - أريد إلغاء الموعد\""
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/{{appointment_id}}/cancel",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "{{appointment_id}}", "cancel"]
+        }
+      }
+    },
+    {
+      "name": "GET Pending Cancel Requests",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/cancel-requests/pending",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "cancel-requests", "pending"]
+        }
+      }
+    },
+    {
+      "name": "PUT Respond to Cancel Request (Approve)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"approve\": true, \"reason\": null}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/cancel-request/{{cancel_request_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "cancel-request", "{{cancel_request_id}}"]
+        }
+      }
+    },
+    {
+      "name": "PUT Respond to Cancel Request (Reject)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"approve\": false, \"reason\": \"لا يمكن الإلغاء في هذا الوقت\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/cancel-request/{{cancel_request_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "cancel-request", "{{cancel_request_id}}"]
+        }
+      }
+    },
+    {
+      "name": "POST Request Reschedule",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"newDate\":\"2026-05-25\",\"newTime\":\"14:00\",\"reason\":\"ظروف طارئة\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/{{appointment_id}}/reschedule",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "{{appointment_id}}", "reschedule"]
+        }
+      }
+    },
+    {
+      "name": "PUT Respond Reschedule (Approve)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":2}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/reschedule/{{reschedule_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "reschedule", "{{reschedule_id}}"]
+        }
+      }
+    },
+    {
+      "name": "PUT Respond Reschedule (Reject)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":3}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/reschedule/{{reschedule_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "reschedule", "{{reschedule_id}}"]
+        }
+      }
+    },
+    {
+      "name": "GET Pending Reschedules",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/Appointments/reschedule/pending",
+          "host": ["{{base_url}}"],
+          "path": ["api", "Appointments", "reschedule", "pending"]
+        }
+      }
+    }
+  ]
+},
+
     {
       "name": "📜 Laws",
       "item": [

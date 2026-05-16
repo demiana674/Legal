@@ -14,10 +14,12 @@
 <PackageReference Include="ClosedXML" Version="0.102.2" />
 <PackageReference Include="DinkToPdf" Version="1.0.8" />
 <PackageReference Include="DocumentFormat.OpenXml" Version="2.20.0" />
+<PackageReference Include="DocX" Version="5.0.0" />
 <PackageReference Include="EPPlus" Version="8.5.4" />
 <PackageReference Include="Microsoft.ML" Version="5.0.0" />
 <PackageReference Include="Microsoft.ML.Recommender" Version="0.23.0" />
 <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+<PackageReference Include="NPOI" Version="2.8.0" />
 <PackageReference Include="PdfPig" Version="0.1.14" />
 <!-- <PackageReference Include="QuestPDF" Version="2026.2.4" /> -->
 <PackageReference Include="QuestPDF" Version="2024.3.2" />
@@ -25,6 +27,8 @@
 <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.6.0" />
 
     <PackageReference Include="FluentValidation" Version="12.0.0" />
+
+    <!-- <PackageReference Include="Xceed.Words.NET" Version="2.0.0" /> -->
   </ItemGroup>
 
   <PropertyGroup>

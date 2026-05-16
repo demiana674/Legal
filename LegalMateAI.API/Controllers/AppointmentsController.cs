@@ -104,7 +104,7 @@ namespace LegalMateAI.API.Controllers
             if (userId == Guid.Empty)
                 return Unauthorized(ApiResponse<object>.Unauthorized());
 
-            var appointments = await _appointmentService.GetLawyerAppointmentsAsync(userId, "Pending");
+            var appointments = await _appointmentService.GetPendingAppointmentsForLawyerAsync(userId);
             return Ok(ApiResponse<List<AppointmentResponseDto>>.Ok(appointments));
         }
 
@@ -172,13 +172,13 @@ namespace LegalMateAI.API.Controllers
         }
 
         // ================================================================
-        // 🗑️ إلغاء موعد (بموافقة الطرفين)
+        // 🗑️ طلب إلغاء موعد (يتطلب موافقة الطرف الآخر)
         // ================================================================
 
-        [HttpDelete("{id}")]
+        [HttpPost("{id}/cancel")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> CancelAppointment(Guid id, [FromBody] string? reason = null)
+        public async Task<IActionResult> RequestCancelAppointment(Guid id, [FromBody] string? reason = null)
         {
             var userId = GetUserId();
             var userRole = GetUserRole();
@@ -193,9 +193,48 @@ namespace LegalMateAI.API.Controllers
 
             var result = await _appointmentService.CancelAppointmentAsync(id, userId, reason);
             if (!result) 
-                return BadRequest(ApiResponse<object>.BadRequest("لا يمكن إلغاء هذا الموعد"));
+                return BadRequest(ApiResponse<object>.BadRequest("لا يمكن إلغاء هذا الموعد أو يوجد طلب إلغاء نشط بالفعل"));
 
-            return Ok(ApiResponse<object>.Ok("تم إلغاء الموعد بنجاح"));
+            return Ok(ApiResponse<object>.Ok("تم إرسال طلب إلغاء الموعد - في انتظار موافقة الطرف الآخر"));
+        }
+
+        // ================================================================
+        // ✅ الموافقة/رفض طلب إلغاء
+        // ================================================================
+
+        [HttpPut("cancel-request/{cancelRequestId}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RespondToCancelRequest(Guid cancelRequestId, [FromBody] RespondToCancelRequestDto request)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty) return Unauthorized(ApiResponse<object>.Unauthorized());
+
+            var result = await _appointmentService.RespondToCancelRequestAsync(userId, cancelRequestId, request.Approve, request.Reason);
+            if (!result) return NotFound(ApiResponse<object>.NotFound("طلب الإلغاء غير موجود أو ليس لديك صلاحية"));
+
+            var message = request.Approve ? "تم قبول طلب الإلغاء" : "تم رفض طلب الإلغاء";
+            return Ok(ApiResponse<object>.Ok(message));
+        }
+
+        // ================================================================
+        // 📋 طلبات الإلغاء المعلقة
+        // ================================================================
+
+        [HttpGet("cancel-requests/pending")]
+        [ProducesResponseType(typeof(ApiResponse<List<CancelRequestResponseDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPendingCancelRequests()
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty) return Unauthorized(ApiResponse<object>.Unauthorized());
+
+            List<CancelRequestResponseDto> requests;
+            if (IsLawyer())
+                requests = await _appointmentService.GetPendingCancelRequestsForLawyerAsync(userId);
+            else
+                requests = await _appointmentService.GetPendingCancelRequestsForUserAsync(userId);
+
+            return Ok(ApiResponse<List<CancelRequestResponseDto>>.Ok(requests));
         }
 
         // ================================================================
@@ -220,7 +259,7 @@ namespace LegalMateAI.API.Controllers
             var result = await _appointmentService.RequestRescheduleAsync(userId, request, IsLawyer());
             if (result == null) return BadRequest(ApiResponse<object>.BadRequest("لا يمكن إعادة جدولة الموعد - الوقت غير متاح"));
 
-            return Ok(ApiResponse<RescheduleResponseDto>.Ok(result, "تم طلب إعادة الجدولة بنجاح"));
+            return Ok(ApiResponse<RescheduleResponseDto>.Ok(result, "تم طلب إعادة الجدولة بنجاح - في انتظار موافقة الطرف الآخر"));
         }
 
         // ================================================================
@@ -235,7 +274,7 @@ namespace LegalMateAI.API.Controllers
             if (userId == Guid.Empty) return Unauthorized(ApiResponse<object>.Unauthorized());
 
             var result = await _appointmentService.RespondToRescheduleAsync(userId, rescheduleId, request, IsLawyer());
-            if (!result) return NotFound(ApiResponse<object>.NotFound("طلب إعادة الجدولة غير موجود"));
+            if (!result) return NotFound(ApiResponse<object>.NotFound("طلب إعادة الجدولة غير موجود أو ليس لديك صلاحية"));
 
             var message = request.Status == RescheduleStatus.Approved ? "تم قبول طلب إعادة الجدولة" : "تم رفض طلب إعادة الجدولة";
             return Ok(ApiResponse<object>.Ok(message));

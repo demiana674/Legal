@@ -15,7 +15,8 @@ namespace LegalMateAI.Domain.Enums
         Rescheduled = 3,
         Completed = 4,
         Cancelled = 5,
-        NoShow = 6
+        NoShow = 6,
+        CancellationRequested = 7
     }
 }
 

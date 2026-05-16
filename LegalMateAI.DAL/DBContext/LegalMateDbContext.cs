@@ -26,6 +26,7 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<LawyerAvailability> LawyerAvailabilities { get; set; }
         public DbSet<LawyerReview> LawyerReviews { get; set; }
         public DbSet<Document> Documents { get; set; }
+        public DbSet<AppointmentCancelRequest> AppointmentCancelRequests { get; set; }
         public DbSet<DocumentAnalysis> DocumentAnalyses { get; set; }
         public DbSet<ClauseAnalysis> ClauseAnalyses { get; set; }
         public DbSet<RiskAssessment> RiskAssessments { get; set; }
@@ -99,6 +100,15 @@ namespace LegalMateAI.DAL.DBContext
                 .WithMany(ls => ls.LawyerProfiles)
                 .HasForeignKey(lps => lps.SpecialtyId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<AppointmentCancelRequest>(entity =>
+{
+    entity.HasKey(e => e.Id);
+    
+    entity.HasOne(e => e.Appointment)
+        .WithMany(a => a.CancelRequests)
+        .HasForeignKey(e => e.AppointmentId)
+        .OnDelete(DeleteBehavior.Cascade);
+});    
 
             modelBuilder.Entity<LegalSpecialization>()
                 .Property(l => l.Id)

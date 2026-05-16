@@ -130,7 +130,7 @@ builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
 builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
 
-// ===== ML & Analytics Services (NEW) =====
+// ===== ML & Analytics Services =====
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 builder.Services.AddScoped<IDataWarehouseService, DataWarehouseService>();
 builder.Services.AddScoped<IDataMiningService, DataMiningService>();
@@ -182,6 +182,7 @@ using (var scope = app.Services.CreateScope())
     {
         await context.Database.EnsureCreatedAsync();
 
+        // ===== Seed Governorates =====
         var governorates = EgyptData.GetGovernorates();
         foreach (var gov in governorates)
         {
@@ -191,6 +192,7 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation($"✅ Seeded {await context.Governorates.CountAsync()} governorates");
 
+        // ===== Seed Cities =====
         var cities = EgyptData.GetCities();
         foreach (var city in cities)
         {
@@ -200,16 +202,23 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation($"✅ Seeded {await context.Cities.CountAsync()} cities");
 
+        // ===== Seed Admins =====
         var admins = AdminSeedData.GetDefaultAdmins(configuration, encryption);
         var addedAdmins = new List<Admin>();
         foreach (var admin in admins)
         {
             var existing = await context.Admins.FirstOrDefaultAsync(a => a.Email == admin.Email);
-            if (existing == null) { await context.Admins.AddAsync(admin); addedAdmins.Add(admin); logger.LogInformation($"✅ Added admin: {admin.FullName}"); }
+            if (existing == null) 
+            { 
+                await context.Admins.AddAsync(admin); 
+                addedAdmins.Add(admin); 
+                logger.LogInformation($"✅ Added admin: {admin.FullName}"); 
+            }
             else addedAdmins.Add(existing);
         }
         await context.SaveChangesAsync();
 
+        // ===== Seed Admin Profiles =====
         foreach (var profile in AdminSeedData.GetDefaultAdminProfiles(configuration, encryption, addedAdmins))
         {
             if (!await context.AdminProfiles.AnyAsync(p => p.AdminId == profile.AdminId))
@@ -218,6 +227,7 @@ using (var scope = app.Services.CreateScope())
         await context.SaveChangesAsync();
         logger.LogInformation($"✅ Seeded admin profiles");
 
+        // ===== Seed Lawyer Specialties =====
         try
         {
             if (!await context.LawyerSpecialties.AnyAsync())
@@ -229,6 +239,7 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Lawyer specialties: {ex.Message}"); }
 
+        // ===== Seed Legal Specializations =====
         try
         {
             if (!await context.LegalSpecializations.AnyAsync())
@@ -240,6 +251,7 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Legal specializations: {ex.Message}"); }
 
+        // ===== Seed Laws =====
         try
         {
             var lawsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "manshurat_laws_final_clean.json");
@@ -250,32 +262,25 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Laws: {ex.Message}"); }
 
+        // ===== Seed Contract Templates from Word files ONLY =====
         try
         {
-            var contractsPath = Path.Combine(app.Environment.ContentRootPath, "SeedData", "contracts.json");
-            if (File.Exists(contractsPath))
+            var templatesFolder = Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "uploads", "contracts", "templates");
+            if (!Directory.Exists(templatesFolder))
             {
-                var contractsJson = await File.ReadAllTextAsync(contractsPath);
-                var contractsData = JsonSerializer.Deserialize<List<ContractSeedDto>>(contractsJson);
-                if (contractsData?.Any() == true)
-                {
-                    foreach (var c in contractsData)
-                    {
-                        var template = new ContractTemplate
-                        {
-                            Id = Guid.NewGuid(), Name = c.name ?? "عقد",
-                            Type = Enum.TryParse<ContractType>(c.type, out var ct) ? ct : ContractType.Other,
-                            Description = c.description ?? "",
-                            TemplateContent = c.pdfUrl ?? c.sourceUrl ?? "",
-                            IsActive = true, CreatedAt = DateTime.UtcNow
-                        };
-                        await context.ContractTemplates.AddAsync(template);
-                    }
-                    await context.SaveChangesAsync();
-                }
+                Directory.CreateDirectory(templatesFolder);
+                logger.LogInformation($"✅ Created templates folder: {templatesFolder}");
+                logger.LogWarning("⚠️ Please add .docx template files to: {TemplatesFolder}", templatesFolder);
+            }
+            else
+            {
+                await ContractTemplateSeeder.SeedTemplatesAsync(context, app.Environment.WebRootPath ?? "wwwroot", logger);
             }
         }
-        catch (Exception ex) { logger.LogWarning($"⚠️ Contracts: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            logger.LogWarning($"⚠️ Contract templates seeding: {ex.Message}");
+        }
 
         logger.LogInformation("═══════════════════════════════════════");
         logger.LogInformation("✅ Database seeding completed!");
@@ -312,13 +317,3 @@ app.MapGet("/api/health", () => new { status = "healthy", timestamp = DateTime.U
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
-
-public class ContractSeedDto
-{
-    public string? name { get; set; }
-    public string? type { get; set; }
-    public string? description { get; set; }
-    public string? sourceUrl { get; set; }
-    public string? pdfUrl { get; set; }
-    public string? searchKeywords { get; set; }
-}

@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/IService/IContractService.cs
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.Domain.Enums;
@@ -10,6 +9,9 @@ namespace LegalMateAI.BLL.Services.IService
         // ========== القوالب ==========
         Task<List<ContractTemplateResponseDto>> GetContractTemplatesAsync(ContractType? type = null, string? search = null);
         Task<ContractTemplateResponseDto?> GetTemplateByIdAsync(Guid templateId);
+        Task<List<string>> GetTemplatePlaceholdersAsync(Guid templateId);
+        Task<TemplateAnalysisDto> AnalyzeTemplateFullAsync(Guid templateId);
+        Task<List<string>> ExtractAndReplaceEmptySpacesAsync(Guid templateId);
         
         // ========== توليد العقود ==========
         Task<ContractResponseDto?> GenerateContractFromTemplateAsync(Guid userId, GenerateContractRequest request);
@@ -28,6 +30,10 @@ namespace LegalMateAI.BLL.Services.IService
         
         // ========== تحميل ==========
         Task<byte[]?> DownloadAnyContractAsync(Guid contractId);
+        
+        // ========== أدوات إدارة القوالب (Admin Only) ==========
+        Task<int> ConvertAllDocToDocxAsync();
+        Task<int> AddPlaceholdersToAllTemplatesAsync();  // ✅ جديد
     }
 
     public class GenerateContractRequest

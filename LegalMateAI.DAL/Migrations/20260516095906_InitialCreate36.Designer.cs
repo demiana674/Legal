@@ -4,6 +4,7 @@ using LegalMateAI.DAL.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegalMateAI.DAL.Migrations
 {
     [DbContext(typeof(LegalMateDbContext))]
-    partial class LegalMateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260516095906_InitialCreate36")]
+    partial class InitialCreate36
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -693,6 +696,7 @@ namespace LegalMateAI.DAL.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
@@ -702,11 +706,11 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TemplateContent")
-                        .IsRequired()
+                    b.PrimitiveCollection<string>("Placeholders")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TemplateFilePath")
+                    b.Property<string>("TemplateContent")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Type")

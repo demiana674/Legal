@@ -31,8 +31,10 @@ namespace LegalMateAI.Domain.Entities
         public bool IsUrgent { get; set; }
         
         // Navigation properties
-        // public User User { get; set; } = null!;
+        public User User { get; set; } = null!;
+        // public UserProfile User { get; set; } = null!;
         public LawyerProfile Lawyer { get; set; } = null!;
+        public virtual ICollection<AppointmentCancelRequest> CancelRequests { get; set; } = new List<AppointmentCancelRequest>();
         public ICollection<AppointmentReschedule> Reschedules { get; set; } = new List<AppointmentReschedule>();
     }
 }

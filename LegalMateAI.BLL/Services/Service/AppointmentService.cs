@@ -96,8 +96,14 @@ namespace LegalMateAI.BLL.Services.Service
                 .ThenInclude(l => l!.User)
                 .Where(a => a.UserID == userId);
 
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<AppointmentStatus>(status, true, out var s))
+            if (string.IsNullOrEmpty(status))
+            {
+                query = query.Where(a => a.Status != AppointmentStatus.Pending);
+            }
+            else if (Enum.TryParse<AppointmentStatus>(status, true, out var s))
+            {
                 query = query.Where(a => a.Status == s);
+            }
 
             return (await query.OrderByDescending(a => a.Date).ToListAsync())
                 .Select(a => MapToDto(a, null))
@@ -114,8 +120,14 @@ namespace LegalMateAI.BLL.Services.Service
                 .ThenInclude(l => l!.User)
                 .Where(a => a.LawyerId == lawyerProfile.Id);
 
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<AppointmentStatus>(status, true, out var s))
+            if (string.IsNullOrEmpty(status))
+            {
+                query = query.Where(a => a.Status != AppointmentStatus.Pending);
+            }
+            else if (Enum.TryParse<AppointmentStatus>(status, true, out var s))
+            {
                 query = query.Where(a => a.Status == s);
+            }
 
             return (await query.OrderByDescending(a => a.Date).ToListAsync())
                 .Select(a => MapToDto(a, null))
@@ -135,29 +147,155 @@ namespace LegalMateAI.BLL.Services.Service
             return MapToDto(appointment, user);
         }
 
-        // ========== إلغاء (بموافقة الطرفين) ==========
+        // ========== المواعيد المعلقة فقط ==========
+
+        public async Task<List<AppointmentResponseDto>> GetPendingAppointmentsForLawyerAsync(Guid lawyerId)
+        {
+            var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            if (lawyerProfile == null) return new List<AppointmentResponseDto>();
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Lawyer)
+                .ThenInclude(l => l!.User)
+                .Where(a => a.LawyerId == lawyerProfile.Id && a.Status == AppointmentStatus.Pending)
+                .OrderByDescending(a => a.RequestedAt)
+                .ToListAsync();
+
+            return appointments.Select(a => MapToDto(a, null)).ToList();
+        }
+
+        public async Task<List<AppointmentResponseDto>> GetPendingAppointmentsForUserAsync(Guid userId)
+        {
+            var appointments = await _context.Appointments
+                .Include(a => a.Lawyer)
+                .ThenInclude(l => l!.User)
+                .Where(a => a.UserID == userId && a.Status == AppointmentStatus.Pending)
+                .OrderByDescending(a => a.RequestedAt)
+                .ToListAsync();
+
+            return appointments.Select(a => MapToDto(a, null)).ToList();
+        }
+
+        // ========== إلغاء (يتطلب موافقة الطرفين) ==========
 
         public async Task<bool> CancelAppointmentAsync(Guid appointmentId, Guid userId, string? reason = null)
         {
-            var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == appointmentId);
+            var appointment = await _context.Appointments
+                .Include(a => a.CancelRequests)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+                
             if (appointment == null) return false;
             
-            if (appointment.Status == AppointmentStatus.Completed || appointment.Status == AppointmentStatus.Cancelled)
+            if (appointment.Status == AppointmentStatus.Completed || 
+                appointment.Status == AppointmentStatus.Cancelled ||
+                appointment.Status == AppointmentStatus.Pending)
                 return false;
 
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
             
-            bool isParticipant = appointment.UserID == userId;
+            bool isUser = appointment.UserID == userId;
             bool isLawyer = lawyerProfile != null && appointment.LawyerId == lawyerProfile.Id;
             
-            if (!isParticipant && !isLawyer)
+            if (!isUser && !isLawyer)
                 return false;
 
-            appointment.Status = AppointmentStatus.Cancelled;
-            appointment.CancelledAt = DateTime.UtcNow;
-            appointment.CancellationReason = reason;
+            var existingRequest = await _context.AppointmentCancelRequests
+                .FirstOrDefaultAsync(c => c.AppointmentId == appointmentId && c.Status == CancelRequestStatus.Pending);
+            
+            if (existingRequest != null)
+                return false;
+
+            var cancelRequest = new AppointmentCancelRequest
+            {
+                Id = Guid.NewGuid(),
+                AppointmentId = appointmentId,
+                RequestedBy = isLawyer ? CancelInitiator.Lawyer : CancelInitiator.User,
+                Reason = reason ?? "لم يتم تقديم سبب",
+                Status = CancelRequestStatus.Pending,
+                RequestedAt = DateTime.UtcNow
+            };
+
+            _context.AppointmentCancelRequests.Add(cancelRequest);
+            appointment.Status = AppointmentStatus.CancellationRequested;
+            
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> RespondToCancelRequestAsync(Guid userId, Guid cancelRequestId, bool approve, string? responseReason = null)
+        {
+            var cancelRequest = await _context.AppointmentCancelRequests
+                .Include(c => c.Appointment)
+                .ThenInclude(a => a!.Lawyer)
+                .ThenInclude(l => l!.User)
+                .FirstOrDefaultAsync(c => c.Id == cancelRequestId);
+
+            if (cancelRequest == null) return false;
+            if (cancelRequest.Status != CancelRequestStatus.Pending) return false;
+
+            var appointment = cancelRequest.Appointment;
+            var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
+
+            bool isUser = appointment.UserID == userId;
+            bool isLawyer = lawyerProfile != null && appointment.LawyerId == lawyerProfile.Id;
+
+            if (!isUser && !isLawyer) return false;
+            
+            // لا يمكن للشخص الذي طلب الإلغاء أن يرد على طلبه
+            if ((cancelRequest.RequestedBy == CancelInitiator.Lawyer && isLawyer) ||
+                (cancelRequest.RequestedBy == CancelInitiator.User && isUser))
+                return false;
+
+            cancelRequest.Status = approve ? CancelRequestStatus.Approved : CancelRequestStatus.Rejected;
+            cancelRequest.RespondedAt = DateTime.UtcNow;
+            cancelRequest.ResponseReason = responseReason;
+
+            if (approve)
+            {
+                appointment.Status = AppointmentStatus.Cancelled;
+                appointment.CancelledAt = DateTime.UtcNow;
+                appointment.CancellationReason = cancelRequest.Reason;
+            }
+            else
+            {
+                appointment.Status = AppointmentStatus.Confirmed;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<CancelRequestResponseDto>> GetPendingCancelRequestsForUserAsync(Guid userId)
+        {
+            var cancelRequests = await _context.AppointmentCancelRequests
+                .Include(c => c.Appointment)
+                .ThenInclude(a => a!.Lawyer)
+                .ThenInclude(l => l!.User)
+                .Where(c => c.Appointment.UserID == userId && 
+                           c.Status == CancelRequestStatus.Pending &&
+                           c.RequestedBy != CancelInitiator.User)
+                .OrderByDescending(c => c.RequestedAt)
+                .ToListAsync();
+
+            return cancelRequests.Select(MapCancelRequestToDto).ToList();
+        }
+
+        public async Task<List<CancelRequestResponseDto>> GetPendingCancelRequestsForLawyerAsync(Guid lawyerId)
+        {
+            var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            if (lawyerProfile == null) return new List<CancelRequestResponseDto>();
+
+            var cancelRequests = await _context.AppointmentCancelRequests
+                .Include(c => c.Appointment)
+                .ThenInclude(a => a!.Lawyer)
+                .ThenInclude(l => l!.User)
+                .Where(c => c.Appointment.LawyerId == lawyerProfile.Id && 
+                           c.Status == CancelRequestStatus.Pending &&
+                           c.RequestedBy != CancelInitiator.Lawyer)
+                .OrderByDescending(c => c.RequestedAt)
+                .ToListAsync();
+
+            return cancelRequests.Select(MapCancelRequestToDto).ToList();
         }
 
         // ========== إعادة الجدولة ==========
@@ -214,6 +352,11 @@ namespace LegalMateAI.BLL.Services.Service
             if (!isLawyer && appointment.UserID != userId) return false;
             if (isLawyer && (lawyerProfile == null || appointment.LawyerId != lawyerProfile.Id)) return false;
 
+            // لا يمكن للشخص الذي طلب إعادة الجدولة أن يرد على طلبه
+            if ((reschedule.InitiatedBy == RescheduleInitiator.Lawyer && isLawyer) ||
+                (reschedule.InitiatedBy == RescheduleInitiator.User && !isLawyer))
+                return false;
+
             reschedule.Status = request.Status;
             reschedule.RespondedAt = DateTime.UtcNow;
 
@@ -237,22 +380,28 @@ namespace LegalMateAI.BLL.Services.Service
             var lawyerProfile = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == lawyerId);
             if (lawyerProfile == null) return new List<RescheduleResponseDto>();
 
-            return await _context.AppointmentReschedules
+            var requests = await _context.AppointmentReschedules
                 .Include(r => r.Appointment)
-                .Where(r => r.Appointment.LawyerId == lawyerProfile.Id && r.Status == RescheduleStatus.Pending)
+                .Where(r => r.Appointment.LawyerId == lawyerProfile.Id && 
+                           r.Status == RescheduleStatus.Pending &&
+                           r.InitiatedBy != RescheduleInitiator.Lawyer)
                 .OrderBy(r => r.RequestedAt)
-                .Select(r => MapRescheduleToDto(r))
                 .ToListAsync();
+
+            return requests.Select(MapRescheduleToDto).ToList();
         }
 
         public async Task<List<RescheduleResponseDto>> GetRescheduleRequestsForUserAsync(Guid userId)
         {
-            return await _context.AppointmentReschedules
+            var requests = await _context.AppointmentReschedules
                 .Include(r => r.Appointment)
-                .Where(r => r.Appointment.UserID == userId && r.Status == RescheduleStatus.Pending)
+                .Where(r => r.Appointment.UserID == userId && 
+                           r.Status == RescheduleStatus.Pending &&
+                           r.InitiatedBy != RescheduleInitiator.User)
                 .OrderBy(r => r.RequestedAt)
-                .Select(r => MapRescheduleToDto(r))
                 .ToListAsync();
+
+            return requests.Select(MapRescheduleToDto).ToList();
         }
 
         // ========== Helpers ==========
@@ -316,7 +465,8 @@ namespace LegalMateAI.BLL.Services.Service
             RequestedAt = a.RequestedAt,
             ConfirmedAt = a.ConfirmedAt,
             UserId = a.UserID,
-            LawyerId = a.LawyerId,
+            // ✅ نرجع UserId بتاع المحامي مش LawyerProfile.Id
+            LawyerId = a.Lawyer?.UserId ?? Guid.Empty,
             User = new UserBriefDto 
             { 
                 Id = a.UserID, 
@@ -330,7 +480,7 @@ namespace LegalMateAI.BLL.Services.Service
             }
         };
 
-        private RescheduleResponseDto MapRescheduleToDto(AppointmentReschedule r) => new()
+        private static RescheduleResponseDto MapRescheduleToDto(AppointmentReschedule r) => new()
         {
             Id = r.Id,
             OldDate = r.OldDate,
@@ -341,6 +491,22 @@ namespace LegalMateAI.BLL.Services.Service
             Status = r.Status,
             Reason = r.Reason,
             RequestedAt = r.RequestedAt
+        };
+
+        private static CancelRequestResponseDto MapCancelRequestToDto(AppointmentCancelRequest c) => new()
+        {
+            Id = c.Id,
+            AppointmentId = c.AppointmentId,
+            RequestedBy = c.RequestedBy,
+            Reason = c.Reason,
+            Status = c.Status,
+            RequestedAt = c.RequestedAt,
+            RespondedAt = c.RespondedAt,
+            ResponseReason = c.ResponseReason,
+            AppointmentDate = c.Appointment?.Date ?? default,
+            AppointmentTime = c.Appointment?.Time ?? "",
+            LawyerName = c.Appointment?.Lawyer?.User?.FullName ?? "",
+            UserName = c.Appointment?.User?.FullName ?? ""
         };
     }
 }

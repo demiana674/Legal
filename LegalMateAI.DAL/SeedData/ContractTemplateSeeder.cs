@@ -1,4 +1,3 @@
-// LegalMateAI.DAL/SeedData/ContractTemplateSeeder.cs
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
 using LegalMateAI.Domain.Enums;
@@ -35,7 +34,7 @@ namespace LegalMateAI.DAL.SeedData
                 var relativePath = filePath.Replace(webRootPath, "").Replace("\\", "/");
                 
                 var existingTemplate = await context.ContractTemplates
-                    .FirstOrDefaultAsync(t => t.TemplateContent == relativePath);
+                    .FirstOrDefaultAsync(t => t.TemplateFilePath == relativePath);
 
                 if (existingTemplate == null)
                 {
@@ -47,7 +46,8 @@ namespace LegalMateAI.DAL.SeedData
                         Name = Path.GetFileNameWithoutExtension(fileName),
                         Type = contractType,
                         Description = GetDescriptionFromFileName(fileName),
-                        TemplateContent = relativePath,
+                        TemplateFilePath = relativePath,
+                        TemplateContent = "", // للنصوص فقط (يترك فارغ)
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     };
