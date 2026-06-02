@@ -12,32 +12,30 @@ namespace LegalMateAI.Domain.Entities
         public User User { get; set; } = null!;
         
         // Professional Information
-        public string? LicenseNumber { get; set; }        // ✅ مشفر
+        public string? LicenseNumber { get; set; }
         public string? BarAssociation { get; set; }
         public DateTime? LicenseIssueDate { get; set; }
         public string? PracticeDegree { get; set; }
         public int? YearsOfExperience { get; set; }
         
-        // ✅ رقم الهاتف (مشفر)
         public string? PhoneNumber { get; set; }
-        
-        // ✅ هاتف بديل (مشفر)
         public string? AlternativePhone { get; set; }
         
         // Location
         public int? GovernorateId { get; set; }
         public Governorate? Governorate { get; set; }
-        
-        // ✅ معرف المدينة (بدل النص)
         public int? CityId { get; set; }
         public City? City { get; set; }
-        
         public string? OfficeAddress { get; set; }
         
-        // Verification
-        public LawyerVerificationStatus VerificationStatus { get; set; } = LawyerVerificationStatus.Pending;
+        //  بيانات الموافقة والرفض (تبقى هنا)
         public DateTime? VerifiedAt { get; set; }
         public string? RejectionReason { get; set; }
+        
+        //  خصائص التعليق
+        public string? SuspensionReason { get; set; }
+        public DateTime? SuspendedAt { get; set; }
+        public DateTime? ActivatedAt { get; set; }
         
         // Timestamps
         public DateTime CreatedAt { get; set; }
@@ -48,6 +46,8 @@ namespace LegalMateAI.Domain.Entities
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
         public ICollection<LawyerAvailability> Availabilities { get; set; } = new List<LawyerAvailability>();
         public ICollection<LawyerReview> Reviews { get; set; } = new List<LawyerReview>();
+         public virtual ICollection<LawyerSpecialization> Specializations { get; set; } = new List<LawyerSpecialization>();
+	
         public ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
         public ICollection<LawyerProfileSpecialty> Specialties { get; set; } = new List<LawyerProfileSpecialty>();
     }

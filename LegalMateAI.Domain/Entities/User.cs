@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LegalMateAI.Domain.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LegalMateAI.Domain.Entities
 {
@@ -9,7 +10,10 @@ namespace LegalMateAI.Domain.Entities
         public Guid UserID { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        
+        [NotMapped]
         public string FullName => $"{FirstName} {LastName}";
+        
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public string? Phone { get; set; }
@@ -17,21 +21,21 @@ namespace LegalMateAI.Domain.Entities
         public string? Nationality { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public UserRole Role { get; set; }
+        
         public AccountStatus Status { get; set; } = AccountStatus.Pending;
         
-        /// <summary>
-        /// افتراضياً false، يتم تفعيله حسب الحالة:
-        /// - المستخدم العادي: يصبح true فور التسجيل
-        /// - المحامي: يبقى false حتى موافقة الأدمن
-        /// - المعلق: يصبح false
-        /// </summary>
-        public bool IsActive { get; set; } = false;
+        [NotMapped]
+        public bool IsActive => Status == AccountStatus.Active;
         
         public bool EmailVerified { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLogin { get; set; }
         public DateTime JoinDate { get; set; }
         public string? ProfilePicture { get; set; }
+        
+        public string? SuspensionReason { get; set; }
+        public DateTime? SuspendedAt { get; set; }
+        public DateTime? ActivatedAt { get; set; }
         
         // Relationships
         public LawyerProfile? LawyerProfile { get; set; }

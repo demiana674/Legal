@@ -120,6 +120,7 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ILawyerProfileService, LawyerProfileService>();
 builder.Services.AddScoped<IAdminProfileService, AdminProfileService>();
+builder.Services.AddSingleton<IWebHostEnvironment>(builder.Environment);
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<ICaseService, CaseService>();
 builder.Services.AddScoped<PdfGenerationService>();
@@ -127,7 +128,7 @@ builder.Services.AddScoped<ILawService, LawService>();
 builder.Services.AddScoped<ILawyerBranchService, LawyerBranchService>();
 builder.Services.AddScoped<LawParserService>();
 builder.Services.AddScoped<ILogService, LogService>();
-builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
+// builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
 builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
 
 // ===== ML & Analytics Services =====

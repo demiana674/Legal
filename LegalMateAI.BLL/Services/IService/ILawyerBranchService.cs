@@ -2,6 +2,7 @@
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.UpdateDTO;
+
 namespace LegalMateAI.BLL.Services.IService
 {
     public interface ILawyerBranchService

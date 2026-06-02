@@ -2,6 +2,7 @@
 using System;
 using LegalMateAI.Domain.Enums;
 using System.Text.Json.Serialization; 
+
 namespace LegalMateAI.DTOs.ReadDTO
 {
     public class UserResponseDto
@@ -11,9 +12,10 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string LastName { get; set; } = string.Empty;
         public string FullName => $"{FirstName} {LastName}";
         public string Email { get; set; } = string.Empty;
-         public string? ProfilePicture { get; set; } 
+        public string? ProfilePicture { get; set; } 
         public string PhoneNumber { get; set; } = string.Empty;
-         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? AlternativePhone { get; set; } 
         public string? NationalId { get; set; }
         
@@ -22,11 +24,21 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? GovernorateName { get; set; }
         public string? CityName { get; set; }
         public string? Address { get; set; }
-        // public string? Gender { get; set; } 
         public string? Nationality { get; set; } 
         public UserRole Role { get; set; }
         public string RoleName => Role.ToString();
+        
+        //  الحالة الأساسية
         public AccountStatus Status { get; set; }
+        
+        // للتوافق مع الفرونت القديم - نفس قيمة Status
+        public string VerificationStatus => Status.ToString();
+        
+        //  خصائص التعليق
+        public string? SuspensionReason { get; set; }
+        public DateTime? SuspendedAt { get; set; }
+        public DateTime? ActivatedAt { get; set; }
+        
         public bool EmailVerified { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? DateOfBirth { get; set; }
@@ -34,6 +46,5 @@ namespace LegalMateAI.DTOs.ReadDTO
         public int DocumentsCount { get; set; }
         public int ContractsCount { get; set; }
         public int AppointmentsCount { get; set; }
-        // public string? LastPasswordChange { get; set; }
     }
 }

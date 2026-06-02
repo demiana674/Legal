@@ -631,7 +631,9 @@ namespace LegalMateAI.BLL.Services.Service
             return await _context.LawyerProfiles
                 .Include(lp => lp.User)
                 .Include(lp => lp.Reviews)
-                .Where(lp => lp.VerificationStatus == LawyerVerificationStatus.Active)
+                // .Where(lp => lp.VerificationStatus == LawyerVerificationStatus.Active)
+                // ✅ بعد التعديل
+               .Where(lp => lp.User.Status == AccountStatus.Active)
                 .Select(lp => new LawyerLeaderboardDto
                 {
                     LawyerId = lp.Id,

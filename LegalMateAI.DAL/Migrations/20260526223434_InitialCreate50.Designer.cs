@@ -4,6 +4,7 @@ using LegalMateAI.DAL.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegalMateAI.DAL.Migrations
 {
     [DbContext(typeof(LegalMateDbContext))]
-    partial class LegalMateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526223434_InitialCreate50")]
+    partial class InitialCreate50
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -185,7 +188,7 @@ namespace LegalMateAI.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("BranchId")
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CancellationReason")
@@ -1931,8 +1934,7 @@ namespace LegalMateAI.DAL.Migrations
                     b.HasOne("LegalMateAI.Domain.Entities.LawyerBranch", "Branch")
                         .WithMany("Appointments")
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
                         .WithMany()
@@ -2308,12 +2310,12 @@ namespace LegalMateAI.DAL.Migrations
             modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSpecialization", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
-                        .WithMany("Specializations")
+                        .WithMany()
                         .HasForeignKey("LawyerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LegalMateAI.Domain.Entities.LawyerSpecialty", "Specialization")
+                    b.HasOne("LegalMateAI.Domain.Entities.LegalSpecialization", "Specialization")
                         .WithMany()
                         .HasForeignKey("SpecializationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2469,8 +2471,6 @@ namespace LegalMateAI.DAL.Migrations
                     b.Navigation("Contracts");
 
                     b.Navigation("Reviews");
-
-                    b.Navigation("Specializations");
 
                     b.Navigation("Specialties");
                 });

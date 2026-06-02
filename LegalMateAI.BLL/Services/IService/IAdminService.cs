@@ -15,41 +15,23 @@ namespace LegalMateAI.BLL.Services.IService
         Task<UserResponseDto?> GetUserDetailsAsync(Guid userId);
         Task<bool> UpdateUserStatusAsync(Guid adminId, Guid userId, AccountStatus status, string? reason = null);
         Task<bool> DeleteUserAsync(Guid adminId, Guid userId);
+        
+        //  دوال تعليق وتفعيل المستخدمين
+        Task<bool> SuspendUserAsync(Guid adminId, Guid userId, string? reason = null);
+        Task<bool> ActivateUserAsync(Guid adminId, Guid userId);
+        Task<List<UserResponseDto>> GetSuspendedUsersAsync();
 
         // ==================== Lawyer Management ====================
         Task<List<PendingLawyerDto>> GetPendingLawyersAsync();
         Task<List<LawyerResponseDto>> GetAllLawyersAsync(LawyerFilterDto? filter = null);
         Task<LawyerResponseDto?> GetLawyerDetailsAsync(Guid lawyerId);
         
-        /// <summary>
-        /// ✅ الموافقة على محامي - تغيير الحالة من Pending إلى Active
-        /// </summary>
         Task<bool> ApproveLawyerAsync(Guid userId);
-        
-        /// <summary>
-        /// ✅ رفض محامي - حذف نهائي من النظام
-        /// </summary>
         Task<bool> RejectLawyerAsync(Guid userId, string reason);
-        
-        /// <summary>
-        /// ✅ تعليق محامي (للحسابات النشطة)
-        /// </summary>
         Task<bool> SuspendLawyerAsync(Guid userId, string? reason = null);
-        
-        /// <summary>
-        /// ✅ إعادة تنشيط محامي
-        /// </summary>
         Task<bool> ActivateLawyerAsync(Guid userId);
-        
-        /// <summary>
-        /// ✅ حذف محامي نهائي
-        /// </summary>
+        Task<List<LawyerResponseDto>> GetSuspendedLawyersAsync();
         Task<bool> DeleteLawyerAsync(Guid userId);
-        
-        /// <summary>
-        /// ✅ تحديث حالة المحامي العامة
-        /// </summary>
-        Task<bool> UpdateLawyerStatusAsync(Guid userId, LawyerVerificationStatus status, string? notes = null);
 
         // ==================== Log Management ====================
         Task<PaginatedLogsDto<AdminLogDto>> GetAllLogsAsync(LogFilterDto? filter = null);

@@ -1,7 +1,7 @@
 // LegalMateAI.API/Controllers/LocationsController.cs
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
-
+using LegalMateAI.DTOs.ReadDTO;
 namespace LegalMateAI.API.Controllers
 {
     [ApiController]
@@ -22,27 +22,18 @@ namespace LegalMateAI.API.Controllers
             return Ok(governorates);
         }
 
-        // [HttpGet("governorates/{id}/cities")]
-        // public async Task<IActionResult> GetCitiesByGovernorate(int id)
-        // {
-        //     var cities = await _locationService.GetCitiesByGovernorateAsync(id);
-        //     return Ok(cities);
-        // }
-
-
         [HttpGet("governorates/{id}/cities")]
-public async Task<IActionResult> GetCitiesByGovernorate(int id)
-{
-    if (id <= 0)
-        return BadRequest("رقم المحافظة غير صحيح");
+        public async Task<IActionResult> GetCitiesByGovernorate(int id)
+        {
+            if (id <= 0)
+                return BadRequest(new { message = "رقم المحافظة غير صحيح" });
 
-    var cities = await _locationService.GetCitiesByGovernorateAsync(id);
-    
-    // اختياري: إذا كنتِ تريدين إعلام الفرونت إند أن المحافظة لا تملك مدن مسجلة
-    if (cities == null || !cities.Any())
-        return NotFound("لا توجد مدن مسجلة لهذه المحافظة");
+            var cities = await _locationService.GetCitiesByGovernorateAsync(id);
+            
+            if (cities == null || !cities.Any())
+                return Ok(new List<CityListDto>()); // إرجاع قائمة فارغة بدلاً من NotFound
 
-    return Ok(cities);
-}
+            return Ok(cities);
+        }
     }
 }

@@ -1,3 +1,4 @@
+// LegalMateAI.API/Controllers/AppointmentsController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
@@ -7,6 +8,9 @@ using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.Domain.Enums;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using LegalMateAI.DAL.DBContext;
+using LegalMateAI.Domain.Entities;
 
 namespace LegalMateAI.API.Controllers
 {
@@ -17,13 +21,16 @@ namespace LegalMateAI.API.Controllers
     {
         private readonly IAppointmentService _appointmentService;
         private readonly ILogger<AppointmentsController> _logger;
+        private readonly LegalMateDbContext _context;
 
         public AppointmentsController(
             IAppointmentService appointmentService,
-            ILogger<AppointmentsController> logger)
+            ILogger<AppointmentsController> logger,
+            LegalMateDbContext context)
         {
             _appointmentService = appointmentService;
             _logger = logger;
+            _context = context;
         }
 
         private Guid GetUserId()
@@ -47,14 +54,61 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto request)
         {
             var userId = GetUserId();
+            var lawyerId = request.LawyerId;
+            
+            _logger.LogInformation($"========== DEBUG CREATE APPOINTMENT ==========");
+            _logger.LogInformation($"📌 UserId (العميل الحالي): {userId}");
+            _logger.LogInformation($"📌 LawyerId من الـ Request: {lawyerId}");
+            _logger.LogInformation($"📌 BranchId من الـ Request: {request.BranchId}");
+            _logger.LogInformation($"📌 Date: {request.Date}, Time: {request.Time}");
+            
             if (userId == Guid.Empty)
                 return Unauthorized(ApiResponse<object>.Unauthorized());
 
+            // ✅ التحقق من وجود المحامي
+            var lawyerExists = await _context.Users
+                .FirstOrDefaultAsync(u => u.UserID == lawyerId && u.Role == UserRole.Lawyer);
+            
+            if (lawyerExists == null)
+            {
+                _logger.LogWarning($"❌ لا يوجد مستخدم بهذا الـ UserId: {lawyerId}");
+                return BadRequest(ApiResponse<object>.BadRequest("المحامي غير موجود"));
+            }
+            
+            _logger.LogInformation($"✅ المحامي موجود: {lawyerExists.FullName}");
+            
+            // ✅ التحقق من وجود LawyerProfile
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            
+            if (lawyerProfile == null)
+            {
+                _logger.LogWarning($"❌ لا يوجد LawyerProfile للمحامي: {lawyerId}");
+                return BadRequest(ApiResponse<object>.BadRequest("بيانات المحامي غير مكتملة"));
+            }
+            
+            _logger.LogInformation($"✅ LawyerProfile موجود: {lawyerProfile.Id}");
+            
+            // ✅ التحقق من وجود الفرع
+            var branch = await _context.LawyerBranches
+                .FirstOrDefaultAsync(b => b.Id == request.BranchId && b.LawyerId == lawyerProfile.Id);
+            
+            if (branch == null)
+            {
+                _logger.LogWarning($"❌ الفرع غير موجود للمحامي: {request.BranchId}");
+                return BadRequest(ApiResponse<object>.BadRequest("الفرع غير موجود"));
+            }
+            
+            _logger.LogInformation($"✅ الفرع موجود: {branch.BranchName}");
+
             var result = await _appointmentService.CreateAppointmentAsync(userId, request);
             if (result == null)
+            {
+                _logger.LogWarning($"❌ الموعد غير متاح");
                 return BadRequest(ApiResponse<object>.BadRequest("الموعد غير متاح أو المحامي غير موجود"));
+            }
 
-            _logger.LogInformation("Appointment created: {AppointmentId}", result.Id);
+            _logger.LogInformation($"✅ Appointment created: {result.Id}");
             return Ok(ApiResponse<AppointmentResponseDto>.Ok(result, "تم حجز الموعد بنجاح - في انتظار موافقة المحامي"));
         }
 

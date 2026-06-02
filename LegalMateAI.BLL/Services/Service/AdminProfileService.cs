@@ -78,20 +78,27 @@ namespace LegalMateAI.BLL.Services.Service
                 DateOfBirth = profile?.DateOfBirth?.ToString("yyyy-MM-dd"),
                 Nationality = profile?.Nationality,
                 NationalId = Decrypt(profile?.NationalId),
-                Governorate = profile?.Governorate?.Name ?? "",  // تحويل إلى string (الاسم فقط)
-                City = profile?.City?.Name ?? "",                // تحويل إلى string (الاسم فقط)
+                Governorate = profile?.Governorate?.Name ?? "",
+                City = profile?.City?.Name ?? "",
                 Address = profile?.Address,
                 CreatedAt = admin.CreatedAt,
                 LastLoginAt = admin.LastLoginAt,
                 JoinDateFormatted = profile?.JoinDate?.ToString("MMMM yyyy", new System.Globalization.CultureInfo("ar-EG")),
                 Status = "نشط",
                 IsOnline = admin.LastLoginAt?.Date == DateTime.UtcNow.Date,
-                TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),
-                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer),
-                PendingVerifications = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
-                VerifiedToday = await _context.LawyerProfiles
-                    .CountAsync(l => l.VerifiedAt != null && l.VerifiedAt.Value.Date == DateTime.UtcNow.Date),
+                
+                // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
+                TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User && u.Status == AccountStatus.Active),
+                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Active),
+                
+                // ✅ المحامين المعلقين (Pending) من User.Status
+                PendingVerifications = await _context.Users
+                    .CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Pending),
+                
+                // ✅ تم توثيقهم اليوم من User.ActivatedAt
+                VerifiedToday = await _context.Users
+                    .CountAsync(u => u.Role == UserRole.Lawyer && u.ActivatedAt != null && u.ActivatedAt.Value.Date == DateTime.UtcNow.Date),
+                
                 TotalVerifiedLawyers = profile?.TotalVerifiedLawyers ?? 0,
                 TotalRejectedLawyers = profile?.TotalRejectedLawyers ?? 0,
                 CanVerifyLawyers = true,
@@ -120,31 +127,6 @@ namespace LegalMateAI.BLL.Services.Service
                 {
                     admin.Profile.AlternativePhone = _encryption.Encrypt(request.AlternativePhone);
                 }
-
-                // if (!string.IsNullOrEmpty(request.NationalId))
-                // {
-                //     admin.Profile.NationalId = _encryption.Encrypt(request.NationalId);
-                // }
-
-                // if (!string.IsNullOrEmpty(request.FirstName))
-                // {
-                //     admin.Profile.FirstName = request.FirstName;
-                // }
-
-                // if (!string.IsNullOrEmpty(request.LastName))
-                // {
-                //     admin.Profile.LastName = request.LastName;
-                // }
-
-                // if (!string.IsNullOrEmpty(request.JobTitle))
-                // {
-                //     admin.Profile.JobTitle = request.JobTitle;
-                // }
-
-                // if (!string.IsNullOrEmpty(request.Department))
-                // {
-                //     admin.Profile.Department = request.Department;
-                // }
 
                 if (!string.IsNullOrEmpty(request.Address))
                 {
@@ -234,10 +216,11 @@ namespace LegalMateAI.BLL.Services.Service
             var admin = await _context.Admins.Include(a => a.Profile).FirstOrDefaultAsync(a => a.Id == adminId);
             if (admin == null) return null;
 
+            // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
             var pendingLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                 .Where(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null &&
-                       u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Pending)
+                       u.Status == AccountStatus.Pending)
                 .OrderBy(u => u.CreatedAt)
                 .Take(10)
                 .Select(u => new PendingLawyerDto
@@ -253,26 +236,32 @@ namespace LegalMateAI.BLL.Services.Service
                     RegisteredAt = u.CreatedAt
                 }).ToListAsync();
 
-        var recentActivity = await _context.AdminLogs
-    .Where(l => l.ActorId == adminId)
-    .OrderByDescending(l => l.Timestamp)
-    .Take(10)
-    .Select(l => new AdminLogDto
-    {
-        Id = l.Id,
-        Name = l.ActorName,
-        Action = l.Action,
-        TargetType = l.TargetType,
-        TargetId = l.TargetId,
-        Timestamp = l.Timestamp
-    })
-    .ToListAsync();
+            var recentActivity = await _context.AdminLogs
+                .Where(l => l.ActorId == adminId)
+                .OrderByDescending(l => l.Timestamp)
+                .Take(10)
+                .Select(l => new AdminLogDto
+                {
+                    Id = l.Id,
+                    Name = l.ActorName,
+                    Action = l.Action,
+                    TargetType = l.TargetType,
+                    TargetId = l.TargetId,
+                    Timestamp = l.Timestamp
+                })
+                .ToListAsync();
+
             return new AdminDashboardDto
             {
-                TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User),
-                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer),
+                // ✅ التعديل: استخدام User.Status
+                TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User && u.Status == AccountStatus.Active),
+                TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Active),
                 PendingVerifications = pendingLawyers.Count,
-                VerifiedToday = await _context.LawyerProfiles.CountAsync(l => l.VerifiedAt != null && l.VerifiedAt.Value.Date == DateTime.UtcNow.Date),
+                
+                // ✅ التعديل: استخدام User.ActivatedAt
+                VerifiedToday = await _context.Users
+                    .CountAsync(u => u.Role == UserRole.Lawyer && u.ActivatedAt != null && u.ActivatedAt.Value.Date == DateTime.UtcNow.Date),
+                
                 PendingLawyers = pendingLawyers,
                 RecentActivity = recentActivity,
                 AdminName = admin.FullName,

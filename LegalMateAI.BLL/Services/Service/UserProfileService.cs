@@ -207,4 +207,4 @@ namespace LegalMateAI.BLL.Services.Service
             catch { return encrypted; }
         }
     }
-}
+} 

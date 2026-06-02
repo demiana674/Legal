@@ -11,7 +11,8 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string FullName { get; set; } = string.Empty;
         public string Specialization { get; set; } = string.Empty;
         public double Rating { get; set; }
-        public string? Initials => FullName.Length >= 2 ? FullName.Substring(0, 2) : FullName;
+         public string? Initials { get; set; } = string.Empty;
+        // public string? Initials => FullName.Length >= 2 ? FullName.Substring(0, 2) : FullName;
     }
 }
 

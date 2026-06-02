@@ -25,14 +25,30 @@ namespace LegalMateAI.BLL.Services.Service
 
         // ========== للجميع ==========
 
-        public async Task<List<LawyerBranchDto>> GetLawyerBranchesAsync(Guid lawyerId)
+        public async Task<List<LawyerBranchDto>> GetLawyerBranchesAsync(Guid userId)
         {
+            _logger.LogInformation($"🔵 GetLawyerBranchesAsync called with UserId: {userId}");
+
+            // ✅ نجيب الـ LawyerProfile من الـ UserId
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.UserId == userId);
+
+            if (lawyerProfile == null)
+            {
+                _logger.LogWarning($"❌ No LawyerProfile found for UserId: {userId}");
+                return new List<LawyerBranchDto>();
+            }
+
+            _logger.LogInformation($"✅ LawyerProfile found: {lawyerProfile.Id}");
+
             var branches = await _context.LawyerBranches
                 .Include(b => b.Governorate)
                 .Include(b => b.City)
-                .Where(b => b.LawyerId == lawyerId && b.IsActive)
+                .Where(b => b.LawyerId == lawyerProfile.Id && b.IsActive)
                 .OrderBy(b => b.BranchName)
                 .ToListAsync();
+
+            _logger.LogInformation($"✅ Retrieved {branches.Count} branches");
 
             return branches.Select(MapToDto).ToList();
         }
@@ -92,17 +108,23 @@ namespace LegalMateAI.BLL.Services.Service
 
         // ========== للمحامي فقط ==========
 
-        public async Task<LawyerBranchDto?> CreateBranchAsync(Guid lawyerId, CreateLawyerBranchDto request)
+        public async Task<LawyerBranchDto?> CreateBranchAsync(Guid userId, CreateLawyerBranchDto request)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            _logger.LogInformation($"🔵 CreateBranchAsync called for UserId: {userId}");
+            
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.UserId == userId);
 
-            if (lawyer == null) return null;
+            if (lawyerProfile == null)
+            {
+                _logger.LogWarning($"❌ LawyerProfile not found for UserId: {userId}");
+                return null;
+            }
 
             var branch = new LawyerBranch
             {
                 Id = Guid.NewGuid(),
-                LawyerId = lawyer.Id,
+                LawyerId = lawyerProfile.Id,
                 BranchName = request.BranchName,
                 GovernorateId = request.GovernorateId,
                 CityId = request.CityId,
@@ -115,19 +137,19 @@ namespace LegalMateAI.BLL.Services.Service
             _context.LawyerBranches.Add(branch);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Branch created: {branch.BranchName} for lawyer {lawyerId}");
+            _logger.LogInformation($"✅ Branch created: {branch.BranchName}");
             return await GetBranchByIdAsync(branch.Id);
         }
 
-        public async Task<LawyerBranchDto?> UpdateBranchAsync(Guid lawyerId, Guid branchId, UpdateLawyerBranchDto request)
+        public async Task<LawyerBranchDto?> UpdateBranchAsync(Guid userId, Guid branchId, UpdateLawyerBranchDto request)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.UserId == userId);
 
-            if (lawyer == null) return null;
+            if (lawyerProfile == null) return null;
 
             var branch = await _context.LawyerBranches
-                .FirstOrDefaultAsync(b => b.Id == branchId && b.LawyerId == lawyer.Id);
+                .FirstOrDefaultAsync(b => b.Id == branchId && b.LawyerId == lawyerProfile.Id);
 
             if (branch == null) return null;
 
@@ -142,15 +164,15 @@ namespace LegalMateAI.BLL.Services.Service
             return await GetBranchByIdAsync(branchId);
         }
 
-        public async Task<bool> DeleteBranchAsync(Guid lawyerId, Guid branchId)
+        public async Task<bool> DeleteBranchAsync(Guid userId, Guid branchId)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.UserId == userId);
 
-            if (lawyer == null) return false;
+            if (lawyerProfile == null) return false;
 
             var branch = await _context.LawyerBranches
-                .FirstOrDefaultAsync(b => b.Id == branchId && b.LawyerId == lawyer.Id);
+                .FirstOrDefaultAsync(b => b.Id == branchId && b.LawyerId == lawyerProfile.Id);
 
             if (branch == null) return false;
 
@@ -161,15 +183,15 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        public async Task<bool> UpdateBranchAvailabilityAsync(Guid lawyerId, Guid branchId, List<CreateBranchAvailabilityDto> availabilities)
+        public async Task<bool> UpdateBranchAvailabilityAsync(Guid userId, Guid branchId, List<CreateBranchAvailabilityDto> availabilities)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.UserId == lawyerId);
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.UserId == userId);
 
-            if (lawyer == null) return false;
+            if (lawyerProfile == null) return false;
 
             var branch = await _context.LawyerBranches
-                .FirstOrDefaultAsync(b => b.Id == branchId && b.LawyerId == lawyer.Id);
+                .FirstOrDefaultAsync(b => b.Id == branchId && b.LawyerId == lawyerProfile.Id);
 
             if (branch == null) return false;
 

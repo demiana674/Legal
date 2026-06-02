@@ -1,3 +1,4 @@
+// LegalMateAI.DTOs/CreateDTO/CreateLawyerBranchDto.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace LegalMateAI.DTOs.CreateDTO
@@ -8,9 +9,11 @@ namespace LegalMateAI.DTOs.CreateDTO
         [StringLength(100)]
         public string BranchName { get; set; } = string.Empty;
         
-        public int? GovernorateId { get; set; }
+        [Required(ErrorMessage = "المحافظة مطلوبة")]
+        public int GovernorateId { get; set; }  // ✅ غير إلى int (غير nullable)
         
-        public int? CityId { get; set; }
+        [Required(ErrorMessage = "المدينة مطلوبة")]
+        public int CityId { get; set; }  // ✅ غير إلى int (غير nullable)
         
         [Required(ErrorMessage = "العنوان مطلوب")]
         [StringLength(200)]

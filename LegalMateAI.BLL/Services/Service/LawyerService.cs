@@ -55,11 +55,10 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.UserProfile)  // ✅ مهم عشان نجيب NationalId و Nationality
+                .Include(u => u.UserProfile)
                 .Where(u => u.Role == UserRole.Lawyer &&
-                            u.IsActive == true &&
-                            u.LawyerProfile != null &&
-                            u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Active);
+                            u.Status == AccountStatus.Active &&
+                            u.LawyerProfile != null);
 
             if (searchCriteria.SpecializationId.HasValue)
             {
@@ -103,25 +102,27 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.Certificates)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.UserProfile)  // ✅ مهم عشان نجيب NationalId و Nationality
+                .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == lawyerId && 
                                           u.Role == UserRole.Lawyer &&
                                           u.LawyerProfile != null &&
-                                          u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Active);
+                                          u.Status == AccountStatus.Active);
 
             return user?.LawyerProfile == null ? null : MapToDto(user, _encryption);
         }
 
         public async Task<List<AvailabilityDto>> GetLawyerAvailabilityAsync(Guid lawyerId)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.UserId == lawyerId && 
-                                          l.VerificationStatus == LawyerVerificationStatus.Active);
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                .FirstOrDefaultAsync(u => u.UserID == lawyerId && 
+                                          u.Role == UserRole.Lawyer &&
+                                          u.Status == AccountStatus.Active);
             
-            if (lawyer == null) return new List<AvailabilityDto>();
+            if (user?.LawyerProfile == null) return new List<AvailabilityDto>();
 
             return await _context.LawyerAvailabilities
-                .Where(a => a.LawyerId == lawyer.Id)
+                .Where(a => a.LawyerId == user.LawyerProfile.Id)
                 .OrderBy(a => a.Day).ThenBy(a => a.StartTime)
                 .Select(a => new AvailabilityDto
                 {
@@ -136,14 +137,16 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<bool> UpdateAvailabilityAsync(Guid lawyerId, List<CreateLawyerAvailabilityDto> availabilities)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.UserId == lawyerId && 
-                                          l.VerificationStatus == LawyerVerificationStatus.Active);
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                .FirstOrDefaultAsync(u => u.UserID == lawyerId && 
+                                          u.Role == UserRole.Lawyer &&
+                                          u.Status == AccountStatus.Active);
             
-            if (lawyer == null) return false;
+            if (user?.LawyerProfile == null) return false;
 
             var existing = await _context.LawyerAvailabilities
-                .Where(a => a.LawyerId == lawyer.Id).ToListAsync();
+                .Where(a => a.LawyerId == user.LawyerProfile.Id).ToListAsync();
             _context.LawyerAvailabilities.RemoveRange(existing);
 
             foreach (var avail in availabilities)
@@ -151,7 +154,7 @@ namespace LegalMateAI.BLL.Services.Service
                 _context.LawyerAvailabilities.Add(new LawyerAvailability
                 {
                     Id = Guid.NewGuid(),
-                    LawyerId = lawyer.Id,
+                    LawyerId = user.LawyerProfile.Id,
                     Day = avail.Day,
                     DayName = GetDayNameAr(avail.Day),
                     StartTime = avail.StartTime,
@@ -198,10 +201,20 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<bool> AddReviewAsync(Guid userId, Guid lawyerId, int rating, string? comment, Guid? appointmentId)
         {
-            var lawyer = await _context.LawyerProfiles
-                .FirstOrDefaultAsync(l => l.Id == lawyerId && 
-                                          l.VerificationStatus == LawyerVerificationStatus.Active);
-            if (lawyer == null) return false;
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile)
+                .FirstOrDefaultAsync(u => u.UserID == userId);
+            
+            var lawyerProfile = await _context.LawyerProfiles
+                .FirstOrDefaultAsync(l => l.Id == lawyerId);
+                
+            if (lawyerProfile == null) return false;
+            
+            // ✅ التحقق من أن المحامي نشط
+            var lawyerUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.UserID == lawyerProfile.UserId && u.Status == AccountStatus.Active);
+            
+            if (lawyerUser == null) return false;
 
             var existingReview = await _context.LawyerReviews
                 .FirstOrDefaultAsync(r => r.UserId == userId && r.LawyerId == lawyerId);
@@ -233,11 +246,10 @@ namespace LegalMateAI.BLL.Services.Service
                     .ThenInclude(lp => lp!.City)
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.UserProfile)  // ✅ مهم
+                .Include(u => u.UserProfile)
                 .Where(u => u.Role == UserRole.Lawyer && 
-                            u.IsActive &&
-                            u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active &&
-                            u.LawyerProfile.Specialties.Any(ls => ls.Specialty.NameAr.Contains(specialization)))
+                            u.Status == AccountStatus.Active &&
+                            u.LawyerProfile!.Specialties.Any(ls => ls.Specialty.NameAr.Contains(specialization)))
                 .Take(limit)
                 .ToListAsync();
 
@@ -270,29 +282,15 @@ namespace LegalMateAI.BLL.Services.Service
             catch { return encrypted; }
         }
 
-        private static DateTime? DecryptDate(string? encrypted, IEncryptionService encryption)
-        {
-            if (string.IsNullOrEmpty(encrypted)) return null;
-            try 
-            { 
-                var dateStr = encryption.Decrypt(encrypted);
-                if (DateTime.TryParse(dateStr, out var date))
-                    return date;
-                return null;
-            }
-            catch { return null; }
-        }
-
         private static LawyerResponseDto MapToDto(User user, IEncryptionService encryption)
         {
             var lawyer = user.LawyerProfile!;
             var avgRating = lawyer.Reviews?.Any() == true ? lawyer.Reviews.Average(r => r.Rating) : 0;
 
-            // ✅ فك تشفير البيانات
+            // فك تشفير البيانات
             string? decryptedPhone = Decrypt(user.Phone, encryption);
             string? decryptedNationalId = Decrypt(user.NationalId, encryption);
             string? decryptedLicense = Decrypt(lawyer.LicenseNumber, encryption);
-            string? decryptedLicenseIssueDate = lawyer.LicenseIssueDate?.ToString("yyyy-MM-dd");
             string? decryptedDateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd");
             string? decryptedCreatedAt = user.CreatedAt.ToString("yyyy-MM-dd");
             string? decryptedVerifiedAt = lawyer.VerifiedAt?.ToString("yyyy-MM-dd");
@@ -312,11 +310,19 @@ namespace LegalMateAI.BLL.Services.Service
                 LicenseNumber = decryptedLicense ?? "",
                 BarAssociation = lawyer.BarAssociation ?? "",
                 YearsOfExperience = lawyer.YearsOfExperience ?? 0,
-                VerificationStatus = lawyer.VerificationStatus.ToString(),
-                IsActive = user.IsActive,
+                
+                // ✅ التعديل: استخدام Status بدلاً من VerificationStatus
+                Status = user.Status,
+                
                 VerifiedAt = lawyer.VerifiedAt,
                 VerifiedAtFormatted = decryptedVerifiedAt,
                 RejectionReason = lawyer.RejectionReason,
+                
+                // ✅ خصائص التعليق
+                SuspensionReason = lawyer.SuspensionReason ?? user.SuspensionReason,
+                SuspendedAt = lawyer.SuspendedAt ?? user.SuspendedAt,
+                ActivatedAt = lawyer.ActivatedAt ?? user.ActivatedAt,
+                
                 Rating = Math.Round(avgRating, 1),
                 TotalReviews = lawyer.Reviews?.Count ?? 0,
                 GovernorateId = lawyer.GovernorateId,

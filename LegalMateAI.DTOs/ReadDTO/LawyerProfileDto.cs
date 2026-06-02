@@ -1,5 +1,7 @@
+// LegalMateAI.DTOs/ReadDTO/LawyerProfileDto.cs
 using System;
 using System.Collections.Generic;
+using LegalMateAI.Domain.Enums;
 
 namespace LegalMateAI.DTOs.ReadDTO
 {
@@ -15,7 +17,10 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? AlternativePhone { get; set; }
         public string? ProfilePicture { get; set; }
         public string? NationalId { get; set; }
-         public string? DateOfBirth { get; set; }
+        public string? DateOfBirth { get; set; }
+        
+        // الجنسية
+        public string? Nationality { get; set; }
         
         // بيانات مهنية
         public string LicenseNumber { get; set; } = string.Empty;
@@ -30,10 +35,16 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? City { get; set; }
         public string? OfficeAddress { get; set; }
         
-        // الحالة
-        public string VerificationStatus { get; set; } = string.Empty;
+        // الحالة الأساسية
+        public AccountStatus Status { get; set; }
+        public string VerificationStatus => Status.ToString();
+        public bool IsActive => Status == AccountStatus.Active;
+        
+        // خصائص التعليق
+        public string? SuspensionReason { get; set; }
+        public DateTime? SuspendedAt { get; set; }
+        public DateTime? ActivatedAt { get; set; }
         public DateTime? VerifiedAt { get; set; }
-        public bool IsActive { get; set; }
         public string? RejectionReason { get; set; }
         
         // إحصائيات
@@ -42,7 +53,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public int TotalClients { get; set; }
         public DateTime CreatedAt { get; set; }
         
-        // تخصصات المحامي
-        public List<SpecializationDto> Specializations { get; set; } = new List<SpecializationDto>();
+        // ✅ تخصصات المحامي - كمصفوفة strings للـ Frontend
+        public List<string> Specializations { get; set; } = new List<string>();
     }
 }

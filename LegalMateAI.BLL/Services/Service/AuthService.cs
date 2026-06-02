@@ -76,23 +76,41 @@ namespace LegalMateAI.BLL.Services.Service
                 return null;
             }
 
-            // التحقق من حالة الحساب
-            if (!user.IsActive)
+            // ✅ التحقق من حالة الحساب باستخدام AccountStatus (داخلياً فقط)
+            switch (user.Status)
             {
-                await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
-                _logger.LogWarning("Login failed - inactive account: {Email}", request.Email);
-                throw new UnauthorizedAccessException("الحساب غير نشط. يرجى التواصل مع الدعم.");
-            }
-
-            // التحقق من حالة المحامي (إذا كان محامي)
-            if (user.Role == UserRole.Lawyer && user.LawyerProfile != null)
-            {
-                if (user.LawyerProfile.VerificationStatus != LawyerVerificationStatus.Active)
-                {
+                case AccountStatus.Suspended:
                     await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
-                    _logger.LogWarning("Login failed - unverified lawyer: {Email}", request.Email);
-                    throw new UnauthorizedAccessException("حساب المحامي لم يتم توثيقه بعد. يرجى الانتظار حتى مراجعة الإدارة.");
-                }
+                    _logger.LogWarning("Login failed - suspended account: {Email}", request.Email);
+                    throw new UnauthorizedAccessException("الحساب معلق. يرجى التواصل مع الدعم.");
+
+                case AccountStatus.Locked:
+                    await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
+                    _logger.LogWarning("Login failed - locked account: {Email}", request.Email);
+                    throw new UnauthorizedAccessException("الحساب مقفل. يرجى إعادة تعيين كلمة المرور.");
+
+                case AccountStatus.Deactivated:
+                    await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
+                    _logger.LogWarning("Login failed - deactivated account: {Email}", request.Email);
+                    throw new UnauthorizedAccessException("الحساب معطل. يرجى التواصل مع الدعم.");
+
+                case AccountStatus.Pending:
+                    if (user.Role == UserRole.Lawyer)
+                    {
+                        await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
+                        _logger.LogWarning("Login failed - pending lawyer: {Email}", request.Email);
+                        throw new UnauthorizedAccessException("حساب المحامي لم يتم توثيقه بعد. يرجى الانتظار حتى مراجعة الإدارة.");
+                    }
+                    break;
+
+                case AccountStatus.Active:
+                    // الحساب نشط، نسمح بالدخول
+                    break;
+
+                default:
+                    await _authRepo.LogLoginAttemptAsync(user.UserID, request.Email, false);
+                    _logger.LogWarning("Login failed - unknown status: {Status} for user: {Email}", user.Status, request.Email);
+                    throw new UnauthorizedAccessException("حالة الحساب غير معروفة. يرجى التواصل مع الدعم.");
             }
 
             // تحديث آخر تسجيل دخول
@@ -107,6 +125,7 @@ namespace LegalMateAI.BLL.Services.Service
             
             _logger.LogInformation("User logged in: {Email}, Role: {Role}", user.Email, user.Role);
             
+            // ✅ الـ Response زي ما هو - من غير تغيير
             return new AuthResponse
             {
                 UserId = user.UserID,
@@ -144,6 +163,7 @@ namespace LegalMateAI.BLL.Services.Service
             
             _logger.LogInformation("Admin logged in: {Email}", admin.Email);
             
+            // ✅ الـ Response زي ما هو - من غير تغيير
             return new AuthResponse
             {
                 UserId = admin.Id,

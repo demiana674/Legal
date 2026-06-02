@@ -1,3 +1,4 @@
+// LegalMateAI.BLL.Services.Service/ContractService.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
@@ -69,140 +70,72 @@ namespace LegalMateAI.BLL.Services.Service
         }
 
         // =========================================================
-        // 3. GET PLACEHOLDERS
+        // 3. استخراج الـ placeholders من القالب تلقائياً
         // =========================================================
-        public async Task<List<string>> GetTemplatePlaceholdersAsync(Guid templateId)
+        private List<string> ExtractPlaceholdersFromTemplate(string filePath)
         {
-            var template = await _context.ContractTemplates
-                .FirstOrDefaultAsync(t => t.Id == templateId && t.IsActive);
-
-            if (template == null || string.IsNullOrEmpty(template.TemplateFilePath))
-                return new List<string>();
-
-            var webRootPath = _env.WebRootPath ??
-                              Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-
-            var templatePath = Path.Combine(
-                webRootPath,
-                template.TemplateFilePath.TrimStart('/'));
-
-            if (!File.Exists(templatePath))
-                return new List<string>();
-
-            var placeholders = new List<string>();
-
             try
             {
-                using var doc = DocX.Load(templatePath);
-                var regex = new Regex(@"\{\{([^}]+)\}\}");
-                var matches = regex.Matches(doc.Text);
-
-                foreach (Match match in matches)
-                {
-                    var placeholder = match.Groups[1].Value.Trim();
-                    if (!placeholders.Contains(placeholder))
-                        placeholders.Add(placeholder);
-                }
+                using var doc = DocX.Load(filePath);
+                string text = doc.Text;
+                var regex = new Regex(@"\{([^}]+)\}");
+                var matches = regex.Matches(text);
+                var placeholders = matches.Select(m => m.Groups[1].Value).Distinct().ToList();
+                _logger.LogInformation("Extracted {Count} placeholders from template: {Placeholders}",
+                    placeholders.Count, string.Join(", ", placeholders));
+                return placeholders;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to read placeholders from template {TemplateId}", templateId);
+                _logger.LogError(ex, "Failed to extract placeholders from template");
+                return new List<string>();
             }
-
-            return placeholders;
         }
 
         // =========================================================
-        // 4. ANALYZE TEMPLATE
+        // 4. استبدال الـ placeholders في القالب
         // =========================================================
-        public async Task<TemplateAnalysisDto> AnalyzeTemplateFullAsync(Guid templateId)
+        private void ReplacePlaceholdersInDocument(DocX doc, Dictionary<string, string> filledData)
         {
-            var result = new TemplateAnalysisDto();
-
-            var template = await _context.ContractTemplates
-                .FirstOrDefaultAsync(t => t.Id == templateId && t.IsActive);
-
-            if (template == null || string.IsNullOrEmpty(template.TemplateFilePath))
+            foreach (var item in filledData)
             {
-                result.Message = "القالب غير موجود";
-                return result;
+                var placeholder = $"{{{item.Key}}}";
+                var value = item.Value ?? "";
+                _logger.LogInformation("Replacing '{Placeholder}' with '{Value}'", placeholder, value);
+                doc.ReplaceText(placeholder, value);
             }
-
-            var webRootPath = _env.WebRootPath ??
-                              Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-
-            var templatePath = Path.Combine(
-                webRootPath,
-                template.TemplateFilePath.TrimStart('/'));
-
-            if (!File.Exists(templatePath))
-            {
-                result.Message = "ملف القالب غير موجود";
-                return result;
-            }
-
-            result.TemplateId = templateId;
-            result.TemplateName = template.Name;
-
-            try
-            {
-                using var doc = DocX.Load(templatePath);
-                var fullText = doc.Text;
-                var placeholders = new List<PlaceholderFieldDto>();
-                int order = 1;
-
-                var regex = new Regex(@"\{\{([^}]+)\}\}");
-                var matches = regex.Matches(fullText);
-
-                foreach (Match match in matches)
-                {
-                    var originalName = match.Groups[1].Value.Trim();
-                    
-                    placeholders.Add(new PlaceholderFieldDto
-                    {
-                        Name = originalName,
-                        Type = "text",
-                        Label = originalName.Replace("_", " "),
-                        IsRequired = true,
-                        Order = order,
-                        Placeholder = "أدخل البيانات"
-                    });
-                    order++;
-                }
-
-                result.Placeholders = placeholders.OrderBy(p => p.Order).ToList();
-                result.PlaceholdersCount = placeholders.Count;
-                result.UniqueFields = new List<UniqueFieldDto>();
-                result.SignatureFields = new List<string>();
-
-                if (placeholders.Count == 0)
-                {
-                    result.Message = "لا توجد Placeholders في هذا القالب";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to analyze template");
-                result.Message = ex.Message;
-            }
-
-            return result;
         }
 
         // =========================================================
-        // 5. GENERATE CONTRACT
+        // 5. توليد عقد جديد (مع استخراج placeholders تلقائياً)
         // =========================================================
         public async Task<ContractResponseDto?> GenerateContractFromTemplateAsync(
             Guid userId,
-            GenerateContractRequest request)
+            Guid templateId,
+            Dictionary<string, string> filledData,
+            string? contractTitle = null)
         {
+            _logger.LogInformation("========== START GENERATING CONTRACT ==========");
+            _logger.LogInformation("User ID: {UserId}", userId);
+            _logger.LogInformation("Template ID: {TemplateId}", templateId);
+            _logger.LogInformation("Contract Title: {Title}", contractTitle);
+            _logger.LogInformation("Filled Data: {Data}", JsonSerializer.Serialize(filledData));
+
             var user = await _context.Users.FindAsync(userId);
-            if (user == null) return null;
+            if (user == null)
+            {
+                _logger.LogError("User not found: {UserId}", userId);
+                return null;
+            }
 
             var template = await _context.ContractTemplates
-                .FirstOrDefaultAsync(t => t.Id == request.TemplateId && t.IsActive);
+                .FirstOrDefaultAsync(t => t.Id == templateId && t.IsActive);
 
-            if (template == null) return null;
+            if (template == null)
+            {
+                _logger.LogError("Template not found: {TemplateId}", templateId);
+                return null;
+            }
 
             if (string.IsNullOrEmpty(template.TemplateFilePath))
             {
@@ -211,7 +144,8 @@ namespace LegalMateAI.BLL.Services.Service
             }
 
             var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            
+            _logger.LogInformation("WebRootPath: {WebRootPath}", webRootPath);
+
             var uploadsFolder = Path.Combine(
                 webRootPath,
                 "uploads",
@@ -220,11 +154,19 @@ namespace LegalMateAI.BLL.Services.Service
                 userId.ToString());
 
             if (!Directory.Exists(uploadsFolder))
+            {
+                _logger.LogInformation("Creating directory: {UploadsFolder}", uploadsFolder);
                 Directory.CreateDirectory(uploadsFolder);
+            }
 
-            var fileName = $"{Guid.NewGuid()}.docx";
+            var finalTitle = !string.IsNullOrEmpty(contractTitle) ? contractTitle : template.Name;
+            var safeFileName = GenerateSafeFileName(finalTitle);
+            var fileName = $"{safeFileName}_{DateTime.Now:yyyyMMddHHmmss}.docx";
             var fullPath = Path.Combine(uploadsFolder, fileName);
             var templatePath = Path.Combine(webRootPath, template.TemplateFilePath.TrimStart('/'));
+
+            _logger.LogInformation("Template path: {TemplatePath}", templatePath);
+            _logger.LogInformation("Output path: {FullPath}", fullPath);
 
             if (!File.Exists(templatePath))
             {
@@ -234,46 +176,36 @@ namespace LegalMateAI.BLL.Services.Service
 
             try
             {
+                // نسخ القالب
                 File.Copy(templatePath, fullPath, true);
+                _logger.LogInformation("Template copied successfully");
 
+                // استخراج الـ placeholders من القالب (للتسجيل فقط)
+                var placeholders = ExtractPlaceholdersFromTemplate(templatePath);
+                _logger.LogInformation("Found placeholders in template: {Count}", placeholders.Count);
+
+                // استبدال الـ placeholders بالبيانات
                 using var doc = DocX.Load(fullPath);
-                var replacedCount = 0;
-
-                foreach (var item in request.FilledData)
-                {
-                    var placeholder = $"{{{{{item.Key}}}}}";
-                    var value = item.Value?.ToString() ?? "";
-
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        doc.ReplaceText(placeholder, value);
-                        replacedCount++;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(request.ContractTitle))
-                {
-                    doc.ReplaceText("{{ContractTitle}}", request.ContractTitle);
-                }
-
+                ReplacePlaceholdersInDocument(doc, filledData);
                 doc.Save();
-                _logger.LogInformation("Replaced {Count} placeholders in contract", replacedCount);
+
+                _logger.LogInformation("Contract generated successfully for user {UserId}", userId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed generating contract");
+                _logger.LogError(ex, "Failed generating contract for user {UserId}", userId);
                 return null;
             }
 
+            // حفظ العقد في قاعدة البيانات
             var contract = new Contract
             {
                 Id = Guid.NewGuid(),
                 ContractNumber = GenerateContractNumber(),
                 UserId = userId,
-                LawyerId = request.LawyerId,
-                Title = request.ContractTitle ?? template.Name,
+                Title = finalTitle,
                 Type = template.Type,
-                Content = JsonSerializer.Serialize(request.FilledData),
+                Content = JsonSerializer.Serialize(filledData),
                 FileUrl = $"/uploads/contracts/user/{userId}/{fileName}",
                 FileFormat = "docx",
                 Status = ContractStatus.Draft,
@@ -283,215 +215,51 @@ namespace LegalMateAI.BLL.Services.Service
             _context.Contracts.Add(contract);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Contract saved to DB with ID: {ContractId}", contract.Id);
+            _logger.LogInformation("========== END GENERATING CONTRACT ==========");
+
             return MapToDto(contract);
         }
 
         // =========================================================
-        // 6. ADD PLACEHOLDERS TO ALL TEMPLATES (ADMIN ONLY)
-        // =========================================================
-        public async Task<int> AddPlaceholdersToAllTemplatesAsync()
-        {
-            var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var templatesFolder = Path.Combine(webRootPath, "uploads", "contracts", "templates");
-            
-            if (!Directory.Exists(templatesFolder))
-            {
-                _logger.LogWarning("Templates folder not found: {Folder}", templatesFolder);
-                return 0;
-            }
-            
-            var allTemplates = await _context.ContractTemplates.ToListAsync();
-            var processedCount = 0;
-            
-            _logger.LogInformation("Starting to add placeholders to {Count} templates", allTemplates.Count);
-            
-            foreach (var template in allTemplates)
-            {
-                if (string.IsNullOrEmpty(template.TemplateFilePath))
-                {
-                    _logger.LogWarning("Template {TemplateName} has no file path", template.Name);
-                    continue;
-                }
-                
-                var filePath = Path.Combine(webRootPath, template.TemplateFilePath.TrimStart('/'));
-                
-                if (!File.Exists(filePath))
-                {
-                    _logger.LogWarning("Template file not found: {FilePath}", filePath);
-                    continue;
-                }
-                
-                try
-                {
-                    // إنشاء نسخة احتياطية
-                    var backupPath = filePath + ".backup";
-                    if (!File.Exists(backupPath))
-                    {
-                        File.Copy(filePath, backupPath);
-                        _logger.LogInformation("Created backup: {BackupPath}", backupPath);
-                    }
-                    
-                    using var doc = DocX.Load(filePath);
-                    var text = doc.Text;
-                    var counter = 1;
-                    var hasChanges = false;
-                    var emptyPatterns = new[] { @"\.{4,}", @"_{3,}", @"\(\s*\)", @"\(\s*\.{2,}\s*\)", @"\[.*?\]" };
-                    
-                    // معالجة الفقرات للبحث عن فراغات
-                    foreach (var para in doc.Paragraphs)
-                    {
-                        var paraText = para.Text;
-                        var newText = paraText;
-                        var modifications = new List<(int index, int length, string placeholder)>();
-                        
-                        foreach (var pattern in emptyPatterns)
-                        {
-                            var regex = new Regex(pattern);
-                            var matches = regex.Matches(paraText);
-                            
-                            foreach (Match match in matches.Cast<Match>().Reverse())
-                            {
-                                var placeholder = $"{{{{field_{counter}}}}}";
-                                modifications.Add((match.Index, match.Length, placeholder));
-                                counter++;
-                                hasChanges = true;
-                            }
-                        }
-                        
-                        foreach (var mod in modifications.OrderByDescending(m => m.index))
-                        {
-                            newText = newText.Substring(0, mod.index) + mod.placeholder + newText.Substring(mod.index + mod.length);
-                        }
-                        
-                        if (newText != paraText)
-                        {
-                            para.ReplaceText(paraText, newText);
-                        }
-                    }
-                    
-                    // معالجة الجداول للبحث عن فراغات
-                    // معالجة الجداول للبحث عن فراغات
-foreach (var table in doc.Tables)
-{
-    foreach (var row in table.Rows)
-    {
-        foreach (var cell in row.Cells)
-        {
-            var cellText = cell.Paragraphs.FirstOrDefault()?.Text ?? "";
-            var newCellText = cellText;
-            var modifications = new List<(int index, int length, string placeholder)>();
-            
-            foreach (var pattern in emptyPatterns)
-            {
-                var regex = new Regex(pattern);
-                var matches = regex.Matches(cellText);
-                
-                foreach (Match match in matches.Cast<Match>().Reverse())
-                {
-                    var placeholder = $"{{{{field_{counter}}}}}";
-                    modifications.Add((match.Index, match.Length, placeholder));
-                    counter++;
-                    hasChanges = true;
-                }
-            }
-            
-            foreach (var mod in modifications.OrderByDescending(m => m.index))
-            {
-                newCellText = newCellText.Substring(0, mod.index) + mod.placeholder + newCellText.Substring(mod.index + mod.length);
-            }
-            
-            if (newCellText != cellText)
-            {
-                foreach (var para in cell.Paragraphs)
-                {
-                    para.ReplaceText(cellText, newCellText);
-                }
-            }
-        }
-    }
-}
-                    
-                    // لو مفيش فراغات، أضف صفحة جديدة في البداية فيها Placeholders
-                    if (!hasChanges)
-                    {
-                        var firstParagraph = doc.InsertParagraph();
-                        firstParagraph.InsertText("=== بيانات العقد ===\n");
-                        firstParagraph.InsertText($"اسم المشروع/الشركة: {{{{field_1}}}}\n");
-                        firstParagraph.InsertText($"الطرف الثاني/المورد: {{{{field_2}}}}\n");
-                        firstParagraph.InsertText($"العنوان: {{{{field_3}}}}\n");
-                        firstParagraph.InsertText($"المبلغ: {{{{field_4}}}}\n");
-                        firstParagraph.InsertText($"التاريخ: {{{{field_5}}}}\n");
-                        firstParagraph.InsertText($"الرقم القومي: {{{{field_6}}}}\n");
-                        firstParagraph.InsertText($"رقم الهاتف: {{{{field_7}}}}\n");
-                        firstParagraph.InsertText($"البريد الإلكتروني: {{{{field_8}}}}\n");
-                        firstParagraph.InsertText($"التوقيع: {{{{field_9}}}}\n");
-                        
-                        hasChanges = true;
-                        counter = 10;
-                        _logger.LogInformation("Added default placeholders to: {TemplateName}", template.Name);
-                    }
-                    
-                    if (hasChanges)
-                    {
-                        doc.Save();
-                        processedCount++;
-                        _logger.LogInformation("✅ Added placeholders to: {TemplateName} (Total: {Count} placeholders)", template.Name, counter - 1);
-                    }
-                    else
-                    {
-                        _logger.LogInformation("No changes made to: {TemplateName}", template.Name);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to process template {TemplateName}", template.Name);
-                }
-            }
-            
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Completed. Processed {Count} templates", processedCount);
-            return processedCount;
-        }
-
-        // =========================================================
-        // 7. CONVERT DOC TO DOCX (ADMIN ONLY)
+        // 6. CONVERT DOC TO DOCX (ADMIN ONLY)
         // =========================================================
         public async Task<int> ConvertAllDocToDocxAsync()
         {
             var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             var templatesFolder = Path.Combine(webRootPath, "uploads", "contracts", "templates");
-            
+
             if (!Directory.Exists(templatesFolder))
                 return 0;
-            
+
             var docFiles = Directory.GetFiles(templatesFolder, "*.doc");
             var converted = 0;
-            
+
             foreach (var docFile in docFiles)
             {
                 try
                 {
                     var docxFile = Path.ChangeExtension(docFile, ".docx");
-                    
+
                     using (var doc = DocX.Load(docFile))
                     {
                         doc.SaveAs(docxFile);
                     }
-                    
+
                     File.Delete(docFile);
                     converted++;
-                    
+
                     var relativePath = $"/uploads/contracts/templates/{Path.GetFileName(docxFile)}";
                     var templates = await _context.ContractTemplates
                         .Where(t => t.TemplateFilePath != null && t.TemplateFilePath.Contains(Path.GetFileNameWithoutExtension(docFile)))
                         .ToListAsync();
-                    
+
                     foreach (var template in templates)
                     {
                         template.TemplateFilePath = relativePath;
                     }
                     await _context.SaveChangesAsync();
-                    
+
                     _logger.LogInformation("Converted: {DocFile} to {DocxFile}", docFile, docxFile);
                 }
                 catch (Exception ex)
@@ -499,78 +267,25 @@ foreach (var table in doc.Tables)
                     _logger.LogError(ex, "Failed to convert {DocFile}", docFile);
                 }
             }
-            
+
             return converted;
-        }
-
-        // =========================================================
-        // 8. EXTRACT AND REPLACE EMPTY SPACES
-        // =========================================================
-        public async Task<List<string>> ExtractAndReplaceEmptySpacesAsync(Guid templateId)
-        {
-            var template = await _context.ContractTemplates.FindAsync(templateId);
-            if (template == null || string.IsNullOrEmpty(template.TemplateFilePath))
-                return new List<string>();
-
-            var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var templatePath = Path.Combine(webRootPath, template.TemplateFilePath.TrimStart('/'));
-
-            if (!File.Exists(templatePath))
-                return new List<string>();
-
-            var placeholders = new List<string>();
-            var counter = 1;
-
-            try
-            {
-                using var doc = DocX.Load(templatePath);
-                var emptyPatterns = new[] { @"\.{4,}", @"_{3,}", @"\(\s*\)", @"\(\s*\.{2,}\s*\)", @"\[.*?\]" };
-
-                foreach (var para in doc.Paragraphs)
-                {
-                    var paraText = para.Text;
-                    var newText = paraText;
-                    var modifications = new List<(int index, int length, string placeholder)>();
-
-                    foreach (var pattern in emptyPatterns)
-                    {
-                        var regex = new Regex(pattern);
-                        var matches = regex.Matches(paraText);
-
-                        foreach (Match match in matches.Cast<Match>().Reverse())
-                        {
-                            var placeholder = $"{{{{field_{counter}}}}}";
-                            modifications.Add((match.Index, match.Length, placeholder));
-                            placeholders.Add($"field_{counter}");
-                            counter++;
-                        }
-                    }
-
-                    foreach (var mod in modifications.OrderByDescending(m => m.index))
-                    {
-                        newText = newText.Substring(0, mod.index) + mod.placeholder + newText.Substring(mod.index + mod.length);
-                    }
-
-                    if (newText != paraText)
-                    {
-                        para.ReplaceText(paraText, newText);
-                    }
-                }
-
-                doc.Save();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to extract placeholders from template {TemplateId}", templateId);
-                return new List<string>();
-            }
-
-            return placeholders;
         }
 
         // =========================================================
         // HELPER METHODS
         // =========================================================
+
+        private string GenerateSafeFileName(string title)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var safeName = new string(title.Where(c => !invalidChars.Contains(c)).ToArray());
+            safeName = safeName.Replace(" ", "_");
+
+            if (safeName.Length > 50)
+                safeName = safeName[..50];
+
+            return safeName;
+        }
 
         private string GenerateContractNumber()
         {
@@ -754,33 +469,5 @@ foreach (var table in doc.Tables)
 
             return await File.ReadAllBytesAsync(filePath);
         }
-    }
-
-    public class FieldRule
-    {
-        public string Pattern { get; }
-        public string FieldName { get; }
-        public string FieldType { get; }
-        public string? RegexPattern { get; }
-        public string Placeholder { get; }
-
-        public FieldRule(string pattern, string fieldName, string fieldType, string? regexPattern, string placeholder)
-        {
-            Pattern = pattern;
-            FieldName = fieldName;
-            FieldType = fieldType;
-            RegexPattern = regexPattern;
-            Placeholder = placeholder;
-        }
-    }
-
-    public class FieldMetadata
-    {
-        public string FieldId { get; set; } = string.Empty;
-        public string Type { get; set; } = "text";
-        public string Label { get; set; } = string.Empty;
-        public string? RegexPattern { get; set; }
-        public string? Placeholder { get; set; }
-        public int Order { get; set; }
     }
 }

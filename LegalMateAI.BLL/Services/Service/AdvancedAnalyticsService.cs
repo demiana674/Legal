@@ -345,7 +345,8 @@ namespace LegalMateAI.BLL.Services.Service
                 {
                     ["total_users"] = await _context.Users.CountAsync(),
                     ["total_lawyers"] = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer),
-                    ["pending_verifications"] = await _context.LawyerProfiles.CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
+                    // ["pending_verifications"] = await _context.LawyerProfiles.CountAsync(l => l.VerificationStatus == LawyerVerificationStatus.Pending),
+                    ["pending_verifications"] = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Pending),
                     ["documents_uploaded_today"] = await _context.Documents.CountAsync(d => d.UploadedAt.Date == today)
                 }
             };

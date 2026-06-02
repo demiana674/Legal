@@ -47,6 +47,8 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<PredefinedContractTemplate> PredefinedContractTemplates { get; set; }
         public DbSet<GeneratedContract> GeneratedContracts { get; set; }
 
+         
+
         // ===== إضافات Data Warehouse & Analytics =====
         public DbSet<DataWarehouseFact> DataWarehouseFacts { get; set; }
         public DbSet<TimeDimension> TimeDimensions { get; set; }
@@ -100,15 +102,16 @@ namespace LegalMateAI.DAL.DBContext
                 .WithMany(ls => ls.LawyerProfiles)
                 .HasForeignKey(lps => lps.SpecialtyId)
                 .OnDelete(DeleteBehavior.Restrict);
+                
             modelBuilder.Entity<AppointmentCancelRequest>(entity =>
-{
-    entity.HasKey(e => e.Id);
-    
-    entity.HasOne(e => e.Appointment)
-        .WithMany(a => a.CancelRequests)
-        .HasForeignKey(e => e.AppointmentId)
-        .OnDelete(DeleteBehavior.Cascade);
-});    
+            {
+                entity.HasKey(e => e.Id);
+                
+                entity.HasOne(e => e.Appointment)
+                    .WithMany(a => a.CancelRequests)
+                    .HasForeignKey(e => e.AppointmentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });    
 
             modelBuilder.Entity<LegalSpecialization>()
                 .Property(l => l.Id)
@@ -305,11 +308,10 @@ namespace LegalMateAI.DAL.DBContext
 
             modelBuilder.Entity<Admin>().HasIndex(a => a.Email).IsUnique();
 
-            modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.VerificationStatus);
+            // ❌ تم حذف هذا السطر: modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.VerificationStatus);
             modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.LicenseNumber).IsUnique();
 
-            modelBuilder.Entity<Governorate>().HasIndex(g => g.Name);
-
+            modelBuilder.Entity<Governorate>().HasIndex(g => g.Name);// ✅ تخصصات المحامي
             modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.ContractNumber).IsUnique();
             modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.UserId);
             modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.CreatedAt);
@@ -333,9 +335,20 @@ namespace LegalMateAI.DAL.DBContext
             modelBuilder.Entity<RecommendationLog>()
                 .HasIndex(r => r.CreatedAt);
 
+            // ✅ إضافة Index على Status في جدول Users (لتحسين أداء البحث)
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Status)
+                .HasDatabaseName("IX_Users_Status");
+
+            // ✅ أيضاً يمكن إضافة Index مركب (Composite Index) للبحث المتقدم
+            modelBuilder.Entity<User>()
+                .HasIndex(u => new { u.Role, u.Status })
+                .HasDatabaseName("IX_Users_Role_Status");
+
             // ===== Default Values =====
+            // ✅ فقط أعمدة التخزين الفعلية (وليس الخصائص المحسوبة)
             modelBuilder.Entity<User>().Property(u => u.Status).HasDefaultValue(AccountStatus.Pending);
-            modelBuilder.Entity<User>().Property(u => u.IsActive).HasDefaultValue(false);
+            // ❌ تم حذف: modelBuilder.Entity<User>().Property(u => u.IsActive).HasDefaultValue(false);
             modelBuilder.Entity<User>().Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             modelBuilder.Entity<User>().Property(u => u.JoinDate).HasDefaultValueSql("GETUTCDATE()");
 
@@ -343,7 +356,7 @@ namespace LegalMateAI.DAL.DBContext
             modelBuilder.Entity<AdminLog>().Property(al => al.Timestamp).HasDefaultValueSql("GETUTCDATE()");
 
             modelBuilder.Entity<LawyerProfile>().Property(l => l.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-            modelBuilder.Entity<LawyerProfile>().Property(l => l.VerificationStatus).HasDefaultValue(LawyerVerificationStatus.Pending);
+            // ❌ تم حذف: modelBuilder.Entity<LawyerProfile>().Property(l => l.VerificationStatus).HasDefaultValue(LawyerVerificationStatus.Pending);
 
             modelBuilder.Entity<LoginAttempt>().Property(la => la.AttemptedAt).HasDefaultValueSql("GETUTCDATE()");
 

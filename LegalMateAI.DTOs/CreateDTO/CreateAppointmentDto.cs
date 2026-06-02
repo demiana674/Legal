@@ -1,3 +1,4 @@
+// LegalMateAI.DTOs/CreateDTO/CreateAppointmentDto.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace LegalMateAI.DTOs.CreateDTO
@@ -6,6 +7,9 @@ namespace LegalMateAI.DTOs.CreateDTO
     {
         [Required(ErrorMessage = "معرف المحامي مطلوب")]
         public Guid LawyerId { get; set; }
+
+        [Required(ErrorMessage = "معرف الفرع مطلوب")]
+        public Guid BranchId { get; set; }
 
         [Required(ErrorMessage = "نوع الموعد مطلوب")]
         [StringLength(100)]

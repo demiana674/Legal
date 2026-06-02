@@ -93,8 +93,8 @@ namespace LegalMateAI.BLL.Services.Service
                     Nationality = request.Nationality,
                     DateOfBirth = request.DateOfBirth,
                     Role = request.Role,
-                    IsActive = false,  // ✅ كل المستخدمين يبدأوا غير نشطين
-                    Status = AccountStatus.Pending,  // ✅ الحالة الافتراضية: Pending
+                    // ❌ تم إزالة IsActive - أصبحت محسوبة
+                    Status = AccountStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
                     JoinDate = DateTime.UtcNow,
                     EmailVerified = false
@@ -103,7 +103,7 @@ namespace LegalMateAI.BLL.Services.Service
                 // ✅ تسجيل مستخدم عادي - يتفعل فوراً
                 if (request.Role == UserRole.User)
                 {
-                    user.IsActive = true;  // المستخدم العادي يتفعل مباشرة
+                    // ✅ فقط نغير الـ Status، IsActive هتتحسب تلقائياً
                     user.Status = AccountStatus.Active;
                     
                     var userProfile = new UserProfile
@@ -169,8 +169,7 @@ namespace LegalMateAI.BLL.Services.Service
                         };
                     }
 
-                    // ✅ المحامي يبدأ غير نشط وفي حالة Pending
-                    user.IsActive = false;
+                    // ✅ المحامي يبدأ Pending (IsActive = false تلقائياً)
                     user.Status = AccountStatus.Pending;
                     
                     var lawyerProfile = new LawyerProfile
@@ -185,7 +184,6 @@ namespace LegalMateAI.BLL.Services.Service
                         GovernorateId = request.GovernorateId,
                         CityId = request.CityId,
                         OfficeAddress = request.Address,
-                        VerificationStatus = LawyerVerificationStatus.Pending,  // ✅ أهم سطر: حالة Pending
                         CreatedAt = DateTime.UtcNow
                     };
                     
@@ -200,7 +198,7 @@ namespace LegalMateAI.BLL.Services.Service
                         Success = true,
                         Message = "تم تقديم طلب تسجيل المحامي بنجاح، في انتظار موافقة الإدارة",
                         UserId = user.UserID,
-                        RequiresApproval = true  // ✅ المحامي يحتاج موافقة
+                        RequiresApproval = true
                     };
                 }
 

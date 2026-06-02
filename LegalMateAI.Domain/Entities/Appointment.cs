@@ -1,5 +1,5 @@
+// LegalMateAI.Domain/Entities/Appointment.cs
 using System;
-using System.Collections.Generic;
 using LegalMateAI.Domain.Enums;
 
 namespace LegalMateAI.Domain.Entities
@@ -10,13 +10,7 @@ namespace LegalMateAI.Domain.Entities
         public string AppointmentNumber { get; set; } = string.Empty;
         public Guid UserID { get; set; }
         public Guid LawyerId { get; set; }
-        
-        /// <summary>
-        /// معرف الفرع (اختياري)
-        /// </summary>
-        public Guid? BranchId { get; set; }
-        public LawyerBranch? Branch { get; set; }
-        
+        public Guid BranchId { get; set; }  // ✅ إضافة BranchId
         public string AppointmentType { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         public string Time { get; set; } = string.Empty;
@@ -32,9 +26,9 @@ namespace LegalMateAI.Domain.Entities
         
         // Navigation properties
         public User User { get; set; } = null!;
-        // public UserProfile User { get; set; } = null!;
         public LawyerProfile Lawyer { get; set; } = null!;
-        public virtual ICollection<AppointmentCancelRequest> CancelRequests { get; set; } = new List<AppointmentCancelRequest>();
+        public LawyerBranch Branch { get; set; } = null!;  
         public ICollection<AppointmentReschedule> Reschedules { get; set; } = new List<AppointmentReschedule>();
+        public ICollection<AppointmentCancelRequest> CancelRequests { get; set; } = new List<AppointmentCancelRequest>();
     }
 }

@@ -64,6 +64,46 @@ namespace LegalMateAI.API.Controllers
             return Ok(new { message = "تم تحديث حالة المستخدم بنجاح" });
         }
 
+        /// <summary>
+        /// ✅ تعليق مستخدم
+        /// </summary>
+        [HttpPost("users/{userId}/suspend")]
+        public async Task<IActionResult> SuspendUser(Guid userId, [FromBody] string? reason = null)
+        {
+            var adminId = GetCurrentUserId();
+            if (!adminId.HasValue) return Unauthorized(new { message = "لم يتم العثور على معرف المدير" });
+
+            var result = await _adminService.SuspendUserAsync(adminId.Value, userId, reason);
+            if (!result) return NotFound(new { message = "المستخدم غير موجود" });
+
+            return Ok(new { message = "تم تعليق المستخدم بنجاح", reason });
+        }
+
+        /// <summary>
+        /// ✅ تفعيل مستخدم
+        /// </summary>
+        [HttpPost("users/{userId}/activate")]
+        public async Task<IActionResult> ActivateUser(Guid userId)
+        {
+            var adminId = GetCurrentUserId();
+            if (!adminId.HasValue) return Unauthorized(new { message = "لم يتم العثور على معرف المدير" });
+
+            var result = await _adminService.ActivateUserAsync(adminId.Value, userId);
+            if (!result) return NotFound(new { message = "المستخدم غير موجود" });
+
+            return Ok(new { message = "تم تفعيل المستخدم بنجاح" });
+        }
+
+        /// <summary>
+        /// ✅ جلب المستخدمين المعلقين
+        /// </summary>
+        [HttpGet("users/suspended")]
+        public async Task<IActionResult> GetSuspendedUsers()
+        {
+            var suspendedUsers = await _adminService.GetSuspendedUsersAsync();
+            return Ok(suspendedUsers);
+        }
+
         [HttpDelete("users/{userId}")]
         public async Task<IActionResult> DeleteUser(Guid userId)
         {
@@ -134,6 +174,16 @@ namespace LegalMateAI.API.Controllers
             return Ok(new { message = "تم تفعيل المحامي بنجاح" });
         }
 
+        /// <summary>
+        /// ✅ جلب المحامين المعلقين
+        /// </summary>
+        [HttpGet("lawyers/suspended")]
+        public async Task<IActionResult> GetSuspendedLawyers()
+        {
+            var suspendedLawyers = await _adminService.GetSuspendedLawyersAsync();
+            return Ok(suspendedLawyers);
+        }
+
         [HttpDelete("lawyers/{lawyerId}")]
         public async Task<IActionResult> DeleteLawyer(Guid lawyerId)
         {
@@ -151,13 +201,6 @@ namespace LegalMateAI.API.Controllers
             return Ok(result);
         }
 
-        // [HttpGet("users/logs")]
-        // public async Task<IActionResult> GetUserLogs([FromQuery] LogFilterDto? filter = null)
-        // {
-        //     var result = await _adminService.GetAllLogsAsync(filter ?? new LogFilterDto());
-        //     return Ok(result);
-        // }
-
         [HttpGet("logs/stats")]
         public async Task<IActionResult> GetLogsStats()
         {
@@ -167,41 +210,29 @@ namespace LegalMateAI.API.Controllers
 
         // ==================== Export Methods ====================
 
-//         [HttpGet("export/csv")]
-// public async Task<IActionResult> ExportLogsToCsv([FromQuery] LogFilterDto? filter = null)
-// {
-//     var bytes = await _adminService.ExportLogsAsync(filter ?? new LogFilterDto(), "csv");
+        [HttpGet("export/excel")]
+        public async Task<IActionResult> ExportLogsToExcel([FromQuery] LogFilterDto? filter = null)
+        {
+            var bytes = await _adminService.ExportLogsAsync(filter ?? new LogFilterDto(), "excel");
 
-//     return File(
-//         bytes,
-//         "text/csv",
-//         $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
-//     );
-// }
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            );
+        }
 
-[HttpGet("export/excel")]
-public async Task<IActionResult> ExportLogsToExcel([FromQuery] LogFilterDto? filter = null)
-{
-    var bytes = await _adminService.ExportLogsAsync(filter ?? new LogFilterDto(), "excel");
+        [HttpGet("export/pdf")]
+        public async Task<IActionResult> ExportLogsToPdf([FromQuery] LogFilterDto? filter = null)
+        {
+            var bytes = await _adminService.ExportLogsToPdfAsync(filter ?? new LogFilterDto());
 
-    return File(
-        bytes,
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
-    );
-}
-
-[HttpGet("export/pdf")]
-public async Task<IActionResult> ExportLogsToPdf([FromQuery] LogFilterDto? filter = null)
-{
-    var bytes = await _adminService.ExportLogsToPdfAsync(filter ?? new LogFilterDto());
-
-    return File(
-        bytes,
-        "application/pdf",
-        $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
-    );
-}
+            return File(
+                bytes,
+                "application/pdf",
+                $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+            );
+        }
 
         // ==================== System Management ====================
 

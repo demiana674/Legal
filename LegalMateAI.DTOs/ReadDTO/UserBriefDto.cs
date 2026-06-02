@@ -16,7 +16,8 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
-        public string? Initials => FullName.Length >= 2 ? FullName.Substring(0, 2) : FullName;
+        public string? Initials { get; set; } = string.Empty;
+       
     }
 }
 

@@ -36,6 +36,7 @@ namespace LegalMateAI.BLL.Services.Service
             int? governorateId = null,
             int topK = 5)
         {
+            // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
             var activeLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Specialties)
@@ -47,9 +48,8 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.City)
                 .Where(u => u.Role == UserRole.Lawyer &&
-                            u.IsActive &&
-                            u.LawyerProfile != null &&
-                            u.LawyerProfile.VerificationStatus == LawyerVerificationStatus.Active)
+                            u.Status == AccountStatus.Active &&
+                            u.LawyerProfile != null)
                 .ToListAsync();
 
             if (!activeLawyers.Any())
@@ -125,14 +125,15 @@ namespace LegalMateAI.BLL.Services.Service
                 .Distinct()
                 .ToListAsync();
 
+            // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
             var recommendedLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Specialties)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
                 .Where(u => u.Role == UserRole.Lawyer &&
-                            u.IsActive &&
-                            u.LawyerProfile!.VerificationStatus == LawyerVerificationStatus.Active &&
+                            u.Status == AccountStatus.Active &&
+                            u.LawyerProfile != null &&
                             u.LawyerProfile.Specialties.Any(s => similarLawyers.Contains(s.SpecialtyId)) &&
                             !userRatings.Contains(u.LawyerProfile!.Id))
                 .Take(topK)

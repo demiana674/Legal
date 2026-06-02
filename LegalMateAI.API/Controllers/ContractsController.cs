@@ -6,6 +6,7 @@ using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.Domain.Enums;
 using System.Security.Claims;
+using Xceed.Words.NET; // ✅ مهم لقراءة ملفات Word
 
 namespace LegalMateAI.API.Controllers
 {
@@ -14,13 +15,16 @@ namespace LegalMateAI.API.Controllers
     public class ContractsController : ControllerBase
     {
         private readonly IContractService _contractService;
+        private readonly IWebHostEnvironment _env; // ✅ لإضافة البيئة
         private readonly ILogger<ContractsController> _logger;
 
         public ContractsController(
             IContractService contractService,
+            IWebHostEnvironment env,
             ILogger<ContractsController> logger)
         {
             _contractService = contractService;
+            _env = env;
             _logger = logger;
         }
 
@@ -43,7 +47,7 @@ namespace LegalMateAI.API.Controllers
         [HttpGet("templates")]
         [ProducesResponseType(typeof(List<ContractTemplateResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetContractTemplates(
-            [FromQuery] ContractType? type = null, 
+            [FromQuery] ContractType? type = null,
             [FromQuery] string? search = null)
         {
             var templates = await _contractService.GetContractTemplatesAsync(type, search);
@@ -63,80 +67,59 @@ namespace LegalMateAI.API.Controllers
         }
 
         // ================================================================
-        // 📊 تحليل القالب مع تجميع الحقول المتكررة (Public)
+        // 📖 قراءة محتوى قالب Word (للعرض والتعبئة) - ✅ الـ Endpoint الجديد
         // ================================================================
 
         [AllowAnonymous]
-        [HttpGet("templates/{id:guid}/analyze")]
-        [ProducesResponseType(typeof(TemplateAnalysisDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> AnalyzeTemplate(Guid id)
-        {
-            var analysis = await _contractService.AnalyzeTemplateFullAsync(id);
-            return Ok(analysis);
-        }
-
-        // ================================================================
-        // 📋 جلب الـ Placeholders المطلوبة للقالب (Public)
-        // ================================================================
-
-        [AllowAnonymous]
-        [HttpGet("templates/{id:guid}/placeholders")]
+        [HttpGet("templates/{id:guid}/read-content")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetTemplatePlaceholders(Guid id)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ReadTemplateContent(Guid id)
         {
-            var placeholders = await _contractService.GetTemplatePlaceholdersAsync(id);
-            
-            if (placeholders == null || placeholders.Count == 0)
+            var template = await _contractService.GetTemplateByIdAsync(id);
+            if (template == null)
+                return NotFound(new { message = "القالب غير موجود" });
+
+            if (string.IsNullOrEmpty(template.TemplateFilePath))
+                return BadRequest(new { message = "القالب لا يحتوي على ملف" });
+
+            // بناء المسار الكامل للملف
+            var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var fullPath = Path.Combine(webRootPath, template.TemplateFilePath.TrimStart('/'));
+
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound(new { message = "ملف القالب غير موجود" });
+
+            string content = "";
+
+            try
             {
-                return Ok(new
+                // استخدام Xceed.Words.NET لقراءة المحتوى (نفس المكتبة اللي عندك)
+                using (var doc = DocX.Load(fullPath))
                 {
-                    templateId = id,
-                    placeholdersCount = 0,
-                    placeholders = new List<string>(),
-                    message = "لا توجد Placeholders في هذا القالب، أو القالب غير موجود"
-                });
+                    content = doc.Text;
+                }
+
+                _logger.LogInformation("Successfully read template content: {TemplateId}", id);
             }
-            
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading template file: {TemplateId}", id);
+                return StatusCode(500, new { message = "خطأ في قراءة ملف القالب" });
+            }
+
             return Ok(new
             {
-                templateId = id,
-                placeholdersCount = placeholders.Count,
-                placeholders = placeholders
+                id = template.Id,
+                name = template.Name,
+                content = content,
+                filePath = template.TemplateFilePath
             });
         }
 
         // ================================================================
-        // 🔧 استخراج واستبدال الفراغات تلقائياً (Admin Only)
-        // ================================================================
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost("templates/{id:guid}/extract-empty")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> ExtractEmptySpaces(Guid id)
-        {
-            var userId = GetUserId();
-            if (!userId.HasValue)
-                return Unauthorized(new { message = "يجب تسجيل الدخول" });
-
-            if (!IsAdmin())
-                return StatusCode(403, new { message = "غير مصرح لك بهذه العملية" });
-
-            var placeholders = await _contractService.ExtractAndReplaceEmptySpacesAsync(id);
-            return Ok(new
-            {
-                templateId = id,
-                placeholdersCount = placeholders.Count,
-                placeholders = placeholders,
-                message = placeholders.Count > 0
-                    ? "تم استخراج واستبدال الفراغات بنجاح"
-                    : "لا توجد فراغات في هذا القالب"
-            });
-        }
-
-        // ================================================================
-        // 🔄 تحويل جميع ملفات .doc إلى .docx (Admin Only - مرة واحدة)
+        // 🔄 تحويل جميع ملفات .doc إلى .docx (Admin Only)
         // ================================================================
 
         [Authorize(Roles = "Admin")]
@@ -152,38 +135,12 @@ namespace LegalMateAI.API.Controllers
                 return StatusCode(403, new { message = "غير مصرح لك بهذه العملية" });
 
             var converted = await _contractService.ConvertAllDocToDocxAsync();
-            
+
             return Ok(new
             {
                 message = $"تم تحويل {converted} ملف من .doc إلى .docx",
                 convertedCount = converted,
                 note = "الآن جميع القوالب بصيغة .docx وجاهزة للاستخدام"
-            });
-        }
-
-        // ================================================================
-        // 🔄 إضافة Placeholders تلقائياً لجميع القوالب (Admin Only)
-        // ================================================================
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost("templates/add-placeholders-to-all")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> AddPlaceholdersToAllTemplates()
-        {
-            var userId = GetUserId();
-            if (!userId.HasValue)
-                return Unauthorized(new { message = "يجب تسجيل الدخول" });
-
-            if (!IsAdmin())
-                return StatusCode(403, new { message = "غير مصرح لك بهذه العملية" });
-
-            var processedCount = await _contractService.AddPlaceholdersToAllTemplatesAsync();
-            
-            return Ok(new
-            {
-                message = "تمت معالجة القوالب بنجاح",
-                processedCount = processedCount,
-                note = "الآن جميع القوالب تحتوي على Placeholders بصيغة {{field_1}}, {{field_2}}, إلخ"
             });
         }
 
@@ -199,15 +156,23 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> GenerateContract([FromBody] GenerateContractRequest request)
         {
             var userId = GetUserId();
-            if (!userId.HasValue) 
+            if (!userId.HasValue)
                 return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
+            if (request.FilledData == null)
+                request.FilledData = new Dictionary<string, string>();
+
             var template = await _contractService.GetTemplateByIdAsync(request.TemplateId);
-            if (template == null) 
+            if (template == null)
                 return BadRequest(new { message = "القالب غير موجود" });
 
-            var result = await _contractService.GenerateContractFromTemplateAsync(userId.Value, request);
-            if (result == null) 
+            var result = await _contractService.GenerateContractFromTemplateAsync(
+                userId.Value,
+                request.TemplateId,
+                request.FilledData,
+                request.ContractTitle);
+
+            if (result == null)
                 return BadRequest(new { message = "فشل توليد العقد" });
 
             return Ok(result);
@@ -222,11 +187,11 @@ namespace LegalMateAI.API.Controllers
         [ProducesResponseType(typeof(List<ContractResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetMyContracts(
-            [FromQuery] string? search = null, 
+            [FromQuery] string? search = null,
             [FromQuery] ContractStatus? status = null)
         {
             var userId = GetUserId();
-            if (!userId.HasValue) 
+            if (!userId.HasValue)
                 return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
             var contracts = await _contractService.GetUserContractsAsync(userId.Value, status?.ToString(), search);
@@ -243,7 +208,7 @@ namespace LegalMateAI.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SearchContracts([FromQuery] string q)
         {
-            if (string.IsNullOrWhiteSpace(q)) 
+            if (string.IsNullOrWhiteSpace(q))
                 return BadRequest(new { message = "يرجى إدخال كلمة البحث" });
 
             var contracts = await _contractService.SearchAllContractsAsync(q);
@@ -278,7 +243,7 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> UpdateContract(Guid id, [FromBody] UpdateContractDto request)
         {
             var userId = GetUserId();
-            if (!userId.HasValue) 
+            if (!userId.HasValue)
                 return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
             var result = await _contractService.UpdateContractAsync(userId.Value, id, request);
@@ -296,7 +261,7 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> UpdateContractStatus(Guid id, [FromBody] UpdateContractStatusDto request)
         {
             var userId = GetUserId();
-            if (!userId.HasValue) 
+            if (!userId.HasValue)
                 return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
             var result = await _contractService.UpdateContractStatusAsync(userId.Value, id, request);
@@ -318,7 +283,7 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> DeleteContract(Guid id)
         {
             var userId = GetUserId();
-            if (!userId.HasValue) 
+            if (!userId.HasValue)
                 return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
             var result = await _contractService.DeleteContractAsync(userId.Value, id);
@@ -337,17 +302,28 @@ namespace LegalMateAI.API.Controllers
         public async Task<IActionResult> DownloadContract(Guid id)
         {
             var fileBytes = await _contractService.DownloadAnyContractAsync(id);
-            if (fileBytes == null) 
+            if (fileBytes == null)
                 return NotFound(new { message = "العقد غير موجود" });
 
             var contract = await _contractService.GetAnyContractByIdAsync(id);
             var fileName = $"{(contract?.Title ?? "contract")}_{DateTime.Now:yyyyMMdd}.docx";
-            
+
             return File(
-                fileBytes, 
+                fileBytes,
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 fileName
             );
         }
+    }
+
+    // ================================================================
+    // Request DTO
+    // ================================================================
+
+    public class GenerateContractRequest
+    {
+        public Guid TemplateId { get; set; }
+        public Dictionary<string, string> FilledData { get; set; } = new();
+        public string? ContractTitle { get; set; }
     }
 }

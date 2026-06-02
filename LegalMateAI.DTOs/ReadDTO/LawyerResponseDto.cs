@@ -1,6 +1,8 @@
+// LegalMateAI.DTOs/ReadDTO/LawyerResponseDto.cs
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using LegalMateAI.Domain.Enums;
 
 namespace LegalMateAI.DTOs.ReadDTO
 {
@@ -21,8 +23,21 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string LicenseNumber { get; set; } = string.Empty;
         public string BarAssociation { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
-        public string VerificationStatus { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
+        
+        //  الحالة الأساسية
+        public AccountStatus Status { get; set; }
+        
+        //  للتوافق مع الفرونت القديم - نفس قيمة Status
+        public string VerificationStatus => Status.ToString();
+        
+        //  IsActive محسوبة
+        public bool IsActive => Status == AccountStatus.Active;
+        
+        //  خصائص التعليق
+        public string? SuspensionReason { get; set; }
+        public DateTime? SuspendedAt { get; set; }
+        public DateTime? ActivatedAt { get; set; }
+        
         public DateTime? VerifiedAt { get; set; }
         
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -36,11 +51,9 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? City { get; set; }
         public string? OfficeAddress { get; set; }
         
-        // ✅ الحقول الجديدة
         public string? DateOfBirth { get; set; }
         public string? CreatedAt { get; set; }
         
-        // ✅ استخدم الـ DTOs الموجودة في ملفات تانية (مش نعرفهم هنا)
         public List<LawyerProfileSpecialtyDto> Specialties { get; set; } = new();
         public List<CertificateDto> Certificates { get; set; } = new();
     }

@@ -9,12 +9,13 @@ namespace LegalMateAI.BLL.Services.IService
         // ========== القوالب ==========
         Task<List<ContractTemplateResponseDto>> GetContractTemplatesAsync(ContractType? type = null, string? search = null);
         Task<ContractTemplateResponseDto?> GetTemplateByIdAsync(Guid templateId);
-        Task<List<string>> GetTemplatePlaceholdersAsync(Guid templateId);
-        Task<TemplateAnalysisDto> AnalyzeTemplateFullAsync(Guid templateId);
-        Task<List<string>> ExtractAndReplaceEmptySpacesAsync(Guid templateId);
         
         // ========== توليد العقود ==========
-        Task<ContractResponseDto?> GenerateContractFromTemplateAsync(Guid userId, GenerateContractRequest request);
+        Task<ContractResponseDto?> GenerateContractFromTemplateAsync(
+            Guid userId, 
+            Guid templateId, 
+            Dictionary<string, string> filledData,
+            string? contractTitle = null);
         
         // ========== عقود المستخدم ==========
         Task<List<ContractResponseDto>> GetUserContractsAsync(Guid userId, string? status = null, string? search = null);
@@ -33,7 +34,6 @@ namespace LegalMateAI.BLL.Services.IService
         
         // ========== أدوات إدارة القوالب (Admin Only) ==========
         Task<int> ConvertAllDocToDocxAsync();
-        Task<int> AddPlaceholdersToAllTemplatesAsync();  // ✅ جديد
     }
 
     public class GenerateContractRequest
@@ -41,6 +41,5 @@ namespace LegalMateAI.BLL.Services.IService
         public Guid TemplateId { get; set; }
         public Dictionary<string, string> FilledData { get; set; } = new();
         public string? ContractTitle { get; set; }
-        public Guid? LawyerId { get; set; }
     }
 }

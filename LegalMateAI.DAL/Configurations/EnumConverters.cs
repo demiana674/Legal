@@ -31,9 +31,9 @@ namespace LegalMateAI.DAL.Configurations
                 .HasConversion(GetEnumToStringConverter<AccountStatus>());
 
             // ===== Lawyer Related =====
-            modelBuilder.Entity<LawyerProfile>()
-                .Property(l => l.VerificationStatus)
-                .HasConversion(GetEnumToStringConverter<LawyerVerificationStatus>());
+            // modelBuilder.Entity<LawyerProfile>()
+            //     .Property(l => l.VerificationStatus)
+            //     .HasConversion(GetEnumToStringConverter<LawyerVerificationStatus>());
 
             // ===== Appointment Related =====
             modelBuilder.Entity<Appointment>()
@@ -82,6 +82,15 @@ namespace LegalMateAI.DAL.Configurations
             modelBuilder.Entity<AdminLog>()
                 .Property(al => al.Action)
                 .HasConversion(GetEnumToStringConverter<AdminLogAction>());
+
+
+                // ✅ تأكدي من وجود هذا السطر في Config الخاص بـ User
+modelBuilder.Entity<User>()
+    .Property(u => u.Status)
+    .HasConversion(
+        v => v.ToString(),
+        v => (AccountStatus)Enum.Parse(typeof(AccountStatus), v))
+    .HasMaxLength(20);
         }
     }
 }
