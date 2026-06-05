@@ -93,7 +93,6 @@ namespace LegalMateAI.BLL.Services.Service
                     Nationality = request.Nationality,
                     DateOfBirth = request.DateOfBirth,
                     Role = request.Role,
-                    // ❌ تم إزالة IsActive - أصبحت محسوبة
                     Status = AccountStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
                     JoinDate = DateTime.UtcNow,
@@ -103,7 +102,6 @@ namespace LegalMateAI.BLL.Services.Service
                 // ✅ تسجيل مستخدم عادي - يتفعل فوراً
                 if (request.Role == UserRole.User)
                 {
-                    // ✅ فقط نغير الـ Status، IsActive هتتحسب تلقائياً
                     user.Status = AccountStatus.Active;
                     
                     var userProfile = new UserProfile
@@ -117,8 +115,8 @@ namespace LegalMateAI.BLL.Services.Service
                         NationalId = request.NationalId,
                         Nationality = request.Nationality,
                         DateOfBirth = request.DateOfBirth,
-                        GovernorateId = request.GovernorateId,
-                        CityId = request.CityId,
+                        Governorate = request.Governorate,
+                        City = request.City,
                         Address = request.Address,
                         CreatedAt = DateTime.UtcNow,
                         LastProfileUpdate = DateTime.UtcNow
@@ -169,7 +167,6 @@ namespace LegalMateAI.BLL.Services.Service
                         };
                     }
 
-                    // ✅ المحامي يبدأ Pending (IsActive = false تلقائياً)
                     user.Status = AccountStatus.Pending;
                     
                     var lawyerProfile = new LawyerProfile
@@ -181,8 +178,8 @@ namespace LegalMateAI.BLL.Services.Service
                         LicenseIssueDate = request.LicenseIssueDate,
                         PracticeDegree = request.PracticeDegree,
                         YearsOfExperience = request.YearsOfExperience ?? 0,
-                        GovernorateId = request.GovernorateId,
-                        CityId = request.CityId,
+                        Governorate = request.Governorate,
+                        City = request.City,
                         OfficeAddress = request.Address,
                         CreatedAt = DateTime.UtcNow
                     };

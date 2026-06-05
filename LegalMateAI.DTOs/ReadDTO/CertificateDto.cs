@@ -2,7 +2,7 @@ using System;
 
 namespace LegalMateAI.DTOs.ReadDTO
 {
-    public class CertificateDto
+ public class CertificateDto
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;

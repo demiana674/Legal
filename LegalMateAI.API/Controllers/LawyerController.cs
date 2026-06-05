@@ -4,6 +4,9 @@ using LegalMateAI.BLL.Services.IService;
 using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.ReadDTO;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using LegalMateAI.DAL.DBContext;
+using LegalMateAI.Domain.Entities;
 
 namespace LegalMateAI.API.Controllers
 {
@@ -13,13 +16,16 @@ namespace LegalMateAI.API.Controllers
     {
         private readonly ILawyerService _lawyerService;
         private readonly ILogger<LawyerController> _logger;
+        private readonly LegalMateDbContext _context;
 
         public LawyerController(
             ILawyerService lawyerService,
-            ILogger<LawyerController> logger)
+            ILogger<LawyerController> logger,
+            LegalMateDbContext context)
         {
             _lawyerService = lawyerService;
             _logger = logger;
+            _context = context;
         }
 
         private Guid GetUserId()
@@ -40,6 +46,57 @@ namespace LegalMateAI.API.Controllers
         {
             var specialties = await _lawyerService.GetSpecialtiesAsync();
             return Ok(specialties);
+        }
+
+        /// <summary>
+        /// ✅ جلب قائمة المهارات المتاحة للمحامين
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("available-skills")]
+        [ProducesResponseType(typeof(List<LawyerSkillResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAvailableSkills([FromQuery] string? category = null)
+        {
+            var query = _context.Set<LawyerSkill>()
+                .Where(s => s.IsActive)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(category))
+            {
+                query = query.Where(s => s.Category == category);
+            }
+
+            var skills = await query
+                .OrderBy(s => s.DisplayOrder)
+                .ThenBy(s => s.NameAr)
+                .Select(s => new LawyerSkillResponseDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    NameAr = s.NameAr,
+                    Description = s.Description,
+                    Icon = s.Icon,
+                    Category = s.Category
+                })
+                .ToListAsync();
+
+            return Ok(skills);
+        }
+
+        /// <summary>
+        /// ✅ جلب تصنيفات المهارات
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("available-skills/categories")]
+        public async Task<IActionResult> GetSkillCategories()
+        {
+            var categories = await _context.Set<LawyerSkill>()
+                .Where(s => s.IsActive && s.Category != null)
+                .Select(s => s.Category!)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+
+            return Ok(categories);
         }
 
         /// <summary>
@@ -201,5 +258,12 @@ namespace LegalMateAI.API.Controllers
 
             return Ok(new { message = "تم تحديث أوقات التوفر بنجاح" });
         }
+    }
+
+    public class AddReviewRequest
+    {
+        public int Rating { get; set; }
+        public string? Comment { get; set; }
+        public Guid? AppointmentId { get; set; }
     }
 }

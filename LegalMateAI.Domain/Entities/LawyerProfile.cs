@@ -1,7 +1,5 @@
-// LegalMateAI.Domain/Entities/LawyerProfile.cs
-using System;
-using System.Collections.Generic;
 using LegalMateAI.Domain.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LegalMateAI.Domain.Entities
 {
@@ -9,46 +7,54 @@ namespace LegalMateAI.Domain.Entities
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
-        public User User { get; set; } = null!;
-        
-        // Professional Information
+        public virtual User? User { get; set; }
+
         public string? LicenseNumber { get; set; }
         public string? BarAssociation { get; set; }
         public DateTime? LicenseIssueDate { get; set; }
         public string? PracticeDegree { get; set; }
         public int? YearsOfExperience { get; set; }
-        
-        public string? PhoneNumber { get; set; }
-        public string? AlternativePhone { get; set; }
-        
-        // Location
+
+        // حقول نصية للمحافظة والمدينة
+        public string? Governorate { get; set; }
+        public string? City { get; set; }
+
+        // للتوافق مع القديم (اختياري)
         public int? GovernorateId { get; set; }
-        public Governorate? Governorate { get; set; }
         public int? CityId { get; set; }
-        public City? City { get; set; }
+
+        [ForeignKey("GovernorateId")]
+        public virtual Governorate? GovernorateNavigation { get; set; }
+
+        [ForeignKey("CityId")]
+        public virtual City? CityNavigation { get; set; }
+
         public string? OfficeAddress { get; set; }
-        
-        //  بيانات الموافقة والرفض (تبقى هنا)
-        public DateTime? VerifiedAt { get; set; }
+        public string? AlternativePhone { get; set; }
+        public string? PhoneNumber { get; set; }
+
+        public AccountStatus VerificationStatus { get; set; }
         public string? RejectionReason { get; set; }
-        
-        //  خصائص التعليق
         public string? SuspensionReason { get; set; }
         public DateTime? SuspendedAt { get; set; }
         public DateTime? ActivatedAt { get; set; }
-        
-        // Timestamps
+        public DateTime? VerifiedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        
-        // Relationships
-        public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
-        public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
-        public ICollection<LawyerAvailability> Availabilities { get; set; } = new List<LawyerAvailability>();
-        public ICollection<LawyerReview> Reviews { get; set; } = new List<LawyerReview>();
-         public virtual ICollection<LawyerSpecialization> Specializations { get; set; } = new List<LawyerSpecialization>();
-	
-        public ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
-        public ICollection<LawyerProfileSpecialty> Specialties { get; set; } = new List<LawyerProfileSpecialty>();
+
+        // ✅ المهارات والكفاءات (مفصولة بفواصل)
+        public string? Skills { get; set; }
+
+        // ✅ عدد المحاج المعتمدة
+        public int ApprovedLitigationsCount { get; set; }
+
+        // ✅ عدد الموكلين
+        public int ClientsCount { get; set; }
+
+        // العلاقات
+        public virtual ICollection<LawyerSpecialization>? Specializations { get; set; }
+        public virtual ICollection<LawyerProfileSpecialty>? Specialties { get; set; }
+        public virtual ICollection<Certificate>? Certificates { get; set; }
+        public virtual ICollection<LawyerReview>? Reviews { get; set; }
     }
 }

@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/RegisterRequest.cs
 using System.ComponentModel.DataAnnotations;
 using LegalMateAI.Domain.Enums;
 
@@ -41,20 +40,16 @@ namespace LegalMateAI.DTOs
         public DateTime DateOfBirth { get; set; }
 
         [Required(ErrorMessage = "الجنسية مطلوبة")]
-        public string? Nationality { get; set; } 
+        public string? Nationality { get; set; }
 
-        // ✅ معرف المحافظة - رقم مش اسم
-        public int? GovernorateId { get; set; }
-        
-        // ✅ معرف المدينة - رقم مش اسم
-        public int? CityId { get; set; }
-        
-        
+        // ✅ المحافظة والمدينة كـ string
+        public string? Governorate { get; set; }
+        public string? City { get; set; }
+
         [StringLength(300)]
         public string? Address { get; set; }
 
         [Required(ErrorMessage = "نوع المستخدم مطلوب")]
-        // public string? Gender { get; set; }
         public UserRole Role { get; set; } = UserRole.User;
 
         // محامي فقط

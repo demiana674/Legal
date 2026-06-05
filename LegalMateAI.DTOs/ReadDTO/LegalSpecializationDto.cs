@@ -1,8 +1,11 @@
+// LegalMateAI.DTOs/ReadDTO/LegalSpecializationDto.cs
+using System;
+
 namespace LegalMateAI.DTOs.ReadDTO
 {
     public class LegalSpecializationDto
     {
-        public int Id { get; set; }
+        public int Id { get; set; }  // ✅ تغيير من Guid إلى int
         public string Name { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
         public string? Description { get; set; }

@@ -209,9 +209,6 @@ namespace LegalMateAI.DAL.Migrations
                     b.Property<Guid>("LawyerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("LawyerProfileId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -238,8 +235,6 @@ namespace LegalMateAI.DAL.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("LawyerId");
-
-                    b.HasIndex("LawyerProfileId");
 
                     b.HasIndex("UserID");
 
@@ -1164,10 +1159,19 @@ namespace LegalMateAI.DAL.Migrations
                     b.Property<string>("AlternativePhone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ApprovedLitigationsCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("BarAssociation")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("CityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClientsCount")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1175,7 +1179,13 @@ namespace LegalMateAI.DAL.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<string>("Governorate")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("GovernorateId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GovernorateId1")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("LicenseIssueDate")
@@ -1196,6 +1206,9 @@ namespace LegalMateAI.DAL.Migrations
                     b.Property<string>("RejectionReason")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Skills")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("SuspendedAt")
                         .HasColumnType("datetime2");
 
@@ -1208,6 +1221,9 @@ namespace LegalMateAI.DAL.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("VerifiedAt")
                         .HasColumnType("datetime2");
 
@@ -1219,6 +1235,8 @@ namespace LegalMateAI.DAL.Migrations
                     b.HasIndex("CityId");
 
                     b.HasIndex("GovernorateId");
+
+                    b.HasIndex("GovernorateId1");
 
                     b.HasIndex("LicenseNumber")
                         .IsUnique()
@@ -1293,6 +1311,63 @@ namespace LegalMateAI.DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("LawyerReviews");
+                });
+
+            modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSkill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("DisplayOrder");
+
+                    b.HasIndex("NameAr")
+                        .IsUnique();
+
+                    b.ToTable("LawyerSkills");
                 });
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerSpecialization", b =>
@@ -1838,6 +1913,9 @@ namespace LegalMateAI.DAL.Migrations
                     b.Property<string>("AlternativePhone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("CityId")
                         .HasColumnType("int");
 
@@ -1851,17 +1929,18 @@ namespace LegalMateAI.DAL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Governorate")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("GovernorateId")
                         .HasColumnType("int");
 
                     b.Property<string>("LastName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("LastProfileUpdate")
+                    b.Property<DateTime?>("LastProfileUpdate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NationalId")
@@ -1871,9 +1950,6 @@ namespace LegalMateAI.DAL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1911,13 +1987,11 @@ namespace LegalMateAI.DAL.Migrations
 
                     b.HasOne("LegalMateAI.Domain.Entities.City", "City")
                         .WithMany()
-                        .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("CityId");
 
                     b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
                         .WithMany()
-                        .HasForeignKey("GovernorateId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("GovernorateId");
 
                     b.Navigation("Admin");
 
@@ -1939,10 +2013,6 @@ namespace LegalMateAI.DAL.Migrations
                         .HasForeignKey("LawyerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", null)
-                        .WithMany("Appointments")
-                        .HasForeignKey("LawyerProfileId");
 
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
                         .WithMany("Appointments")
@@ -2066,7 +2136,7 @@ namespace LegalMateAI.DAL.Migrations
             modelBuilder.Entity("LegalMateAI.Domain.Entities.Contract", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
-                        .WithMany("Contracts")
+                        .WithMany()
                         .HasForeignKey("LawyerId");
 
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
@@ -2205,7 +2275,7 @@ namespace LegalMateAI.DAL.Migrations
             modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerAvailability", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.LawyerProfile", "Lawyer")
-                        .WithMany("Availabilities")
+                        .WithMany()
                         .HasForeignKey("LawyerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2238,15 +2308,19 @@ namespace LegalMateAI.DAL.Migrations
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfile", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.City", "City")
+                    b.HasOne("LegalMateAI.Domain.Entities.City", "CityNavigation")
                         .WithMany()
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
-                        .WithMany("Lawyers")
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "GovernorateNavigation")
+                        .WithMany()
                         .HasForeignKey("GovernorateId")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", null)
+                        .WithMany("Lawyers")
+                        .HasForeignKey("GovernorateId1");
 
                     b.HasOne("LegalMateAI.Domain.Entities.User", "User")
                         .WithOne("LawyerProfile")
@@ -2254,9 +2328,9 @@ namespace LegalMateAI.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("City");
+                    b.Navigation("CityNavigation");
 
-                    b.Navigation("Governorate");
+                    b.Navigation("GovernorateNavigation");
 
                     b.Navigation("User");
                 });
@@ -2377,7 +2451,7 @@ namespace LegalMateAI.DAL.Migrations
             modelBuilder.Entity("LegalMateAI.Domain.Entities.UserDocument", b =>
                 {
                     b.HasOne("LegalMateAI.Domain.Entities.UserProfile", "UserProfile")
-                        .WithMany("Documents")
+                        .WithMany()
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2387,12 +2461,11 @@ namespace LegalMateAI.DAL.Migrations
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.UserProfile", b =>
                 {
-                    b.HasOne("LegalMateAI.Domain.Entities.City", "City")
+                    b.HasOne("LegalMateAI.Domain.Entities.City", "CityNavigation")
                         .WithMany()
-                        .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("CityId");
 
-                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "Governorate")
+                    b.HasOne("LegalMateAI.Domain.Entities.Governorate", "GovernorateNavigation")
                         .WithMany("Users")
                         .HasForeignKey("GovernorateId");
 
@@ -2402,9 +2475,9 @@ namespace LegalMateAI.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("City");
+                    b.Navigation("CityNavigation");
 
-                    b.Navigation("Governorate");
+                    b.Navigation("GovernorateNavigation");
 
                     b.Navigation("User");
                 });
@@ -2460,13 +2533,7 @@ namespace LegalMateAI.DAL.Migrations
 
             modelBuilder.Entity("LegalMateAI.Domain.Entities.LawyerProfile", b =>
                 {
-                    b.Navigation("Appointments");
-
-                    b.Navigation("Availabilities");
-
                     b.Navigation("Certificates");
-
-                    b.Navigation("Contracts");
 
                     b.Navigation("Reviews");
 
@@ -2496,11 +2563,6 @@ namespace LegalMateAI.DAL.Migrations
                     b.Navigation("LawyerProfile");
 
                     b.Navigation("UserProfile");
-                });
-
-            modelBuilder.Entity("LegalMateAI.Domain.Entities.UserProfile", b =>
-                {
-                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

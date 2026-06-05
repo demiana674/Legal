@@ -1,9 +1,9 @@
-
+// LegalMateAI.DTOs/CreateDTO/LawyerSearchDto.cs
 using System;
 using System.ComponentModel.DataAnnotations;
+
 namespace LegalMateAI.DTOs.CreateDTO
 {
-    // 11. Lawyer Search
     public class LawyerSearchDto
     {
         public string? Specialization { get; set; }
@@ -16,9 +16,9 @@ namespace LegalMateAI.DTOs.CreateDTO
         public bool OnlyAvailable { get; set; }
         public DateTime? PreferredDate { get; set; }
         public int? GovernorateId { get; set; }
-    public int? SpecializationId { get; set; }
-    public string? City { get; set; }
-    public int[]? AuthorizedCourtIds { get; set; }
-  
+        public int? SpecializationId { get; set; }  // ✅ تغيير من Guid? إلى int?
+        public string? Governorate { get; set; }
+        public string? City { get; set; }
+        public int[]? AuthorizedCourtIds { get; set; }
     }
 }

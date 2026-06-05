@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/UserProfileService.cs
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -38,8 +37,6 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var user = await _context.Users
                 .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.City)
-                        .ThenInclude(c => c!.Governorate)
                 .FirstOrDefaultAsync(u => u.UserID == userId);
 
             if (user == null) return null;
@@ -47,8 +44,7 @@ namespace LegalMateAI.BLL.Services.Service
             // فك تشفير البيانات الحساسة
             string? decryptedPhone = Decrypt(user.Phone);
             string? decryptedNationalId = Decrypt(user.NationalId);
-            string? decryptedAltPhone= null;
-            
+            string? decryptedAltPhone = null;
             
             if (user.UserProfile != null)
             {
@@ -63,12 +59,14 @@ namespace LegalMateAI.BLL.Services.Service
                 NationalId = decryptedNationalId,
                 Nationality = user.Nationality ?? "مصري",
                 DateOfBirth = user.DateOfBirth?.ToString("dd MMMM yyyy"),
-                // Gender = "ذكر",
                 AlternativePhone = decryptedAltPhone,
                 ProfilePicture = user.ProfilePicture,
-                GovernorateName = user.UserProfile?.City?.Governorate?.Name,
-                CityName = user.UserProfile?.City?.Name,
+                
+                // ✅ التصحيح: Governorate و City هما strings مباشرة في UserProfile
+                GovernorateName = user.UserProfile?.Governorate,
+                CityName = user.UserProfile?.City,
                 Address = user.UserProfile?.Address,
+                
                 CreatedAt = user.CreatedAt,
                 LastLogin = user.LastLogin,
                 LastPasswordChange = "غير متاح"
@@ -120,14 +118,17 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            if (request.GovernorateId.HasValue)
+            // تحديث المحافظة (string)
+            if (!string.IsNullOrEmpty(request.Governorate))
             {
+                profile.Governorate = request.Governorate;
                 hasChanges = true;
             }
 
-            if (request.CityId.HasValue)
+            // تحديث المدينة (string)
+            if (!string.IsNullOrEmpty(request.City))
             {
-                profile.CityId = request.CityId;
+                profile.City = request.City;
                 hasChanges = true;
             }
 
@@ -207,4 +208,4 @@ namespace LegalMateAI.BLL.Services.Service
             catch { return encrypted; }
         }
     }
-} 
+}

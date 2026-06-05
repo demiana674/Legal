@@ -7,7 +7,7 @@ namespace LegalMateAI.Domain.Entities
     {
         public Guid Id { get; set; }
         public Guid LawyerId { get; set; }
-        public int SpecialtyId { get; set; }
+        public int SpecialtyId { get; set; }  // ✅ تغيير من Guid إلى int
         public bool IsPrimary { get; set; }
         public int YearsOfExperience { get; set; }
         

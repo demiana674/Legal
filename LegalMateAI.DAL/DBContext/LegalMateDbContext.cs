@@ -47,7 +47,8 @@ namespace LegalMateAI.DAL.DBContext
         public DbSet<PredefinedContractTemplate> PredefinedContractTemplates { get; set; }
         public DbSet<GeneratedContract> GeneratedContracts { get; set; }
 
-         
+        // ===== ✅ إضافة LawyerSkills (المهارات) =====
+        public DbSet<LawyerSkill> LawyerSkills { get; set; }
 
         // ===== إضافات Data Warehouse & Analytics =====
         public DbSet<DataWarehouseFact> DataWarehouseFacts { get; set; }
@@ -71,7 +72,25 @@ namespace LegalMateAI.DAL.DBContext
             // ===== 3. TimeDimension Identity off =====
             modelBuilder.Entity<TimeDimension>().Property(t => t.Id).ValueGeneratedNever();
 
-            // ===== 4. Relationships =====
+            // ===== 4. ✅ Configure LawyerSkill =====
+            modelBuilder.Entity<LawyerSkill>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.NameAr).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.Icon).HasMaxLength(50);
+                entity.Property(e => e.Category).HasMaxLength(50);
+                entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(e => e.NameAr).IsUnique();
+                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.DisplayOrder);
+            });
+
+            // ===== 5. Relationships =====
 
             modelBuilder.Entity<Admin>()
                 .HasOne(a => a.Profile)
@@ -136,13 +155,13 @@ namespace LegalMateAI.DAL.DBContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<LawyerProfile>()
-                .HasOne(l => l.Governorate)
-                .WithMany(g => g.Lawyers)
+                .HasOne(l => l.GovernorateNavigation)
+                .WithMany()
                 .HasForeignKey(l => l.GovernorateId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<LawyerProfile>()
-                .HasOne(l => l.City)
+                .HasOne(l => l.CityNavigation)
                 .WithMany()
                 .HasForeignKey(l => l.CityId)
                 .OnDelete(DeleteBehavior.NoAction);
@@ -184,12 +203,6 @@ namespace LegalMateAI.DAL.DBContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ===== UserProfile Relationships =====
-            modelBuilder.Entity<UserProfile>()
-                .HasOne(up => up.City)
-                .WithMany()
-                .HasForeignKey(up => up.CityId)
-                .OnDelete(DeleteBehavior.NoAction);
-
             modelBuilder.Entity<UserProfile>()
                 .HasOne(up => up.User)
                 .WithOne(u => u.UserProfile)
@@ -238,18 +251,6 @@ namespace LegalMateAI.DAL.DBContext
                 .WithMany()
                 .HasForeignKey(g => g.LawyerId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminProfile>()
-                .HasOne(ap => ap.Governorate)
-                .WithMany()
-                .HasForeignKey(ap => ap.GovernorateId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<AdminProfile>()
-                .HasOne(ap => ap.City)
-                .WithMany()
-                .HasForeignKey(ap => ap.CityId)
-                .OnDelete(DeleteBehavior.NoAction);
 
             // ===== Data Warehouse Relationships =====
             modelBuilder.Entity<DataWarehouseFact>()
@@ -308,10 +309,9 @@ namespace LegalMateAI.DAL.DBContext
 
             modelBuilder.Entity<Admin>().HasIndex(a => a.Email).IsUnique();
 
-            // ❌ تم حذف هذا السطر: modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.VerificationStatus);
             modelBuilder.Entity<LawyerProfile>().HasIndex(l => l.LicenseNumber).IsUnique();
 
-            modelBuilder.Entity<Governorate>().HasIndex(g => g.Name);// ✅ تخصصات المحامي
+            modelBuilder.Entity<Governorate>().HasIndex(g => g.Name);
             modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.ContractNumber).IsUnique();
             modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.UserId);
             modelBuilder.Entity<GeneratedContract>().HasIndex(g => g.CreatedAt);
@@ -346,9 +346,7 @@ namespace LegalMateAI.DAL.DBContext
                 .HasDatabaseName("IX_Users_Role_Status");
 
             // ===== Default Values =====
-            // ✅ فقط أعمدة التخزين الفعلية (وليس الخصائص المحسوبة)
             modelBuilder.Entity<User>().Property(u => u.Status).HasDefaultValue(AccountStatus.Pending);
-            // ❌ تم حذف: modelBuilder.Entity<User>().Property(u => u.IsActive).HasDefaultValue(false);
             modelBuilder.Entity<User>().Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             modelBuilder.Entity<User>().Property(u => u.JoinDate).HasDefaultValueSql("GETUTCDATE()");
 
@@ -356,7 +354,6 @@ namespace LegalMateAI.DAL.DBContext
             modelBuilder.Entity<AdminLog>().Property(al => al.Timestamp).HasDefaultValueSql("GETUTCDATE()");
 
             modelBuilder.Entity<LawyerProfile>().Property(l => l.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-            // ❌ تم حذف: modelBuilder.Entity<LawyerProfile>().Property(l => l.VerificationStatus).HasDefaultValue(LawyerVerificationStatus.Pending);
 
             modelBuilder.Entity<LoginAttempt>().Property(la => la.AttemptedAt).HasDefaultValueSql("GETUTCDATE()");
 

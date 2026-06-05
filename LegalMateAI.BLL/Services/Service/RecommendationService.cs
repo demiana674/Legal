@@ -36,11 +36,10 @@ namespace LegalMateAI.BLL.Services.Service
             int? governorateId = null,
             int topK = 5)
         {
-            // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
             var activeLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Specialties)
-                    .ThenInclude(ls => ls.Specialty)
+                    .ThenInclude(s => s.Specialty)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
                 .Include(u => u.LawyerProfile)
@@ -84,20 +83,22 @@ namespace LegalMateAI.BLL.Services.Service
                     ? lawyer.LawyerProfile.Reviews.Average(r => r.Rating)
                     : 0;
 
+                string specialization = lawyer.LawyerProfile.Specialties?
+                    .FirstOrDefault()?.Specialty?.NameAr ?? "قانون عام";
+
                 result.Add(new RecommendedLawyerDto
                 {
                     LawyerId = lawyer.LawyerProfile!.Id,
                     UserId = lawyer.UserID,
                     LawyerName = lawyer.FullName,
                     ProfilePicture = lawyer.ProfilePicture,
-                    Specialization = lawyer.LawyerProfile.Specialties?
-                        .FirstOrDefault()?.Specialty?.NameAr ?? "قانون عام",
+                    Specialization = specialization,
                     BarAssociation = lawyer.LawyerProfile.BarAssociation ?? "",
                     YearsOfExperience = lawyer.LawyerProfile.YearsOfExperience ?? 0,
                     Rating = Math.Round(avgRating, 1),
                     TotalReviews = lawyer.LawyerProfile.Reviews?.Count ?? 0,
-                    GovernorateName = lawyer.LawyerProfile.Governorate?.Name,
-                    City = lawyer.LawyerProfile.City?.Name,
+                    GovernorateName = lawyer.LawyerProfile.Governorate,
+                    City = lawyer.LawyerProfile.City,
                     MatchScore = Math.Round(score, 1),
                     MatchReason = reason
                 });
@@ -125,15 +126,16 @@ namespace LegalMateAI.BLL.Services.Service
                 .Distinct()
                 .ToListAsync();
 
-            // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
             var recommendedLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Specialties)
+                    .ThenInclude(s => s.Specialty)
                 .Include(u => u.LawyerProfile)
                     .ThenInclude(lp => lp!.Reviews)
                 .Where(u => u.Role == UserRole.Lawyer &&
                             u.Status == AccountStatus.Active &&
                             u.LawyerProfile != null &&
+                            u.LawyerProfile.Specialties != null &&
                             u.LawyerProfile.Specialties.Any(s => similarLawyers.Contains(s.SpecialtyId)) &&
                             !userRatings.Contains(u.LawyerProfile!.Id))
                 .Take(topK)
@@ -146,20 +148,22 @@ namespace LegalMateAI.BLL.Services.Service
                     ? lawyer.LawyerProfile.Reviews.Average(r => r.Rating)
                     : 0;
 
+                string specialization = lawyer.LawyerProfile.Specialties?
+                    .FirstOrDefault()?.Specialty?.NameAr ?? "قانون عام";
+
                 result.Add(new RecommendedLawyerDto
                 {
                     LawyerId = lawyer.LawyerProfile.Id,
                     UserId = lawyer.UserID,
                     LawyerName = lawyer.FullName,
                     ProfilePicture = lawyer.ProfilePicture,
-                    Specialization = lawyer.LawyerProfile.Specialties?
-                        .FirstOrDefault()?.Specialty?.NameAr ?? "قانون عام",
+                    Specialization = specialization,
                     BarAssociation = lawyer.LawyerProfile.BarAssociation ?? "",
                     YearsOfExperience = lawyer.LawyerProfile.YearsOfExperience ?? 0,
                     Rating = Math.Round(avgRating, 1),
                     TotalReviews = lawyer.LawyerProfile.Reviews?.Count ?? 0,
-                    GovernorateName = lawyer.LawyerProfile.Governorate?.Name,
-                    City = lawyer.LawyerProfile.City?.Name,
+                    GovernorateName = lawyer.LawyerProfile.Governorate,
+                    City = lawyer.LawyerProfile.City,
                     MatchScore = 85,
                     MatchReason = "موصى به بناءً على تقييماتك السابقة"
                 });
@@ -222,7 +226,9 @@ namespace LegalMateAI.BLL.Services.Service
             if (!string.IsNullOrEmpty(detectedSpecialization))
             {
                 var lawyerSpecialties = lawyer.LawyerProfile!.Specialties?
-                    .Select(s => s.Specialty?.NameAr ?? "") ?? new List<string>();
+                    .Select(s => s.Specialty?.NameAr ?? "")
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .ToList() ?? new List<string>();
 
                 if (lawyerSpecialties.Any(s => s.Contains(detectedSpecialization)))
                 {

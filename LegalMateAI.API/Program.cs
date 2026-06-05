@@ -23,6 +23,7 @@ using DinkToPdf.Contracts;
 using QuestPDF.Infrastructure;
 using Microsoft.Extensions.FileProviders;
 using System.Text.Json;
+using LegalMateAI.DAL.Seeders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -251,6 +252,13 @@ using (var scope = app.Services.CreateScope())
             }
         }
         catch (Exception ex) { logger.LogWarning($"⚠️ Legal specializations: {ex.Message}"); }
+
+        // ===== Seed Lawyer Skills =====
+        try
+        {
+            await LawyerSkillSeeder.SeedAsync(context, logger);
+        }
+        catch (Exception ex) { logger.LogWarning($"⚠️ Lawyer skills seeding: {ex.Message}"); }
 
         // ===== Seed Laws =====
         try

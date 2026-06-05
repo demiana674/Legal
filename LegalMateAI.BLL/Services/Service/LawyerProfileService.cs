@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/LawyerProfileService.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,14 +42,12 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<LawyerProfileDto?> GetProfileAsync(Guid userId)
         {
             var user = await _context.Users
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.LawyerProfile!)
+                    .ThenInclude(lp => lp!.Specialties!)
                     .ThenInclude(s => s.Specialty)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Governorate)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.City)
-                .Include(u => u.LawyerProfile)
+                .Include(u => u.LawyerProfile!)
+                    .ThenInclude(lp => lp!.Certificates)
+                .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Reviews)
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
@@ -59,16 +56,16 @@ namespace LegalMateAI.BLL.Services.Service
 
             var lawyerProfile = user.LawyerProfile;
 
-            // فك تشفير البيانات بأمان
             string? decryptedLicense = DecryptSafely(lawyerProfile.LicenseNumber);
             string? decryptedPhone = DecryptSafely(user.Phone);
             string? decryptedAltPhone = DecryptSafely(user.UserProfile?.AlternativePhone);
             string? decryptedNationalId = DecryptSafely(user.NationalId);
             string? decryptedDateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd");
 
-            // إحصائيات
             var activeCases = await _context.Cases
-                .CountAsync(c => c.LawyerId == lawyerProfile.Id && c.Status != CaseStatus.Completed);
+                .CountAsync(c => c.LawyerId == lawyerProfile.Id && 
+                    c.Status != CaseStatus.Completed && 
+                    c.Status != CaseStatus.Rejected);
 
             var upcomingHearings = await _context.Cases
                 .CountAsync(c => c.LawyerId == lawyerProfile.Id &&
@@ -76,20 +73,40 @@ namespace LegalMateAI.BLL.Services.Service
                     c.NextHearingDate.Value >= DateTime.UtcNow.Date &&
                     c.NextHearingDate.Value <= DateTime.UtcNow.Date.AddDays(7));
 
-            var totalClients = await _context.Cases
+            var actualClientsCount = await _context.Cases
                 .Where(c => c.LawyerId == lawyerProfile.Id)
                 .Select(c => c.ClientId)
                 .Distinct()
                 .CountAsync();
 
-            // ✅ استخراج أسماء التخصصات كمصفوفة strings
+            var avgRating = lawyerProfile.Reviews?.Any() == true 
+                ? lawyerProfile.Reviews.Average(r => r.Rating) 
+                : 0;
+
+            var totalReviews = lawyerProfile.Reviews?.Count ?? 0;
+
+            var skillsList = string.IsNullOrEmpty(lawyerProfile.Skills)
+                ? new List<string>()
+                : lawyerProfile.Skills.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .ToList();
+
             var specializationsList = lawyerProfile.Specialties?
                 .Select(s => s.Specialty?.Name ?? s.Specialty?.NameAr ?? "")
                 .Where(n => !string.IsNullOrEmpty(n))
                 .ToList() ?? new List<string>();
 
+            var certificatesList = lawyerProfile.Certificates?
+                .Select(c => new CertificateDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    IssuingOrganization = c.IssuingOrganization,
+                    Year = c.Year,
+                    FileUrl = c.FileUrl
+                }).ToList() ?? new List<CertificateDto>();
+
             _logger.LogInformation($"📊 Retrieved {specializationsList.Count} specializations for lawyer {userId}");
-            _logger.LogInformation($"📊 Specializations: {string.Join(", ", specializationsList)}");
 
             return new LawyerProfileDto
             {
@@ -109,9 +126,8 @@ namespace LegalMateAI.BLL.Services.Service
                 YearsOfExperience = lawyerProfile.YearsOfExperience ?? 0,
                 LicenseIssueDate = lawyerProfile.LicenseIssueDate,
                 PracticeDegree = lawyerProfile.PracticeDegree,
-                GovernorateId = lawyerProfile.GovernorateId,
-                GovernorateName = lawyerProfile.Governorate?.Name,
-                City = lawyerProfile.City?.Name,
+                GovernorateName = lawyerProfile.Governorate,
+                City = lawyerProfile.City,
                 OfficeAddress = lawyerProfile.OfficeAddress,
                 Status = user.Status,
                 VerifiedAt = lawyerProfile.VerifiedAt,
@@ -121,256 +137,291 @@ namespace LegalMateAI.BLL.Services.Service
                 ActivatedAt = user.ActivatedAt,
                 ActiveCases = activeCases,
                 UpcomingHearings = upcomingHearings,
-                TotalClients = totalClients,
+                TotalClients = actualClientsCount,
                 CreatedAt = user.CreatedAt,
-                Specializations = specializationsList
+                Skills = skillsList,
+                ApprovedLitigationsCount = lawyerProfile.ApprovedLitigationsCount,
+                ClientsCount = actualClientsCount,
+                TotalReviews = totalReviews,
+                AverageRating = avgRating,
+                Specializations = specializationsList,
+                Certificates = certificatesList
             };
         }
 
-     // LegalMateAI.BLL/Services/Service/LawyerProfileService.cs
-// جزء UpdateProfileAsync فقط - المعدل بالكامل
-
-public async Task<bool> UpdateProfileAsync(Guid userId, UpdateLawyerProfileDto request)
-{
-    _logger.LogInformation($"🔵 UpdateProfileAsync called for lawyer: {userId}");
-
-    var user = await _context.Users
-        .Include(u => u.LawyerProfile)
-            .ThenInclude(lp => lp!.Specializations)
-        .Include(u => u.UserProfile)
-        .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
-
-    if (user == null || user.LawyerProfile == null)
-    {
-        _logger.LogWarning($"❌ User not found for userId: {userId}");
-        return false;
-    }
-
-    var lawyerProfile = user.LawyerProfile;
-    _logger.LogInformation($"✅ LawyerProfile found: Id={lawyerProfile.Id}, UserId={lawyerProfile.UserId}");
-    
-    bool hasChanges = false;
-
-    // تحديث الاسم الأول
-    if (!string.IsNullOrEmpty(request.FirstName))
-    {
-        user.FirstName = request.FirstName;
-        hasChanges = true;
-    }
-
-    // تحديث الاسم الأخير
-    if (!string.IsNullOrEmpty(request.LastName))
-    {
-        user.LastName = request.LastName;
-        hasChanges = true;
-    }
-
-    // تحديث البريد الإلكتروني
-    if (!string.IsNullOrEmpty(request.Email))
-    {
-        user.Email = request.Email;
-        hasChanges = true;
-    }
-
-    // تحديث رقم الهاتف
-    if (!string.IsNullOrEmpty(request.Phone))
-    {
-        try
+        public async Task<bool> UpdateProfileAsync(Guid userId, UpdateLawyerProfileDto request)
         {
-            user.Phone = _encryption.Encrypt(request.Phone);
-            lawyerProfile.PhoneNumber = _encryption.Encrypt(request.Phone);
-        }
-        catch
-        {
-            user.Phone = request.Phone;
-            lawyerProfile.PhoneNumber = request.Phone;
-        }
-        hasChanges = true;
-    }
+            _logger.LogInformation($"🔵 UpdateProfileAsync called for lawyer: {userId}");
 
-    // تحديث الهاتف البديل
-    if (request.AlternativePhone != null)
-    {
-        if (user.UserProfile == null)
-        {
-            user.UserProfile = new UserProfile { Id = Guid.NewGuid(), UserId = userId };
-        }
-        try
-        {
-            user.UserProfile.AlternativePhone = string.IsNullOrEmpty(request.AlternativePhone)
-                ? null
-                : _encryption.Encrypt(request.AlternativePhone);
-        }
-        catch
-        {
-            user.UserProfile.AlternativePhone = request.AlternativePhone;
-        }
-        hasChanges = true;
-    }
+            // ✅ الحل الأمثل: جلب الكيان مرة أخرى مع التتبع (AsTracking)
+            var user = await _context.Users
+                .Include(u => u.LawyerProfile!)
+                    .ThenInclude(lp => lp!.Specializations)
+                .Include(u => u.UserProfile)
+                .AsTracking()  // ✅ مهم جداً - لضمان التتبع الصحيح
+                .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
-    // تحديث الجنسية
-    if (!string.IsNullOrEmpty(request.Nationality))
-    {
-        user.Nationality = request.Nationality;
-        hasChanges = true;
-    }
-
-    // تحديث تاريخ الميلاد
-    if (!string.IsNullOrEmpty(request.DateOfBirth))
-    {
-        if (DateTime.TryParse(request.DateOfBirth, out var dob))
-        {
-            user.DateOfBirth = dob;
-            hasChanges = true;
-        }
-    }
-
-    // تحديث الرقم القومي
-    if (!string.IsNullOrEmpty(request.NationalId))
-    {
-        try
-        {
-            user.NationalId = _encryption.Encrypt(request.NationalId);
-        }
-        catch
-        {
-            user.NationalId = request.NationalId;
-        }
-        hasChanges = true;
-    }
-
-    // تحديث سنوات الخبرة
-    if (request.YearsOfExperience.HasValue)
-    {
-        lawyerProfile.YearsOfExperience = request.YearsOfExperience.Value;
-        hasChanges = true;
-    }
-
-    // تحديث نقابة المحامين
-    if (!string.IsNullOrEmpty(request.BarAssociation))
-    {
-        lawyerProfile.BarAssociation = request.BarAssociation;
-        hasChanges = true;
-    }
-
-    // تحديث رقم الرخصة
-    if (!string.IsNullOrEmpty(request.LicenseNumber))
-    {
-        try
-        {
-            lawyerProfile.LicenseNumber = _encryption.Encrypt(request.LicenseNumber);
-        }
-        catch
-        {
-            lawyerProfile.LicenseNumber = request.LicenseNumber;
-        }
-        hasChanges = true;
-    }
-
-    // تحديث تاريخ إصدار الرخصة
-    if (request.LicenseIssueDate.HasValue)
-    {
-        lawyerProfile.LicenseIssueDate = request.LicenseIssueDate;
-        hasChanges = true;
-    }
-
-    // تحديث درجة المزاولة
-    if (!string.IsNullOrEmpty(request.PracticeDegree))
-    {
-        lawyerProfile.PracticeDegree = request.PracticeDegree;
-        hasChanges = true;
-    }
-
-    // تحديث الموقع
-    if (request.GovernorateId.HasValue)
-    {
-        lawyerProfile.GovernorateId = request.GovernorateId;
-        hasChanges = true;
-    }
-
-    if (!string.IsNullOrEmpty(request.City))
-    {
-        var city = await _context.Cities.FirstOrDefaultAsync(c => c.Name == request.City);
-        if (city != null)
-            lawyerProfile.CityId = city.Id;
-        hasChanges = true;
-    }
-
-    if (!string.IsNullOrEmpty(request.OfficeAddress))
-    {
-        lawyerProfile.OfficeAddress = request.OfficeAddress;
-        hasChanges = true;
-    }
-
-    // ✅ تحديث التخصصات - النسخة المعدلة (باستخدام LawyerSpecializations)
-    if (request.Specializations != null && request.Specializations.Any())
-    {
-        _logger.LogInformation($"📚 Updating specializations for lawyer {userId}: {string.Join(", ", request.Specializations)}");
-        _logger.LogInformation($"📚 LawyerProfile.Id: {lawyerProfile.Id}");
-
-        // حذف التخصصات القديمة من جدول تخصصات المحامي
-        var oldCount = lawyerProfile.Specializations.Count;
-        if (lawyerProfile.Specializations.Any())
-        {
-            _context.LawyerSpecializations.RemoveRange(lawyerProfile.Specializations);
-            _logger.LogInformation($"🗑️ Removed {oldCount} old specializations");
-        }
-
-        // إضافة التخصصات الجديدة للمحامي
-        foreach (var specName in request.Specializations)
-        {
-            if (string.IsNullOrWhiteSpace(specName)) continue;
-
-            _logger.LogInformation($"🔍 Processing specialization: '{specName}'");
-
-            // البحث عن التخصص في جدول التخصصات العامة
-            var specialty = await _context.LawyerSpecialties
-                .FirstOrDefaultAsync(s => s.Name == specName || s.NameAr == specName);
-
-            if (specialty == null)
+            if (user == null || user.LawyerProfile == null)
             {
-                // إنشاء تخصص جديد في جدول التخصصات العامة
-                specialty = new LawyerSpecialty
+                _logger.LogWarning($"❌ User not found for userId: {userId}");
+                return false;
+            }
+
+            var lawyerProfile = user.LawyerProfile;
+            _logger.LogInformation($"✅ LawyerProfile found: Id={lawyerProfile.Id}, UserId={lawyerProfile.UserId}");
+            
+            bool hasChanges = false;
+
+            // Basic Info
+            if (!string.IsNullOrEmpty(request.FirstName))
+            {
+                user.FirstName = request.FirstName;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.LastName))
+            {
+                user.LastName = request.LastName;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.Email))
+            {
+                user.Email = request.Email;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.Phone))
+            {
+                try
                 {
-                    Name = specName,
-                    NameAr = specName,
-                    IsActive = true
-                };
-                await _context.LawyerSpecialties.AddAsync(specialty);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation($"✨ Created new specialty: '{specName}' with ID: {specialty.Id}");
+                    user.Phone = _encryption.Encrypt(request.Phone);
+                    lawyerProfile.PhoneNumber = _encryption.Encrypt(request.Phone);
+                }
+                catch
+                {
+                    user.Phone = request.Phone;
+                    lawyerProfile.PhoneNumber = request.Phone;
+                }
+                hasChanges = true;
             }
-            else
+            if (request.AlternativePhone != null)
             {
-                _logger.LogInformation($"✅ Found existing specialty: '{specName}' with ID: {specialty.Id}");
+                if (user.UserProfile == null)
+                {
+                    user.UserProfile = new UserProfile { Id = Guid.NewGuid(), UserId = userId };
+                }
+                try
+                {
+                    user.UserProfile.AlternativePhone = string.IsNullOrEmpty(request.AlternativePhone)
+                        ? null
+                        : _encryption.Encrypt(request.AlternativePhone);
+                }
+                catch
+                {
+                    user.UserProfile.AlternativePhone = request.AlternativePhone;
+                }
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.Nationality))
+            {
+                user.Nationality = request.Nationality;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.DateOfBirth))
+            {
+                if (DateTime.TryParse(request.DateOfBirth, out var dob))
+                {
+                    user.DateOfBirth = dob;
+                    hasChanges = true;
+                }
+            }
+            if (!string.IsNullOrEmpty(request.NationalId))
+            {
+                try
+                {
+                    user.NationalId = _encryption.Encrypt(request.NationalId);
+                }
+                catch
+                {
+                    user.NationalId = request.NationalId;
+                }
+                hasChanges = true;
             }
 
-            // ربط التخصص بالمحامي في جدول LawyerSpecializations
-            var lawyerSpecialization = new LawyerSpecialization
+            // Professional Info
+            if (request.YearsOfExperience.HasValue)
             {
-                Id = Guid.NewGuid(),
-                LawyerId = lawyerProfile.Id,
-                SpecializationId = specialty.Id,
-                IsPrimary = false,
-                CasesCount = 0
-            };
-            _context.LawyerSpecializations.Add(lawyerSpecialization);
-            _logger.LogInformation($"🔗 Added relationship: LawyerId={lawyerProfile.Id}, SpecializationId={specialty.Id}");
+                lawyerProfile.YearsOfExperience = request.YearsOfExperience.Value;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.BarAssociation))
+            {
+                lawyerProfile.BarAssociation = request.BarAssociation;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.LicenseNumber))
+            {
+                try
+                {
+                    lawyerProfile.LicenseNumber = _encryption.Encrypt(request.LicenseNumber);
+                }
+                catch
+                {
+                    lawyerProfile.LicenseNumber = request.LicenseNumber;
+                }
+                hasChanges = true;
+            }
+            if (request.LicenseIssueDate.HasValue)
+            {
+                lawyerProfile.LicenseIssueDate = request.LicenseIssueDate;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.PracticeDegree))
+            {
+                lawyerProfile.PracticeDegree = request.PracticeDegree;
+                hasChanges = true;
+            }
+
+            // ✅ Location - استخدام النص (string) كما هو متوقع
+            if (!string.IsNullOrEmpty(request.Governorate))
+            {
+                lawyerProfile.Governorate = request.Governorate;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.City))
+            {
+                lawyerProfile.City = request.City;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrEmpty(request.OfficeAddress))
+            {
+                lawyerProfile.OfficeAddress = request.OfficeAddress;
+                hasChanges = true;
+            }
+
+            // ✅ تحديث المهارات والكفاءات
+            if (request.Skills != null && request.Skills.Any())
+            {
+                lawyerProfile.Skills = string.Join(",", request.Skills);
+                hasChanges = true;
+            }
+            else if (!string.IsNullOrEmpty(request.SkillsText))
+            {
+                lawyerProfile.Skills = request.SkillsText;
+                hasChanges = true;
+            }
+
+            // ✅ تحديث عدد المحاج المعتمدة
+            if (request.ApprovedLitigationsCount.HasValue)
+            {
+                lawyerProfile.ApprovedLitigationsCount = request.ApprovedLitigationsCount.Value;
+                hasChanges = true;
+            }
+
+            // Specializations
+            if (request.Specializations != null && request.Specializations.Any())
+            {
+                _logger.LogInformation($"📚 Updating specializations for lawyer {userId}: {string.Join(", ", request.Specializations)}");
+
+                var oldSpecializations = await _context.LawyerSpecializations
+                    .Where(ls => ls.LawyerId == lawyerProfile.Id)
+                    .ToListAsync();
+                if (oldSpecializations.Any())
+                {
+                    _context.LawyerSpecializations.RemoveRange(oldSpecializations);
+                }
+
+                foreach (var specName in request.Specializations)
+                {
+                    if (string.IsNullOrWhiteSpace(specName)) continue;
+
+                    var specialty = await _context.LawyerSpecialties
+                        .FirstOrDefaultAsync(s => s.Name == specName || s.NameAr == specName);
+
+                    if (specialty == null)
+                    {
+                        specialty = new LawyerSpecialty
+                        {
+                            Name = specName,
+                            NameAr = specName,
+                            IsActive = true
+                        };
+                        await _context.LawyerSpecialties.AddAsync(specialty);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    var lawyerSpecialization = new LawyerSpecialization
+                    {
+                        Id = Guid.NewGuid(),
+                        LawyerId = lawyerProfile.Id,
+                        SpecializationId = specialty.Id,
+                        IsPrimary = false,
+                        CasesCount = 0
+                    };
+                    _context.LawyerSpecializations.Add(lawyerSpecialization);
+                }
+                hasChanges = true;
+            }
+
+            // Certificates
+            if (request.Certificates != null)
+            {
+                var oldCertificates = await _context.Certificates
+                    .Where(c => c.LawyerId == lawyerProfile.Id)
+                    .ToListAsync();
+                if (oldCertificates.Any())
+                {
+                    _context.Certificates.RemoveRange(oldCertificates);
+                }
+
+                foreach (var cert in request.Certificates)
+                {
+                    if (string.IsNullOrWhiteSpace(cert.Name)) continue;
+
+                    var newCert = new Certificate
+                    {
+                        Id = Guid.NewGuid(),
+                        LawyerId = lawyerProfile.Id,
+                        Name = cert.Name,
+                        IssuingOrganization = cert.IssuingOrganization,
+                        Year = cert.Year,
+                        FileUrl = cert.FileUrl
+                    };
+                    _context.Certificates.Add(newCert);
+                }
+                hasChanges = true;
+            }
+
+            if (hasChanges)
+            {
+                lawyerProfile.UpdatedAt = DateTime.UtcNow;
+                
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"✅ Lawyer profile updated successfully for user: {userId}");
+                    return true;
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    _logger.LogError(ex, $"❌ Concurrency error while updating lawyer {userId}");
+                    
+                    // ✅ إعادة تحميل الكيان وحل التعارض
+                    await ex.Entries.Single().ReloadAsync();
+                    
+                    // إعادة تطبيق التغييرات
+                    _context.Entry(user).CurrentValues.SetValues(user);
+                    _context.Entry(lawyerProfile).CurrentValues.SetValues(lawyerProfile);
+                    
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"✅ Concurrency resolved and lawyer profile updated for user: {userId}");
+                    return true;
+                }
+            }
+
+            _logger.LogInformation($"ℹ️ No changes detected for lawyer: {userId}");
+            return true;
         }
-        hasChanges = true;
-    }
 
-    if (hasChanges)
-    {
-        lawyerProfile.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        _logger.LogInformation($"✅ Lawyer profile updated successfully for user: {userId}");
-        return true;
-    }
-
-    _logger.LogInformation($"ℹ️ No changes detected for lawyer: {userId}");
-    return true;
-}        public async Task<string?> UploadProfilePictureAsync(Guid userId, IFormFile file)
+        public async Task<string?> UploadProfilePictureAsync(Guid userId, IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
 
@@ -383,9 +434,7 @@ public async Task<bool> UpdateProfileAsync(Guid userId, UpdateLawyerProfileDto r
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
             if (user == null) return null;
-
-            if (user.Status != AccountStatus.Active)
-                return null;
+            if (user.Status != AccountStatus.Active) return null;
 
             var uploadsFolder = Path.Combine(_env.WebRootPath ?? "wwwroot", "profiles", "lawyers");
             Directory.CreateDirectory(uploadsFolder);
@@ -427,18 +476,13 @@ public async Task<bool> UpdateProfileAsync(Guid userId, UpdateLawyerProfileDto r
             return await GetProfileAsync(userId);
         }
 
-        // دالة آمنة لفك التشفير
         private string? DecryptSafely(string? encrypted)
         {
             if (string.IsNullOrEmpty(encrypted)) return null;
-
-            try
-            {
-                return _encryption.Decrypt(encrypted);
-            }
+            try { return _encryption.Decrypt(encrypted); }
             catch (Exception ex)
             {
-                _logger.LogWarning($"Decryption failed, returning as plain text. Error: {ex.Message}");
+                _logger.LogWarning($"Decryption failed: {ex.Message}");
                 return encrypted;
             }
         }

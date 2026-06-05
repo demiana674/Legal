@@ -656,7 +656,7 @@ namespace LegalMateAI.BLL.Services.Service
                 .Include(c => c.Client!)
                 .ThenInclude(c => c.UserProfile!)
                 .Where(c => c.Client != null && c.Client.UserProfile != null && c.Client.UserProfile.Governorate != null)
-                .GroupBy(c => c.Client.UserProfile.Governorate.Name)
+                .GroupBy(c => c.Client.UserProfile.Governorate)
                 .Select(g => new GeoDistributionDto
                 {
                     Governorate = g.Key ?? "غير محدد",

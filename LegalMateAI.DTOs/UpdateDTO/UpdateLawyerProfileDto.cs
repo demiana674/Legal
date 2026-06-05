@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/UpdateDTO/UpdateLawyerProfileDto.cs
 using System;
 using System.Collections.Generic;
 
@@ -25,13 +24,35 @@ namespace LegalMateAI.DTOs.UpdateDTO
         
         // Location
         public int? GovernorateId { get; set; }
+        public int? CityId { get; set; }
+        public string? Governorate { get; set; }
         public string? City { get; set; }
         public string? OfficeAddress { get; set; }
         
-        // ✅ Specializations - قائمة بأسماء التخصصات
+        // ✅ المهارات والكفاءات (قائمة)
+        public List<string> Skills { get; set; } = new List<string>();
+        
+        // ✅ المهارات كنص (مفصول بفواصل)
+        public string? SkillsText { get; set; }
+        
+        // ✅ عدد المحاج المعتمدة
+        public int? ApprovedLitigationsCount { get; set; }
+        
+        // Specializations
         public List<string> Specializations { get; set; } = new List<string>();
         
-        // للتوافق مع الإصدارات القديمة
-        public List<Guid>? SpecialtyIds { get; set; }
+        // Certificates
+        public List<CertificateInputDto>? Certificates { get; set; }
+        
+        // Legacy
+        public List<int>? SpecialtyIds { get; set; }
+    }
+
+    public class CertificateInputDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string IssuingOrganization { get; set; } = string.Empty;
+        public int Year { get; set; }
+        public string? FileUrl { get; set; }
     }
 }

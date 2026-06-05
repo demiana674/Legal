@@ -1,4 +1,3 @@
-// LegalMateAI.DTOs/ReadDTO/LawyerResponseDto.cs
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -24,20 +23,13 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string BarAssociation { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
         
-        //  الحالة الأساسية
         public AccountStatus Status { get; set; }
-        
-        //  للتوافق مع الفرونت القديم - نفس قيمة Status
         public string VerificationStatus => Status.ToString();
-        
-        //  IsActive محسوبة
         public bool IsActive => Status == AccountStatus.Active;
         
-        //  خصائص التعليق
         public string? SuspensionReason { get; set; }
         public DateTime? SuspendedAt { get; set; }
         public DateTime? ActivatedAt { get; set; }
-        
         public DateTime? VerifiedAt { get; set; }
         
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -50,9 +42,20 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? GovernorateName { get; set; }
         public string? City { get; set; }
         public string? OfficeAddress { get; set; }
-        
         public string? DateOfBirth { get; set; }
         public string? CreatedAt { get; set; }
+        
+        // ✅ المهارات والكفاءات (قائمة)
+        public List<string> Skills { get; set; } = new List<string>();
+        
+        // ✅ عدد المحاج المعتمدة
+        public int ApprovedLitigationsCount { get; set; }
+        
+        // ✅ عدد الموكلين
+        public int ClientsCount { get; set; }
+        
+        // ✅ عدد القضايا النشطة
+        public int ActiveCasesCount { get; set; }
         
         public List<LawyerProfileSpecialtyDto> Specialties { get; set; } = new();
         public List<CertificateDto> Certificates { get; set; } = new();

@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/AdminService.cs
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -58,10 +57,7 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<List<UserResponseDto>> GetAllUsersAsync(UserFilterDto? filter = null)
         {
             var query = _context.Users
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.City)
+                .Include(u => u.UserProfile!)
                 .Where(u => u.Role == UserRole.User)
                 .AsQueryable();
 
@@ -107,10 +103,7 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<UserResponseDto?> GetUserDetailsAsync(Guid userId)
         {
             var user = await _context.Users
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.City)
+                .Include(u => u.UserProfile!)
                 .FirstOrDefaultAsync(u => u.UserID == userId);
                 
             return user == null ? null : await MapUserToDtoAsync(user);
@@ -134,9 +127,6 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ تعليق مستخدم عادي
-        /// </summary>
         public async Task<bool> SuspendUserAsync(Guid adminId, Guid userId, string? reason = null)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.User);
@@ -153,9 +143,6 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ تفعيل مستخدم عادي
-        /// </summary>
         public async Task<bool> ActivateUserAsync(Guid adminId, Guid userId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.User);
@@ -172,16 +159,10 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ جلب المستخدمين المعلقين
-        /// </summary>
         public async Task<List<UserResponseDto>> GetSuspendedUsersAsync()
         {
             var users = await _context.Users
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.City)
+                .Include(u => u.UserProfile!)
                 .Where(u => u.Role == UserRole.User && u.Status == AccountStatus.Suspended)
                 .OrderByDescending(u => u.SuspendedAt)
                 .ToListAsync();
@@ -233,21 +214,14 @@ namespace LegalMateAI.BLL.Services.Service
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// ✅ جلب المحامين المعلقين (Suspended)
-        /// </summary>
         public async Task<List<LawyerResponseDto>> GetSuspendedLawyersAsync()
         {
             var users = await _context.Users
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.LawyerProfile!)
+                    .ThenInclude(lp => lp!.Specialties!)
                     .ThenInclude(s => s.Specialty)
-                .Include(u => u.LawyerProfile)
+                .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.City)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Governorate)
                 .Include(u => u.UserProfile)
                 .Where(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null && u.Status == AccountStatus.Suspended)
                 .OrderByDescending(u => u.SuspendedAt)
@@ -264,29 +238,33 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<List<LawyerResponseDto>> GetAllLawyersAsync(LawyerFilterDto? filter = null)
         {
             var query = _context.Users
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.LawyerProfile!)
+                    .ThenInclude(lp => lp!.Specialties!)
                     .ThenInclude(s => s.Specialty)
-                .Include(u => u.LawyerProfile)
+                .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.City)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.City)
-                .Where(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null)
+                .Include(u => u.UserProfile!)
+                .Where(u => u.Role == UserRole.Lawyer && 
+                            u.LawyerProfile != null &&
+                            u.Status != AccountStatus.Rejected &&
+                            u.Status != AccountStatus.Pending)
                 .AsQueryable();
 
             if (filter != null)
             {
-                if (!string.IsNullOrEmpty(filter.Status) &&
+                if (!string.IsNullOrEmpty(filter.Status) && filter.Status.ToLower() == "all")
+                {
+                    // لا نطبق فلتر
+                }
+                else if (!string.IsNullOrEmpty(filter.Status) &&
                     Enum.TryParse<AccountStatus>(filter.Status, true, out var status))
+                {
                     query = query.Where(u => u.Status == status);
+                }
                 else
+                {
                     query = query.Where(u => u.Status == AccountStatus.Active);
+                }
 
                 if (!string.IsNullOrEmpty(filter.SearchTerm))
                 {
@@ -302,10 +280,10 @@ namespace LegalMateAI.BLL.Services.Service
                     query = query.Where(u => u.LawyerProfile!.GovernorateId == filter.GovernorateId);
 
                 if (filter.SpecializationId.HasValue)
-                    query = query.Where(u => u.LawyerProfile!.Specialties.Any(s => s.SpecialtyId == filter.SpecializationId.Value));
+                    query = query.Where(u => u.LawyerProfile!.Specialties != null && u.LawyerProfile.Specialties.Any(s => s.SpecialtyId == filter.SpecializationId.Value));
 
                 if (!string.IsNullOrEmpty(filter.City))
-                    query = query.Where(u => u.LawyerProfile!.City != null && u.LawyerProfile.City.Name.Contains(filter.City));
+                    query = query.Where(u => u.LawyerProfile!.City != null && u.LawyerProfile.City.Contains(filter.City));
             }
             else
             {
@@ -332,27 +310,17 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<LawyerResponseDto?> GetLawyerDetailsAsync(Guid lawyerId)
         {
             var user = await _context.Users
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
+                .Include(u => u.LawyerProfile!)
+                    .ThenInclude(lp => lp!.Specialties!)
                     .ThenInclude(s => s.Specialty)
-                .Include(u => u.LawyerProfile)
+                .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.City)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.Governorate)
-                .Include(u => u.UserProfile)
-                    .ThenInclude(up => up!.City)
+                .Include(u => u.UserProfile!)
                 .FirstOrDefaultAsync(u => u.UserID == lawyerId && u.Role == UserRole.Lawyer);
 
             return user?.LawyerProfile == null ? null : await MapLawyerToDtoAsync(user);
         }
 
-        /// <summary>
-        /// ✅ الموافقة على محامي (من Pending إلى Active)
-        /// </summary>
         public async Task<bool> ApproveLawyerAsync(Guid userId)
         {
             _logger.LogInformation($"ApproveLawyer - UserId: {userId}");
@@ -386,22 +354,23 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ رفض محامي (حذف نهائي)
-        /// </summary>
         public async Task<bool> RejectLawyerAsync(Guid userId, string reason)
         {
-            _logger.LogInformation($"RejectLawyer - حذف نهائي للمحامي: {userId}, السبب: {reason}");
+            _logger.LogInformation($"RejectLawyer - رفض المحامي: {userId}, السبب: {reason}");
 
             var user = await _context.Users
                 .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Specialties)
-                .Include(u => u.LawyerProfile)
-                    .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
-            if (user == null) return false;
+            if (user?.LawyerProfile == null) return false;
+
+            user.Status = AccountStatus.Rejected;
+            user.SuspensionReason = reason;
+            user.SuspendedAt = DateTime.UtcNow;
+            
+            user.LawyerProfile.RejectionReason = reason;
+            user.LawyerProfile.VerifiedAt = null;
+            user.LawyerProfile.ActivatedAt = null;
 
             var currentUserId = GetCurrentUserId();
             if (currentUserId.HasValue)
@@ -409,37 +378,11 @@ namespace LegalMateAI.BLL.Services.Service
                 await LogActionAsync(currentUserId.Value, AdminLogAction.Reject, "Lawyer", userId);
             }
 
-            if (user.LawyerProfile?.Specialties != null && user.LawyerProfile.Specialties.Any())
-            {
-                _context.LawyerProfileSpecialties.RemoveRange(user.LawyerProfile.Specialties);
-            }
-
-            if (user.LawyerProfile?.Certificates != null && user.LawyerProfile.Certificates.Any())
-            {
-                _context.Certificates.RemoveRange(user.LawyerProfile.Certificates);
-            }
-
-            if (user.LawyerProfile != null)
-            {
-                _context.LawyerProfiles.Remove(user.LawyerProfile);
-            }
-
-            if (user.UserProfile != null)
-            {
-                _context.UserProfiles.Remove(user.UserProfile);
-            }
-
-            _context.Users.Remove(user);
-
             await _context.SaveChangesAsync();
-
-            _logger.LogInformation($"✅ تم حذف المحامي {user.Email} نهائياً. السبب: {reason}");
+            _logger.LogInformation($"✅ Lawyer rejected: {userId}. Reason: {reason}");
             return true;
         }
 
-        /// <summary>
-        /// ✅ تعليق محامي
-        /// </summary>
         public async Task<bool> SuspendLawyerAsync(Guid userId, string? reason = null)
         {
             var user = await _context.Users
@@ -466,9 +409,6 @@ namespace LegalMateAI.BLL.Services.Service
             return true;
         }
 
-        /// <summary>
-        /// ✅ تفعيل محامي
-        /// </summary>
         public async Task<bool> ActivateLawyerAsync(Guid userId)
         {
             var user = await _context.Users
@@ -678,9 +618,6 @@ namespace LegalMateAI.BLL.Services.Service
             }
         }
 
-        /// <summary>
-        /// ✅ الحصول على معرف المستخدم الحالي مع تحسين الأمان
-        /// </summary>
         private Guid? GetCurrentUserId()
         {
             try
@@ -699,7 +636,6 @@ namespace LegalMateAI.BLL.Services.Service
                     return null;
                 }
 
-                // تجربة أكثر من Claim
                 var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)
                     ?? user.FindFirst("id")
                     ?? user.FindFirst("sub")
@@ -891,8 +827,8 @@ namespace LegalMateAI.BLL.Services.Service
                 ProfilePicture = user.ProfilePicture,
                 AlternativePhone = user.UserProfile != null ? _encryptionService.Decrypt(user.UserProfile.AlternativePhone ?? "") : null,
                 NationalId = _encryptionService.Decrypt(user.NationalId ?? ""),
-                GovernorateName = user.UserProfile?.Governorate?.Name,
-                CityName = user.UserProfile?.City?.Name,
+                GovernorateName = user.UserProfile?.Governorate,
+                CityName = user.UserProfile?.City,
                 Address = user.UserProfile?.Address,
                 Nationality = user.UserProfile?.Nationality,
                 Role = user.Role,
@@ -941,8 +877,8 @@ namespace LegalMateAI.BLL.Services.Service
                 ActivatedAt = lawyer.ActivatedAt ?? user.ActivatedAt,
                 Rating = (float)avgRating,
                 TotalReviews = 0,
-                GovernorateName = lawyer.Governorate?.Name,
-                City = lawyer.City?.Name ?? "",
+                GovernorateName = lawyer.Governorate,
+                City = lawyer.City ?? "",
                 OfficeAddress = lawyer.OfficeAddress,
                 DateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd"),
                 CreatedAt = user.CreatedAt.ToString("yyyy-MM-dd"),
@@ -953,7 +889,7 @@ namespace LegalMateAI.BLL.Services.Service
                     IsPrimary = s.IsPrimary,
                     YearsOfExperience = s.YearsOfExperience
                 }).ToList() ?? new(),
-                Certificates = lawyer.Certificates?.Select(c => new CertificateDto
+                Certificates = lawyer.Certificates?.Select(c => new LegalMateAI.DTOs.ReadDTO.CertificateDto
                 {
                     Id = c.Id,
                     Name = c.Name,

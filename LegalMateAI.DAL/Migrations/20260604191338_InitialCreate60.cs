@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LegalMateAI.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate20 : Migration
+    public partial class InitialCreate60 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,15 +29,34 @@ namespace LegalMateAI.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CaseDimensions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CaseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CaseType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Priority = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DurationDays = table.Column<int>(type: "int", nullable: false),
+                    IsResolved = table.Column<bool>(type: "bit", nullable: false),
+                    Complexity = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CaseDimensions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ContractTemplates",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TemplateContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Placeholders = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TemplateFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -57,6 +76,26 @@ namespace LegalMateAI.DAL.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Governorates", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LawyerSkills",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    NameAr = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    Icon = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LawyerSkills", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -91,6 +130,82 @@ namespace LegalMateAI.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LocationDimensions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GovernorateId = table.Column<int>(type: "int", nullable: false),
+                    GovernorateName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CityId = table.Column<int>(type: "int", nullable: false),
+                    CityName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Region = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsUrban = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LocationDimensions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RecommendationLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RecommendedLawyerId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SearchContext = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DetectedSpecialization = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ResultsCount = table.Column<int>(type: "int", nullable: false),
+                    WasSelected = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RecommendationLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TimeDimensions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false),
+                    Year = table.Column<int>(type: "int", nullable: false),
+                    Quarter = table.Column<int>(type: "int", nullable: false),
+                    Month = table.Column<int>(type: "int", nullable: false),
+                    Week = table.Column<int>(type: "int", nullable: false),
+                    Day = table.Column<int>(type: "int", nullable: false),
+                    MonthName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsWeekend = table.Column<bool>(type: "bit", nullable: false),
+                    Season = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TimeDimensions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserDimensions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AgeGroup = table.Column<int>(type: "int", nullable: false),
+                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Nationality = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AccountAgeDays = table.Column<int>(type: "int", nullable: false),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false),
+                    TotalInteractions = table.Column<int>(type: "int", nullable: false),
+                    LifetimeValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserDimensions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -104,13 +219,15 @@ namespace LegalMateAI.DAL.Migrations
                     Nationality = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Role = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Pending"),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Pending"),
                     EmailVerified = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     LastLogin = table.Column<DateTime>(type: "datetime2", nullable: true),
                     JoinDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    ProfilePicture = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    ProfilePicture = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SuspensionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SuspendedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActivatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -192,6 +309,59 @@ namespace LegalMateAI.DAL.Migrations
                         principalTable: "Governorates",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DataWarehouseFacts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TimeDimId = table.Column<int>(type: "int", nullable: false),
+                    UserDimId = table.Column<int>(type: "int", nullable: false),
+                    LawyerDimId = table.Column<int>(type: "int", nullable: false),
+                    CaseDimId = table.Column<int>(type: "int", nullable: false),
+                    ContractDimId = table.Column<int>(type: "int", nullable: false),
+                    DocumentDimId = table.Column<int>(type: "int", nullable: false),
+                    LocationDimId = table.Column<int>(type: "int", nullable: false),
+                    CaseCount = table.Column<int>(type: "int", nullable: false),
+                    ContractCount = table.Column<int>(type: "int", nullable: false),
+                    DocumentCount = table.Column<int>(type: "int", nullable: false),
+                    AppointmentCount = table.Column<int>(type: "int", nullable: false),
+                    TotalFees = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AverageRating = table.Column<double>(type: "float", nullable: false),
+                    SuccessRate = table.Column<int>(type: "int", nullable: false),
+                    ResponseTimeMinutes = table.Column<int>(type: "int", nullable: false),
+                    UserSatisfactionScore = table.Column<int>(type: "int", nullable: false),
+                    RecordedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DataWarehouseFacts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DataWarehouseFacts_CaseDimensions_CaseDimId",
+                        column: x => x.CaseDimId,
+                        principalTable: "CaseDimensions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DataWarehouseFacts_LocationDimensions_LocationDimId",
+                        column: x => x.LocationDimId,
+                        principalTable: "LocationDimensions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DataWarehouseFacts_TimeDimensions_TimeDimId",
+                        column: x => x.TimeDimId,
+                        principalTable: "TimeDimensions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DataWarehouseFacts_UserDimensions_UserDimId",
+                        column: x => x.UserDimId,
+                        principalTable: "UserDimensions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -395,16 +565,25 @@ namespace LegalMateAI.DAL.Migrations
                     LicenseIssueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PracticeDegree = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     YearsOfExperience = table.Column<int>(type: "int", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Governorate = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    City = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     GovernorateId = table.Column<int>(type: "int", nullable: true),
                     CityId = table.Column<int>(type: "int", nullable: true),
                     OfficeAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    VerificationStatus = table.Column<string>(type: "nvarchar(450)", nullable: false, defaultValue: "Pending"),
-                    VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    VerificationStatus = table.Column<int>(type: "int", nullable: false),
                     RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SuspensionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SuspendedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActivatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Skills = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApprovedLitigationsCount = table.Column<int>(type: "int", nullable: false),
+                    ClientsCount = table.Column<int>(type: "int", nullable: false),
+                    GovernorateId1 = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -417,6 +596,11 @@ namespace LegalMateAI.DAL.Migrations
                     table.ForeignKey(
                         name: "FK_LawyerProfiles_Governorates_GovernorateId",
                         column: x => x.GovernorateId,
+                        principalTable: "Governorates",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_LawyerProfiles_Governorates_GovernorateId1",
+                        column: x => x.GovernorateId1,
                         principalTable: "Governorates",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -433,21 +617,22 @@ namespace LegalMateAI.DAL.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AlternativePhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    GovernorateId = table.Column<int>(type: "int", nullable: true),
-                    CityId = table.Column<int>(type: "int", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NationalId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Nationality = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    LastProfileUpdate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Governorate = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    City = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GovernorateId = table.Column<int>(type: "int", nullable: true),
+                    CityId = table.Column<int>(type: "int", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastProfileUpdate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -746,9 +931,9 @@ namespace LegalMateAI.DAL.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_LawyerSpecializations_LegalSpecializations_SpecializationId",
+                        name: "FK_LawyerSpecializations_LawyerSpecialties_SpecializationId",
                         column: x => x.SpecializationId,
-                        principalTable: "LegalSpecializations",
+                        principalTable: "LawyerSpecialties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -878,7 +1063,7 @@ namespace LegalMateAI.DAL.Migrations
                     AppointmentNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LawyerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppointmentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Time = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -890,8 +1075,7 @@ namespace LegalMateAI.DAL.Migrations
                     ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CancellationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsUrgent = table.Column<bool>(type: "bit", nullable: false),
-                    LawyerProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    IsUrgent = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -908,11 +1092,6 @@ namespace LegalMateAI.DAL.Migrations
                         principalTable: "LawyerProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Appointments_LawyerProfiles_LawyerProfileId",
-                        column: x => x.LawyerProfileId,
-                        principalTable: "LawyerProfiles",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Appointments_Users_UserID",
                         column: x => x.UserID,
@@ -940,6 +1119,30 @@ namespace LegalMateAI.DAL.Migrations
                         name: "FK_BranchAvailabilities_LawyerBranches_BranchId",
                         column: x => x.BranchId,
                         principalTable: "LawyerBranches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AppointmentCancelRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequestedBy = table.Column<int>(type: "int", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ResponseReason = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppointmentCancelRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AppointmentCancelRequests_Appointments_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1034,6 +1237,11 @@ namespace LegalMateAI.DAL.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_AppointmentCancelRequests_AppointmentId",
+                table: "AppointmentCancelRequests",
+                column: "AppointmentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AppointmentReschedules_AppointmentId",
                 table: "AppointmentReschedules",
                 column: "AppointmentId");
@@ -1047,11 +1255,6 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_Appointments_LawyerId",
                 table: "Appointments",
                 column: "LawyerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Appointments_LawyerProfileId",
-                table: "Appointments",
-                column: "LawyerProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_UserID",
@@ -1112,6 +1315,26 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_Conversations_UserId",
                 table: "Conversations",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DataWarehouseFacts_CaseDimId",
+                table: "DataWarehouseFacts",
+                column: "CaseDimId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DataWarehouseFacts_LocationDimId",
+                table: "DataWarehouseFacts",
+                column: "LocationDimId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DataWarehouseFacts_TimeDimId_CaseDimId_LocationDimId",
+                table: "DataWarehouseFacts",
+                columns: new[] { "TimeDimId", "CaseDimId", "LocationDimId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DataWarehouseFacts_UserDimId",
+                table: "DataWarehouseFacts",
+                column: "UserDimId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DocumentAnalyses_DocumentId",
@@ -1215,6 +1438,11 @@ namespace LegalMateAI.DAL.Migrations
                 column: "GovernorateId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LawyerProfiles_GovernorateId1",
+                table: "LawyerProfiles",
+                column: "GovernorateId1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LawyerProfiles_LicenseNumber",
                 table: "LawyerProfiles",
                 column: "LicenseNumber",
@@ -1226,11 +1454,6 @@ namespace LegalMateAI.DAL.Migrations
                 table: "LawyerProfiles",
                 column: "UserId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_LawyerProfiles_VerificationStatus",
-                table: "LawyerProfiles",
-                column: "VerificationStatus");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LawyerProfileSpecialties_LawyerId",
@@ -1256,6 +1479,22 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_LawyerReviews_UserId",
                 table: "LawyerReviews",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LawyerSkills_Category",
+                table: "LawyerSkills",
+                column: "Category");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LawyerSkills_DisplayOrder",
+                table: "LawyerSkills",
+                column: "DisplayOrder");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LawyerSkills_NameAr",
+                table: "LawyerSkills",
+                column: "NameAr",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_LawyerSpecializations_LawyerId",
@@ -1291,6 +1530,16 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_PredefinedContractTemplates_IsActive",
                 table: "PredefinedContractTemplates",
                 column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RecommendationLogs_CreatedAt",
+                table: "RecommendationLogs",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RecommendationLogs_UserId",
+                table: "RecommendationLogs",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RiskAssessments_AnalysisId",
@@ -1340,6 +1589,16 @@ namespace LegalMateAI.DAL.Migrations
                 name: "IX_Users_Role",
                 table: "Users",
                 column: "Role");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Role_Status",
+                table: "Users",
+                columns: new[] { "Role", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Status",
+                table: "Users",
+                column: "Status");
         }
 
         /// <inheritdoc />
@@ -1350,6 +1609,9 @@ namespace LegalMateAI.DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "AdminProfiles");
+
+            migrationBuilder.DropTable(
+                name: "AppointmentCancelRequests");
 
             migrationBuilder.DropTable(
                 name: "AppointmentReschedules");
@@ -1379,6 +1641,9 @@ namespace LegalMateAI.DAL.Migrations
                 name: "Conversations");
 
             migrationBuilder.DropTable(
+                name: "DataWarehouseFacts");
+
+            migrationBuilder.DropTable(
                 name: "GeneratedContracts");
 
             migrationBuilder.DropTable(
@@ -1394,10 +1659,19 @@ namespace LegalMateAI.DAL.Migrations
                 name: "LawyerReviews");
 
             migrationBuilder.DropTable(
+                name: "LawyerSkills");
+
+            migrationBuilder.DropTable(
                 name: "LawyerSpecializations");
 
             migrationBuilder.DropTable(
+                name: "LegalSpecializations");
+
+            migrationBuilder.DropTable(
                 name: "LoginAttempts");
+
+            migrationBuilder.DropTable(
+                name: "RecommendationLogs");
 
             migrationBuilder.DropTable(
                 name: "RiskAssessments");
@@ -1412,16 +1686,25 @@ namespace LegalMateAI.DAL.Migrations
                 name: "Cases");
 
             migrationBuilder.DropTable(
-                name: "PredefinedContractTemplates");
+                name: "CaseDimensions");
 
             migrationBuilder.DropTable(
-                name: "LawyerSpecialties");
+                name: "LocationDimensions");
+
+            migrationBuilder.DropTable(
+                name: "TimeDimensions");
+
+            migrationBuilder.DropTable(
+                name: "UserDimensions");
+
+            migrationBuilder.DropTable(
+                name: "PredefinedContractTemplates");
 
             migrationBuilder.DropTable(
                 name: "Appointments");
 
             migrationBuilder.DropTable(
-                name: "LegalSpecializations");
+                name: "LawyerSpecialties");
 
             migrationBuilder.DropTable(
                 name: "DocumentAnalyses");

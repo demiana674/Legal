@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/Service/CaseService.cs
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
@@ -10,6 +9,7 @@ using LegalMateAI.BLL.Services.IService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using BCrypt.Net;
 
 namespace LegalMateAI.BLL.Services.Service
 {
@@ -33,8 +33,46 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<CaseResponseDto?> CreateCaseAsync(Guid userId, CreateCaseDto request, bool isLawyer = false)
         {
-            var client = await _context.Users.FirstOrDefaultAsync(u => u.UserID == request.ClientId && u.Role == UserRole.User);
-            if (client == null) return null;
+            Guid clientId;
+            
+            // ✅ إذا كان الـ ClientId موجوداً وليس Guid.Empty، استخدمه
+            if (request.ClientId != Guid.Empty && request.ClientId != null)
+            {
+                var existingClient = await _context.Users
+                    .FirstOrDefaultAsync(u => u.UserID == request.ClientId && u.Role == UserRole.User);
+                
+                if (existingClient != null)
+                {
+                    clientId = existingClient.UserID;
+                }
+                else
+                {
+                    // ✅ إنشاء موكل جديد إذا كان الـ ID غير موجود
+                    clientId = await CreateNewClientAsync(request);
+                }
+            }
+            else if (!string.IsNullOrEmpty(request.ClientEmail) || !string.IsNullOrEmpty(request.ClientPhone))
+            {
+                // ✅ البحث عن موكل موجود بالإيميل أو الهاتف
+                var existingClient = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Role == UserRole.User && 
+                        (u.Email == request.ClientEmail || u.Phone == request.ClientPhone));
+                
+                if (existingClient != null)
+                {
+                    clientId = existingClient.UserID;
+                }
+                else
+                {
+                    // ✅ إنشاء موكل جديد
+                    clientId = await CreateNewClientAsync(request);
+                }
+            }
+            else
+            {
+                // ✅ إنشاء موكل جديد بالبيانات المدخلة
+                clientId = await CreateNewClientAsync(request);
+            }
 
             Guid? lawyerProfileId = null;
             if (isLawyer)
@@ -50,7 +88,7 @@ namespace LegalMateAI.BLL.Services.Service
                 CaseNumber = GenerateCaseNumber(),
                 Title = request.Title,
                 Description = request.Description,
-                ClientId = request.ClientId,
+                ClientId = clientId,
                 LawyerId = lawyerProfileId,
                 Court = request.Court,
                 NextHearingDate = request.NextHearingDate,
@@ -63,6 +101,90 @@ namespace LegalMateAI.BLL.Services.Service
             _context.Cases.Add(newCase);
             await _context.SaveChangesAsync();
             return await GetCaseByIdAsync(userId, newCase.Id, isLawyer);
+        }
+
+        /// <summary>
+        /// ✅ إنشاء موكل جديد تلقائياً من بيانات القضية
+        /// </summary>
+        private async Task<Guid> CreateNewClientAsync(CreateCaseDto request)
+        {
+            // توليد كلمة مرور عشوائية مؤقتة
+            var tempPassword = GenerateRandomPassword();
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+            
+            // توليد رقم قومي مؤقت فريد
+            var tempNationalId = GenerateTempNationalId();
+            
+            var email = request.ClientEmail;
+            if (string.IsNullOrEmpty(email))
+            {
+                email = $"client_{Guid.NewGuid():N}@tempclient.com";
+            }
+            
+            var newClient = new User
+            {
+                UserID = Guid.NewGuid(),
+                FirstName = request.ClientFirstName ?? "موكل",
+                LastName = request.ClientLastName ?? "جديد",
+                Email = email,
+                PasswordHash = passwordHash,
+                Phone = request.ClientPhone ?? "",
+                NationalId = tempNationalId,
+                Nationality = request.ClientNationality ?? "مصري",
+                DateOfBirth = request.ClientDateOfBirth,
+                Role = UserRole.User,
+                Status = AccountStatus.Active,
+                CreatedAt = DateTime.UtcNow,
+                JoinDate = DateTime.UtcNow,
+                EmailVerified = false
+            };
+            
+            _context.Users.Add(newClient);
+            
+            // إنشاء UserProfile للموكل الجديد
+            var userProfile = new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = newClient.UserID,
+                FirstName = newClient.FirstName,
+                LastName = newClient.LastName,
+                Email = newClient.Email,
+                PhoneNumber = newClient.Phone,
+                NationalId = tempNationalId,
+                Nationality = newClient.Nationality,
+                DateOfBirth = request.ClientDateOfBirth,
+                Governorate = request.ClientGovernorate,
+                City = request.ClientCity,
+                Address = request.ClientAddress,
+                CreatedAt = DateTime.UtcNow,
+                LastProfileUpdate = DateTime.UtcNow
+            };
+            
+            _context.UserProfiles.Add(userProfile);
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation($"✅ New client created automatically: {newClient.Email} (Temp Password: {tempPassword})");
+            
+            return newClient.UserID;
+        }
+
+        /// <summary>
+        /// ✅ توليد كلمة مرور عشوائية مؤقتة
+        /// </summary>
+        private string GenerateRandomPassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, 12).Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        /// <summary>
+        /// ✅ توليد رقم قومي مؤقت فريد
+        /// </summary>
+        private string GenerateTempNationalId()
+        {
+            var random = new Random();
+            return $"TEMP{DateTime.Now.Ticks}{random.Next(1000, 9999)}";
         }
 
         public async Task<CaseResponseDto?> UpdateCaseAsync(Guid userId, Guid caseId, UpdateCaseDto request, bool isLawyer = false)
@@ -106,11 +228,24 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<List<CaseResponseDto>> GetCasesAsync(CaseFilterDto filter)
         {
-            var query = _context.Cases.Include(c => c.Client).Include(c => c.Lawyer).ThenInclude(l => l!.User).Include(c => c.Documents).Include(c => c.Notes).AsQueryable();
+            var query = _context.Cases
+                .Include(c => c.Client)
+                .Include(c => c.Lawyer).ThenInclude(l => l!.User)
+                .Include(c => c.Documents)
+                .Include(c => c.Notes)
+                .AsQueryable();
+                
             if (filter.ClientId.HasValue) query = query.Where(c => c.ClientId == filter.ClientId.Value);
             if (filter.LawyerId.HasValue) query = query.Where(c => c.LawyerId == filter.LawyerId.Value);
             if (filter.Status.HasValue) query = query.Where(c => c.Status == filter.Status.Value);
-            if (!string.IsNullOrEmpty(filter.SearchTerm)) { var t = filter.SearchTerm.ToLower(); query = query.Where(c => c.Title.ToLower().Contains(t) || (c.Description != null && c.Description.ToLower().Contains(t))); }
+            if (!string.IsNullOrEmpty(filter.SearchTerm)) 
+            { 
+                var t = filter.SearchTerm.ToLower(); 
+                query = query.Where(c => c.Title.ToLower().Contains(t) || 
+                    (c.Description != null && c.Description.ToLower().Contains(t)) ||
+                    (c.Client != null && c.Client.FullName.ToLower().Contains(t)) ||
+                    (c.CaseNumber.ToLower().Contains(t)));
+            }
 
             int page = Math.Max(1, filter.Page);
             int pageSize = Math.Max(1, Math.Min(100, filter.PageSize));
@@ -120,10 +255,18 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<CaseResponseDto?> GetCaseByIdAsync(Guid userId, Guid caseId, bool isLawyer = false)
         {
-            var c = await _context.Cases.Include(x => x.Client).Include(x => x.Lawyer).ThenInclude(l => l!.User).Include(x => x.Documents).Include(x => x.Notes).FirstOrDefaultAsync(x => x.Id == caseId);
+            var c = await _context.Cases
+                .Include(x => x.Client)
+                .Include(x => x.Lawyer).ThenInclude(l => l!.User)
+                .Include(x => x.Documents)
+                .Include(x => x.Notes)
+                .FirstOrDefaultAsync(x => x.Id == caseId);
+                
             if (c == null) return null;
+            
             if (isLawyer && c.LawyerId != userId) return null;
             if (!isLawyer && c.ClientId != userId) return null;
+            
             return MapToDto(c);
         }
 
@@ -148,10 +291,16 @@ namespace LegalMateAI.BLL.Services.Service
 
             var document = new CaseDocument
             {
-                Id = Guid.NewGuid(), CaseId = request.CaseId, FileName = request.File.FileName,
-                FileUrl = $"/uploads/cases/{request.CaseId}/{fileName}", FileType = request.File.ContentType,
-                FileSize = request.File.Length, Description = request.Description, UploadedBy = userId,
-                UploadedAt = DateTime.UtcNow, IsVerified = caseEntity.LawyerId == userId
+                Id = Guid.NewGuid(), 
+                CaseId = request.CaseId, 
+                FileName = request.File.FileName,
+                FileUrl = $"/uploads/cases/{request.CaseId}/{fileName}", 
+                FileType = request.File.ContentType,
+                FileSize = request.File.Length, 
+                Description = request.Description, 
+                UploadedBy = userId,
+                UploadedAt = DateTime.UtcNow, 
+                IsVerified = caseEntity.LawyerId == userId
             };
 
             _context.CaseDocuments.Add(document);
@@ -190,10 +339,15 @@ namespace LegalMateAI.BLL.Services.Service
             var uploader = await _context.Users.FindAsync(document.UploadedBy);
             return new CaseDocumentResponseDto
             {
-                Id = document.Id, FileName = document.FileName, FileUrl = document.FileUrl,
-                FileType = document.FileType, FileSizeFormatted = FormatFileSize(document.FileSize),
-                Description = document.Description, UploadedByName = uploader?.FullName ?? "غير معروف",
-                UploadedAt = document.UploadedAt, IsVerified = document.IsVerified
+                Id = document.Id, 
+                FileName = document.FileName, 
+                FileUrl = document.FileUrl,
+                FileType = document.FileType, 
+                FileSizeFormatted = FormatFileSize(document.FileSize),
+                Description = document.Description, 
+                UploadedByName = uploader?.FullName ?? "غير معروف",
+                UploadedAt = document.UploadedAt, 
+                IsVerified = document.IsVerified
             };
         }
 
@@ -206,7 +360,15 @@ namespace LegalMateAI.BLL.Services.Service
             if (isLawyer && caseEntity.LawyerId != userId) return null;
             if (!isLawyer && caseEntity.ClientId != userId) return null;
 
-            var note = new CaseNote { Id = Guid.NewGuid(), CaseId = request.CaseId, Content = request.Content, WrittenBy = userId, CreatedAt = DateTime.UtcNow, IsPrivate = request.IsPrivate && isLawyer };
+            var note = new CaseNote 
+            { 
+                Id = Guid.NewGuid(), 
+                CaseId = request.CaseId, 
+                Content = request.Content, 
+                WrittenBy = userId, 
+                CreatedAt = DateTime.UtcNow, 
+                IsPrivate = request.IsPrivate && isLawyer 
+            };
             _context.CaseNotes.Add(note);
             await _context.SaveChangesAsync();
             return await GetNoteByIdAsync(note.Id);
@@ -216,7 +378,8 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
             if (note == null || note.WrittenBy != userId) return null;
-            note.Content = content; note.UpdatedAt = DateTime.UtcNow;
+            note.Content = content; 
+            note.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return await GetNoteByIdAsync(noteId);
         }
@@ -262,28 +425,67 @@ namespace LegalMateAI.BLL.Services.Service
             var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
             if (note == null) return null;
             var writer = await _context.Users.FindAsync(note.WrittenBy);
-            return new CaseNoteResponseDto { Id = note.Id, Content = note.Content, WrittenByName = writer?.FullName ?? "غير معروف", CreatedAt = note.CreatedAt, UpdatedAt = note.UpdatedAt, IsPrivate = note.IsPrivate };
+            return new CaseNoteResponseDto 
+            { 
+                Id = note.Id, 
+                Content = note.Content, 
+                WrittenByName = writer?.FullName ?? "غير معروف", 
+                CreatedAt = note.CreatedAt, 
+                UpdatedAt = note.UpdatedAt, 
+                IsPrivate = note.IsPrivate 
+            };
         }
 
         private static string FormatFileSize(long bytes)
         {
             string[] sizes = { "B", "KB", "MB", "GB" };
-            double len = bytes; int order = 0;
+            double len = bytes; 
+            int order = 0;
             while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
             return $"{len:0.##} {sizes[order]}";
         }
 
         private CaseResponseDto MapToDto(Case c) => new()
         {
-            Id = c.Id, CaseNumber = c.CaseNumber, Title = c.Title, Description = c.Description,
-            ClientId = c.ClientId, ClientName = c.Client?.FullName ?? "غير معروف",
-            LawyerId = c.LawyerId, LawyerName = c.Lawyer?.User?.FullName,
-            Court = c.Court, NextHearingDate = c.NextHearingDate,
-            Status = c.Status, Priority = c.Priority, CaseType = c.CaseType,
-            CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt, ClosedAt = c.ClosedAt,
-            DocumentsCount = c.Documents?.Count ?? 0, NotesCount = c.Notes?.Count ?? 0,
-            Documents = c.Documents?.Select(d => new CaseDocumentResponseDto { Id = d.Id, FileName = d.FileName, FileUrl = d.FileUrl, FileType = d.FileType, FileSizeFormatted = FormatFileSize(d.FileSize), Description = d.Description, UploadedAt = d.UploadedAt, IsVerified = d.IsVerified }).ToList() ?? new(),
-            Notes = c.Notes?.Select(n => new CaseNoteResponseDto { Id = n.Id, Content = n.Content, CreatedAt = n.CreatedAt, UpdatedAt = n.UpdatedAt, IsPrivate = n.IsPrivate }).ToList() ?? new()
+            Id = c.Id, 
+            CaseNumber = c.CaseNumber, 
+            Title = c.Title, 
+            Description = c.Description,
+            ClientId = c.ClientId, 
+            ClientName = c.Client?.FullName ?? "غير معروف",
+            ClientEmail = c.Client?.Email ?? "",
+            ClientPhone = c.Client?.Phone ?? "",
+            LawyerId = c.LawyerId, 
+            LawyerName = c.Lawyer?.User?.FullName,
+            Court = c.Court, 
+            NextHearingDate = c.NextHearingDate,
+            Status = c.Status, 
+            Priority = c.Priority, 
+            CaseType = c.CaseType,
+            CreatedAt = c.CreatedAt, 
+            UpdatedAt = c.UpdatedAt, 
+            ClosedAt = c.ClosedAt,
+            DocumentsCount = c.Documents?.Count ?? 0, 
+            NotesCount = c.Notes?.Count ?? 0,
+            Documents = c.Documents?.Select(d => new CaseDocumentResponseDto 
+            { 
+                Id = d.Id, 
+                FileName = d.FileName, 
+                FileUrl = d.FileUrl, 
+                FileType = d.FileType, 
+                FileSizeFormatted = FormatFileSize(d.FileSize), 
+                Description = d.Description, 
+                UploadedAt = d.UploadedAt, 
+                IsVerified = d.IsVerified 
+            }).ToList() ?? new(),
+            Notes = c.Notes?.Select(n => new CaseNoteResponseDto 
+            { 
+                Id = n.Id, 
+                Content = n.Content, 
+                CreatedAt = n.CreatedAt, 
+                UpdatedAt = n.UpdatedAt, 
+                IsPrivate = n.IsPrivate 
+            }).ToList() ?? new()
         };
     }
 }

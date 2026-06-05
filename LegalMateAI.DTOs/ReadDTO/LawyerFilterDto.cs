@@ -1,3 +1,4 @@
+// LegalMateAI.DTOs/ReadDTO/LawyerFilterDto.cs
 using System;
 
 namespace LegalMateAI.DTOs.ReadDTO
@@ -7,7 +8,7 @@ namespace LegalMateAI.DTOs.ReadDTO
         public string? Status { get; set; }
         public string? SearchTerm { get; set; }
         public int? GovernorateId { get; set; }
-        public int? SpecializationId { get; set; }
+        public int? SpecializationId { get; set; }  // ✅ تغيير من Guid? إلى int?
         public string? City { get; set; }
         public int? MinExperience { get; set; }
         public double? MinRating { get; set; }

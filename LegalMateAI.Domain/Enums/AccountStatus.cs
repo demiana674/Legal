@@ -16,6 +16,7 @@ namespace LegalMateAI.Domain.Enums
         Active = 2,
         Locked = 3,
          Suspended = 4,
-        Deactivated = 5
+        Deactivated = 5,
+         Rejected = 6 
     }
 }
