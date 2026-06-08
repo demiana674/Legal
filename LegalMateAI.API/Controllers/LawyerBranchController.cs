@@ -106,13 +106,17 @@ namespace LegalMateAI.API.Controllers
             return Ok(availability);
         }
 
-        // تحديث أوقات التوفر
+        // ✅ تحديث أوقات التوفر (معدل)
         [Authorize(Roles = "Lawyer")]
         [HttpPut("{branchId}/availability")]
         public async Task<IActionResult> UpdateAvailability(Guid branchId, [FromBody] List<CreateBranchAvailabilityDto> availabilities)
         {
             var userId = GetUserId();
             var result = await _branchService.UpdateBranchAvailabilityAsync(userId, branchId, availabilities);
+            
+            if (!result)
+                return BadRequest(new { message = "فشل تحديث أوقات التوفر - تأكد من أن الأوقات بين 9 صباحاً و 10 مساءً ولا تتداخل مع فروع أخرى" });
+
             return Ok(new { success = true, message = "تم تحديث أوقات التوفر بنجاح" });
         }
 

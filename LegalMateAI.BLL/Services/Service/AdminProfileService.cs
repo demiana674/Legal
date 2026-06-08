@@ -87,18 +87,12 @@ namespace LegalMateAI.BLL.Services.Service
                 Status = "نشط",
                 IsOnline = admin.LastLoginAt?.Date == DateTime.UtcNow.Date,
                 
-                // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User && u.Status == AccountStatus.Active),
                 TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Active),
-                
-                // ✅ المحامين المعلقين (Pending) من User.Status
                 PendingVerifications = await _context.Users
                     .CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Pending),
-                
-                // ✅ تم توثيقهم اليوم من User.ActivatedAt
                 VerifiedToday = await _context.Users
                     .CountAsync(u => u.Role == UserRole.Lawyer && u.ActivatedAt != null && u.ActivatedAt.Value.Date == DateTime.UtcNow.Date),
-                
                 TotalVerifiedLawyers = profile?.TotalVerifiedLawyers ?? 0,
                 TotalRejectedLawyers = profile?.TotalRejectedLawyers ?? 0,
                 CanVerifyLawyers = true,
@@ -133,14 +127,28 @@ namespace LegalMateAI.BLL.Services.Service
                     admin.Profile.Address = request.Address;
                 }
 
-                if (request.GovernorateId.HasValue)
+                // ✅ التعديل: استخدام الـ Governorate كـ string للبحث عن الـ Id
+                if (!string.IsNullOrEmpty(request.Governorate))
                 {
-                    admin.Profile.GovernorateId = request.GovernorateId.Value;
+                    var governorate = await _context.Governorates
+                        .FirstOrDefaultAsync(g => g.Name == request.Governorate);
+                    
+                    if (governorate != null)
+                    {
+                        admin.Profile.GovernorateId = governorate.Id;
+                    }
                 }
 
-                if (request.CityId.HasValue)
+                // ✅ التعديل: استخدام الـ City كـ string للبحث عن الـ Id
+                if (!string.IsNullOrEmpty(request.City))
                 {
-                    admin.Profile.CityId = request.CityId.Value;
+                    var city = await _context.Cities
+                        .FirstOrDefaultAsync(c => c.Name == request.City);
+                    
+                    if (city != null)
+                    {
+                        admin.Profile.CityId = city.Id;
+                    }
                 }
 
                 admin.Profile.LastActiveAt = DateTime.UtcNow;
@@ -216,7 +224,6 @@ namespace LegalMateAI.BLL.Services.Service
             var admin = await _context.Admins.Include(a => a.Profile).FirstOrDefaultAsync(a => a.Id == adminId);
             if (admin == null) return null;
 
-            // ✅ التعديل: استخدام User.Status بدلاً من LawyerProfile.VerificationStatus
             var pendingLawyers = await _context.Users
                 .Include(u => u.LawyerProfile)
                 .Where(u => u.Role == UserRole.Lawyer && u.LawyerProfile != null &&
@@ -253,15 +260,11 @@ namespace LegalMateAI.BLL.Services.Service
 
             return new AdminDashboardDto
             {
-                // ✅ التعديل: استخدام User.Status
                 TotalUsers = await _context.Users.CountAsync(u => u.Role == UserRole.User && u.Status == AccountStatus.Active),
                 TotalLawyers = await _context.Users.CountAsync(u => u.Role == UserRole.Lawyer && u.Status == AccountStatus.Active),
                 PendingVerifications = pendingLawyers.Count,
-                
-                // ✅ التعديل: استخدام User.ActivatedAt
                 VerifiedToday = await _context.Users
                     .CountAsync(u => u.Role == UserRole.Lawyer && u.ActivatedAt != null && u.ActivatedAt.Value.Date == DateTime.UtcNow.Date),
-                
                 PendingLawyers = pendingLawyers,
                 RecentActivity = recentActivity,
                 AdminName = admin.FullName,

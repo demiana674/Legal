@@ -55,7 +55,9 @@ namespace LegalMateAI.DTOs.ReadDTO
         // ✅ متوسط التقييم
         public double AverageRating { get; set; }
         
-        public List<string> Specializations { get; set; } = new List<string>();
+        // ✅ التخصصات - الآن من نوع LawyerProfileSpecialtyDto
+        public List<LawyerProfileSpecialtyDto> Specializations { get; set; } = new List<LawyerProfileSpecialtyDto>();
+        
         public List<CertificateDto> Certificates { get; set; } = new List<CertificateDto>();
     }
 }

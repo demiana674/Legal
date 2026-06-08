@@ -129,7 +129,6 @@ builder.Services.AddScoped<ILawService, LawService>();
 builder.Services.AddScoped<ILawyerBranchService, LawyerBranchService>();
 builder.Services.AddScoped<LawParserService>();
 builder.Services.AddScoped<ILogService, LogService>();
-// builder.Services.AddScoped<IPredefinedContractService, PredefinedContractService>();
 builder.Services.AddScoped<IDocumentAnalysisService, DocumentAnalysisService>();
 
 // ===== ML & Analytics Services =====
@@ -182,7 +181,8 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        await context.Database.EnsureCreatedAsync();
+        await context.Database.MigrateAsync();
+        logger.LogInformation("✅ Database migrations applied");
 
         // ===== Seed Governorates =====
         var governorates = EgyptData.GetGovernorates();
@@ -205,29 +205,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation($"✅ Seeded {await context.Cities.CountAsync()} cities");
 
         // ===== Seed Admins =====
-        var admins = AdminSeedData.GetDefaultAdmins(configuration, encryption);
-        var addedAdmins = new List<Admin>();
-        foreach (var admin in admins)
-        {
-            var existing = await context.Admins.FirstOrDefaultAsync(a => a.Email == admin.Email);
-            if (existing == null) 
-            { 
-                await context.Admins.AddAsync(admin); 
-                addedAdmins.Add(admin); 
-                logger.LogInformation($"✅ Added admin: {admin.FullName}"); 
-            }
-            else addedAdmins.Add(existing);
-        }
-        await context.SaveChangesAsync();
-
-        // ===== Seed Admin Profiles =====
-        foreach (var profile in AdminSeedData.GetDefaultAdminProfiles(configuration, encryption, addedAdmins))
-        {
-            if (!await context.AdminProfiles.AnyAsync(p => p.AdminId == profile.AdminId))
-                await context.AdminProfiles.AddAsync(profile);
-        }
-        await context.SaveChangesAsync();
-        logger.LogInformation($"✅ Seeded admin profiles");
+        await AdminSeedData.SeedAdminsAsync(context, configuration, encryption, logger);
 
         // ===== Seed Lawyer Specialties =====
         try
@@ -289,6 +267,23 @@ using (var scope = app.Services.CreateScope())
         catch (Exception ex)
         {
             logger.LogWarning($"⚠️ Contract templates seeding: {ex.Message}");
+        }
+
+        // ===== Add YearsOfExperience column if not exists =====
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync(@"
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'LawyerSpecializations' AND COLUMN_NAME = 'YearsOfExperience')
+                BEGIN
+                    ALTER TABLE [LawyerSpecializations] ADD [YearsOfExperience] int NOT NULL DEFAULT 0;
+                END
+            ");
+            logger.LogInformation("✅ YearsOfExperience column checked/added");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning($"⚠️ Could not add YearsOfExperience column: {ex.Message}");
         }
 
         logger.LogInformation("═══════════════════════════════════════");

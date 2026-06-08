@@ -1,18 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.IO;
 using Microsoft.EntityFrameworkCore;
 using LegalMateAI.DAL.DBContext;
 using LegalMateAI.Domain.Entities;
+using LegalMateAI.Domain.Enums;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
 using LegalMateAI.BLL.Services.IService;
 using LegalMateAI.Infrastructure.Services.IService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using LegalMateAI.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace LegalMateAI.BLL.Services.Service
@@ -39,26 +34,47 @@ namespace LegalMateAI.BLL.Services.Service
             _logger = logger;
         }
 
+        private string? DecryptSafely(string? encrypted)
+        {
+            if (string.IsNullOrEmpty(encrypted)) return null;
+            try { return _encryption.Decrypt(encrypted); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Decryption failed: {ex.Message}");
+                return encrypted;
+            }
+        }
+
         public async Task<LawyerProfileDto?> GetProfileAsync(Guid userId)
         {
             var user = await _context.Users
                 .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.Specialties!)
-                    .ThenInclude(s => s.Specialty)
+                    .ThenInclude(lp => lp!.Specializations!)
+                    .ThenInclude(s => s.Specialization)
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Certificates)
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Reviews)
-                .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
             if (user == null || user.LawyerProfile == null) return null;
 
             var lawyerProfile = user.LawyerProfile;
 
+            // ✅ جلب التخصصات مع IsPrimary و YearsOfExperience
+            var specializationsList = lawyerProfile.Specializations?
+                .Select(s => new LawyerProfileSpecialtyDto
+                {
+                    Id = s.SpecializationId,
+                    Name = s.Specialization?.Name ?? "",
+                    NameAr = s.Specialization?.NameAr ?? "",
+                    IsPrimary = s.IsPrimary,
+                    YearsOfExperience = s.YearsOfExperience
+                }).ToList() ?? new List<LawyerProfileSpecialtyDto>();
+
             string? decryptedLicense = DecryptSafely(lawyerProfile.LicenseNumber);
             string? decryptedPhone = DecryptSafely(user.Phone);
-            string? decryptedAltPhone = DecryptSafely(user.UserProfile?.AlternativePhone);
+            string? decryptedAltPhone = DecryptSafely(lawyerProfile.AlternativePhone);
             string? decryptedNationalId = DecryptSafely(user.NationalId);
             string? decryptedDateOfBirth = user.DateOfBirth?.ToString("yyyy-MM-dd");
 
@@ -91,11 +107,6 @@ namespace LegalMateAI.BLL.Services.Service
                     .Select(s => s.Trim())
                     .ToList();
 
-            var specializationsList = lawyerProfile.Specialties?
-                .Select(s => s.Specialty?.Name ?? s.Specialty?.NameAr ?? "")
-                .Where(n => !string.IsNullOrEmpty(n))
-                .ToList() ?? new List<string>();
-
             var certificatesList = lawyerProfile.Certificates?
                 .Select(c => new CertificateDto
                 {
@@ -105,8 +116,6 @@ namespace LegalMateAI.BLL.Services.Service
                     Year = c.Year,
                     FileUrl = c.FileUrl
                 }).ToList() ?? new List<CertificateDto>();
-
-            _logger.LogInformation($"📊 Retrieved {specializationsList.Count} specializations for lawyer {userId}");
 
             return new LawyerProfileDto
             {
@@ -126,6 +135,7 @@ namespace LegalMateAI.BLL.Services.Service
                 YearsOfExperience = lawyerProfile.YearsOfExperience ?? 0,
                 LicenseIssueDate = lawyerProfile.LicenseIssueDate,
                 PracticeDegree = lawyerProfile.PracticeDegree,
+                GovernorateId = lawyerProfile.GovernorateId,
                 GovernorateName = lawyerProfile.Governorate,
                 City = lawyerProfile.City,
                 OfficeAddress = lawyerProfile.OfficeAddress,
@@ -153,12 +163,10 @@ namespace LegalMateAI.BLL.Services.Service
         {
             _logger.LogInformation($"🔵 UpdateProfileAsync called for lawyer: {userId}");
 
-            // ✅ الحل الأمثل: جلب الكيان مرة أخرى مع التتبع (AsTracking)
             var user = await _context.Users
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Specializations)
-                .Include(u => u.UserProfile)
-                .AsTracking()  // ✅ مهم جداً - لضمان التتبع الصحيح
+                .AsTracking()
                 .FirstOrDefaultAsync(u => u.UserID == userId && u.Role == UserRole.Lawyer);
 
             if (user == null || user.LawyerProfile == null)
@@ -168,8 +176,6 @@ namespace LegalMateAI.BLL.Services.Service
             }
 
             var lawyerProfile = user.LawyerProfile;
-            _logger.LogInformation($"✅ LawyerProfile found: Id={lawyerProfile.Id}, UserId={lawyerProfile.UserId}");
-            
             bool hasChanges = false;
 
             // Basic Info
@@ -202,24 +208,23 @@ namespace LegalMateAI.BLL.Services.Service
                 }
                 hasChanges = true;
             }
+            
+            // معالجة الهاتف البديل - يخزن في LawyerProfile
             if (request.AlternativePhone != null)
             {
-                if (user.UserProfile == null)
-                {
-                    user.UserProfile = new UserProfile { Id = Guid.NewGuid(), UserId = userId };
-                }
                 try
                 {
-                    user.UserProfile.AlternativePhone = string.IsNullOrEmpty(request.AlternativePhone)
+                    lawyerProfile.AlternativePhone = string.IsNullOrEmpty(request.AlternativePhone)
                         ? null
                         : _encryption.Encrypt(request.AlternativePhone);
                 }
                 catch
                 {
-                    user.UserProfile.AlternativePhone = request.AlternativePhone;
+                    lawyerProfile.AlternativePhone = request.AlternativePhone;
                 }
                 hasChanges = true;
             }
+            
             if (!string.IsNullOrEmpty(request.Nationality))
             {
                 user.Nationality = request.Nationality;
@@ -280,7 +285,17 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            // ✅ Location - استخدام النص (string) كما هو متوقع
+            // Location
+            if (request.GovernorateId.HasValue)
+            {
+                lawyerProfile.GovernorateId = request.GovernorateId.Value;
+                hasChanges = true;
+            }
+            if (request.CityId.HasValue)
+            {
+                lawyerProfile.CityId = request.CityId.Value;
+                hasChanges = true;
+            }
             if (!string.IsNullOrEmpty(request.Governorate))
             {
                 lawyerProfile.Governorate = request.Governorate;
@@ -297,7 +312,7 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            // ✅ تحديث المهارات والكفاءات
+            // Skills
             if (request.Skills != null && request.Skills.Any())
             {
                 lawyerProfile.Skills = string.Join(",", request.Skills);
@@ -309,39 +324,38 @@ namespace LegalMateAI.BLL.Services.Service
                 hasChanges = true;
             }
 
-            // ✅ تحديث عدد المحاج المعتمدة
+            // Approved Litigations Count
             if (request.ApprovedLitigationsCount.HasValue)
             {
                 lawyerProfile.ApprovedLitigationsCount = request.ApprovedLitigationsCount.Value;
                 hasChanges = true;
             }
 
-            // Specializations
+            // ✅ Specializations - تحديث التخصصات مع IsPrimary و YearsOfExperience
             if (request.Specializations != null && request.Specializations.Any())
             {
-                _logger.LogInformation($"📚 Updating specializations for lawyer {userId}: {string.Join(", ", request.Specializations)}");
-
                 var oldSpecializations = await _context.LawyerSpecializations
                     .Where(ls => ls.LawyerId == lawyerProfile.Id)
                     .ToListAsync();
+                
                 if (oldSpecializations.Any())
                 {
                     _context.LawyerSpecializations.RemoveRange(oldSpecializations);
                 }
 
-                foreach (var specName in request.Specializations)
+                foreach (var spec in request.Specializations)
                 {
-                    if (string.IsNullOrWhiteSpace(specName)) continue;
+                    if (string.IsNullOrWhiteSpace(spec.Name)) continue;
 
                     var specialty = await _context.LawyerSpecialties
-                        .FirstOrDefaultAsync(s => s.Name == specName || s.NameAr == specName);
+                        .FirstOrDefaultAsync(s => s.Name == spec.Name || s.NameAr == spec.Name);
 
                     if (specialty == null)
                     {
                         specialty = new LawyerSpecialty
                         {
-                            Name = specName,
-                            NameAr = specName,
+                            Name = spec.Name,
+                            NameAr = spec.NameAr,
                             IsActive = true
                         };
                         await _context.LawyerSpecialties.AddAsync(specialty);
@@ -353,10 +367,43 @@ namespace LegalMateAI.BLL.Services.Service
                         Id = Guid.NewGuid(),
                         LawyerId = lawyerProfile.Id,
                         SpecializationId = specialty.Id,
-                        IsPrimary = false,
-                        CasesCount = 0
+                        IsPrimary = spec.IsPrimary,
+                        CasesCount = 0,
+                        YearsOfExperience = spec.YearsOfExperience
                     };
                     _context.LawyerSpecializations.Add(lawyerSpecialization);
+                }
+                hasChanges = true;
+            }
+            else if (request.SpecialtyIds != null && request.SpecialtyIds.Any())
+            {
+                // التعامل مع SpecialtyIds القديم
+                var oldSpecializations = await _context.LawyerSpecializations
+                    .Where(ls => ls.LawyerId == lawyerProfile.Id)
+                    .ToListAsync();
+                if (oldSpecializations.Any())
+                {
+                    _context.LawyerSpecializations.RemoveRange(oldSpecializations);
+                }
+
+                foreach (var specialtyId in request.SpecialtyIds)
+                {
+                    var specialty = await _context.LawyerSpecialties
+                        .FirstOrDefaultAsync(s => s.Id == specialtyId);
+
+                    if (specialty != null)
+                    {
+                        var lawyerSpecialization = new LawyerSpecialization
+                        {
+                            Id = Guid.NewGuid(),
+                            LawyerId = lawyerProfile.Id,
+                            SpecializationId = specialty.Id,
+                            IsPrimary = false,
+                            CasesCount = 0,
+                            YearsOfExperience = 0
+                        };
+                        _context.LawyerSpecializations.Add(lawyerSpecialization);
+                    }
                 }
                 hasChanges = true;
             }
@@ -403,14 +450,9 @@ namespace LegalMateAI.BLL.Services.Service
                 catch (DbUpdateConcurrencyException ex)
                 {
                     _logger.LogError(ex, $"❌ Concurrency error while updating lawyer {userId}");
-                    
-                    // ✅ إعادة تحميل الكيان وحل التعارض
                     await ex.Entries.Single().ReloadAsync();
-                    
-                    // إعادة تطبيق التغييرات
                     _context.Entry(user).CurrentValues.SetValues(user);
                     _context.Entry(lawyerProfile).CurrentValues.SetValues(lawyerProfile);
-                    
                     await _context.SaveChangesAsync();
                     _logger.LogInformation($"✅ Concurrency resolved and lawyer profile updated for user: {userId}");
                     return true;
@@ -474,17 +516,6 @@ namespace LegalMateAI.BLL.Services.Service
         public async Task<LawyerProfileDto?> GetDashboardAsync(Guid userId)
         {
             return await GetProfileAsync(userId);
-        }
-
-        private string? DecryptSafely(string? encrypted)
-        {
-            if (string.IsNullOrEmpty(encrypted)) return null;
-            try { return _encryption.Decrypt(encrypted); }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Decryption failed: {ex.Message}");
-                return encrypted;
-            }
         }
     }
 }

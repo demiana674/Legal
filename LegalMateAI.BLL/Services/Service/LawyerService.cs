@@ -49,27 +49,26 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var query = _context.Users
                 .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.Specialties!)
-                    .ThenInclude(ls => ls.Specialty)
-                .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.City)
-                .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Reviews)
                 .Include(u => u.UserProfile)
                 .Where(u => u.Role == UserRole.Lawyer &&
                             u.Status == AccountStatus.Active &&
                             u.LawyerProfile != null);
 
+            // ✅ البحث بالتخصص باستخدام LawyerSpecialization
             if (searchCriteria.SpecializationId.HasValue)
             {
-                query = query.Where(u => u.LawyerProfile!.Specialties != null &&
-                    u.LawyerProfile.Specialties.Any(ls => ls.SpecialtyId == searchCriteria.SpecializationId.Value));
+                query = query.Where(u => _context.LawyerSpecializations
+                    .Any(ls => ls.LawyerId == u.LawyerProfile!.Id && 
+                               ls.SpecializationId == searchCriteria.SpecializationId.Value));
             }
             else if (!string.IsNullOrEmpty(searchCriteria.Specialization))
             {
-                query = query.Where(u => u.LawyerProfile!.Specialties != null &&
-                    u.LawyerProfile.Specialties.Any(ls => ls.Specialty != null && 
-                        (ls.Specialty.NameAr ?? "").Contains(searchCriteria.Specialization)));
+                query = query.Where(u => _context.LawyerSpecializations
+                    .Any(ls => ls.LawyerId == u.LawyerProfile!.Id && 
+                               ls.Specialization != null && 
+                               (ls.Specialization.NameAr != null && ls.Specialization.NameAr.Contains(searchCriteria.Specialization) ||
+                                ls.Specialization.Name != null && ls.Specialization.Name.Contains(searchCriteria.Specialization))));
             }
 
             if (searchCriteria.GovernorateId.HasValue)
@@ -78,8 +77,8 @@ namespace LegalMateAI.BLL.Services.Service
             }
             else if (!string.IsNullOrEmpty(searchCriteria.Location))
             {
-                query = query.Where(u => u.LawyerProfile!.City != null &&
-                    u.LawyerProfile.City.Contains(searchCriteria.Location));
+                query = query.Where(u => u.LawyerProfile!.Governorate != null &&
+                    u.LawyerProfile.Governorate.Contains(searchCriteria.Location));
             }
 
             if (searchCriteria.MinExperience.HasValue)
@@ -88,28 +87,50 @@ namespace LegalMateAI.BLL.Services.Service
             }
 
             var lawyers = await query.ToListAsync();
-            return lawyers.Select(u => MapToDto(u, _encryption)).OrderByDescending(l => l.Rating).ToList();
+            
+            _logger.LogInformation($"Search found {lawyers.Count} lawyers");
+            
+            var result = new List<LawyerResponseDto>();
+            
+            foreach (var user in lawyers)
+            {
+                if (user.LawyerProfile != null)
+                {
+                    // ✅ جلب التخصصات لكل محامي
+                    var specializations = await _context.LawyerSpecializations
+                        .Include(ls => ls.Specialization)
+                        .Where(ls => ls.LawyerId == user.LawyerProfile.Id)
+                        .ToListAsync();
+                    
+                    result.Add(MapToDto(user, _encryption, specializations));
+                }
+            }
+            
+            return result.OrderByDescending(l => l.Rating).ToList();
         }
 
         public async Task<LawyerResponseDto?> GetLawyerByIdAsync(Guid lawyerId)
         {
             var user = await _context.Users
                 .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.Specialties!)
-                    .ThenInclude(ls => ls.Specialty)
-                .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.City)
+                    .ThenInclude(lp => lp!.Reviews)
                 .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Certificates)
-                .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.Reviews)
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserID == lawyerId && 
                                           u.Role == UserRole.Lawyer &&
                                           u.LawyerProfile != null &&
                                           u.Status == AccountStatus.Active);
 
-            return user?.LawyerProfile == null ? null : MapToDto(user, _encryption);
+            if (user?.LawyerProfile == null) return null;
+            
+            // ✅ جلب التخصصات
+            var specializations = await _context.LawyerSpecializations
+                .Include(ls => ls.Specialization)
+                .Where(ls => ls.LawyerId == user.LawyerProfile.Id)
+                .ToListAsync();
+            
+            return MapToDto(user, _encryption, specializations);
         }
 
         public async Task<List<AvailabilityDto>> GetLawyerAvailabilityAsync(Guid lawyerId)
@@ -240,27 +261,36 @@ namespace LegalMateAI.BLL.Services.Service
         {
             var users = await _context.Users
                 .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.Specialties!)
-                    .ThenInclude(ls => ls.Specialty)
-                .Include(u => u.LawyerProfile!)
-                    .ThenInclude(lp => lp!.City)
-                .Include(u => u.LawyerProfile!)
                     .ThenInclude(lp => lp!.Reviews)
                 .Include(u => u.UserProfile)
                 .Where(u => u.Role == UserRole.Lawyer && 
                             u.Status == AccountStatus.Active &&
-                            u.LawyerProfile!.Specialties != null &&
-                            u.LawyerProfile.Specialties.Any(ls => ls.Specialty != null && ls.Specialty.NameAr.Contains(specialization)))
+                            u.LawyerProfile != null &&
+                            _context.LawyerSpecializations.Any(ls => ls.LawyerId == u.LawyerProfile.Id && 
+                                (ls.Specialization.NameAr != null && ls.Specialization.NameAr.Contains(specialization) || 
+                                 ls.Specialization.Name != null && ls.Specialization.Name.Contains(specialization))))
                 .Take(limit)
                 .ToListAsync();
 
-            return users.OrderByDescending(u => 
-                u.LawyerProfile!.Reviews?.Any() == true 
-                    ? u.LawyerProfile.Reviews.Average(r => r.Rating) 
-                    : 0)
-                .Select(u => MapToDto(u, _encryption))
-                .ToList();
+            var result = new List<LawyerResponseDto>();
+            
+            foreach (var user in users)
+            {
+                if (user.LawyerProfile != null)
+                {
+                    var specializations = await _context.LawyerSpecializations
+                        .Include(ls => ls.Specialization)
+                        .Where(ls => ls.LawyerId == user.LawyerProfile.Id)
+                        .ToListAsync();
+                    
+                    result.Add(MapToDto(user, _encryption, specializations));
+                }
+            }
+
+            return result.OrderByDescending(u => u.Rating).ToList();
         }
+
+        // ==================== Private Helper Methods ====================
 
         private static string GetDayNameAr(DayOfWeek day) => day switch
         {
@@ -274,18 +304,31 @@ namespace LegalMateAI.BLL.Services.Service
             _ => day.ToString()
         };
 
+        /// <summary>
+        /// فك تشفير النص المشفر، مع معالجة الأخطاء
+        /// </summary>
         private static string? Decrypt(string? encrypted, IEncryptionService encryption)
         {
             if (string.IsNullOrEmpty(encrypted)) return null;
-            try { return encryption.Decrypt(encrypted); }
-            catch { return encrypted; }
+            try 
+            { 
+                return encryption.Decrypt(encrypted); 
+            }
+            catch 
+            { 
+                return encrypted; 
+            }
         }
 
-        private static LawyerResponseDto MapToDto(User user, IEncryptionService encryption)
+        /// <summary>
+        /// تحويل كيان المستخدم إلى DTO
+        /// </summary>
+        private LawyerResponseDto MapToDto(User user, IEncryptionService encryption, List<LawyerSpecialization>? specializations = null)
         {
             var lawyer = user.LawyerProfile!;
             var avgRating = lawyer.Reviews?.Any() == true ? lawyer.Reviews.Average(r => r.Rating) : 0;
 
+            // فك تشفير البيانات الحساسة
             string? decryptedPhone = Decrypt(user.Phone, encryption);
             string? decryptedNationalId = Decrypt(user.NationalId, encryption);
             string? decryptedLicense = Decrypt(lawyer.LicenseNumber, encryption);
@@ -294,15 +337,22 @@ namespace LegalMateAI.BLL.Services.Service
             string? decryptedVerifiedAt = lawyer.VerifiedAt?.ToString("yyyy-MM-dd");
             string? decryptedNationality = user.Nationality;
 
-            // ✅ تحويل المهارات من نص إلى قائمة
+            // تحويل المهارات من نص إلى قائمة
             var skillsList = string.IsNullOrEmpty(lawyer.Skills)
                 ? new List<string>()
                 : lawyer.Skills.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.Trim())
                     .ToList();
 
-            // ✅ حساب عدد القضايا النشطة
-            var activeCasesCount = lawyer.Specialties?.Count ?? 0;
+            // ✅ تحويل التخصصات
+            var specialtiesList = specializations?.Select(s => new LawyerProfileSpecialtyDto
+            {
+                Id = s.SpecializationId,
+                Name = s.Specialization?.Name ?? "",
+                NameAr = s.Specialization?.NameAr ?? "",
+                IsPrimary = s.IsPrimary,
+                YearsOfExperience = 0
+            }).ToList() ?? new List<LawyerProfileSpecialtyDto>();
 
             return new LawyerResponseDto
             {
@@ -334,20 +384,12 @@ namespace LegalMateAI.BLL.Services.Service
                 DateOfBirth = decryptedDateOfBirth,
                 CreatedAt = decryptedCreatedAt,
                 
-                // ✅ المهارات والإحصائيات الجديدة
                 Skills = skillsList,
                 ApprovedLitigationsCount = lawyer.ApprovedLitigationsCount,
                 ClientsCount = lawyer.ClientsCount,
-                ActiveCasesCount = activeCasesCount,
+                ActiveCasesCount = lawyer.Specialties?.Count ?? 0,
                 
-                Specialties = lawyer.Specialties?.Select(s => new LawyerProfileSpecialtyDto
-                {
-                    Id = s.SpecialtyId,
-                    Name = s.Specialty?.Name ?? "",
-                    NameAr = s.Specialty?.NameAr ?? "",
-                    IsPrimary = s.IsPrimary,
-                    YearsOfExperience = s.YearsOfExperience
-                }).ToList() ?? new(),
+                Specialties = specialtiesList,
                 Certificates = lawyer.Certificates?.Select(c => new LegalMateAI.DTOs.ReadDTO.CertificateDto
                 {
                     Id = c.Id,

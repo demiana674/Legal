@@ -29,17 +29,17 @@ namespace LegalMateAI.DTOs.UpdateDTO
         public string? City { get; set; }
         public string? OfficeAddress { get; set; }
         
-        // ✅ المهارات والكفاءات (قائمة)
+        // المهارات والكفاءات (قائمة)
         public List<string> Skills { get; set; } = new List<string>();
         
-        // ✅ المهارات كنص (مفصول بفواصل)
+        // المهارات كنص (مفصول بفواصل)
         public string? SkillsText { get; set; }
         
-        // ✅ عدد المحاج المعتمدة
+        // عدد المحاج المعتمدة
         public int? ApprovedLitigationsCount { get; set; }
         
-        // Specializations
-        public List<string> Specializations { get; set; } = new List<string>();
+        // ✅ التخصصات - الآن من نوع SpecializationUpdateDto
+        public List<SpecializationUpdateDto>? Specializations { get; set; }
         
         // Certificates
         public List<CertificateInputDto>? Certificates { get; set; }
@@ -54,5 +54,14 @@ namespace LegalMateAI.DTOs.UpdateDTO
         public string IssuingOrganization { get; set; } = string.Empty;
         public int Year { get; set; }
         public string? FileUrl { get; set; }
+    }
+
+    public class SpecializationUpdateDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
+        public int YearsOfExperience { get; set; }
     }
 }
