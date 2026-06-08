@@ -1,4 +1,3 @@
-// LegalMateAI.BLL/Services/IService/ICaseService.cs
 using LegalMateAI.DTOs.CreateDTO;
 using LegalMateAI.DTOs.ReadDTO;
 using LegalMateAI.DTOs.UpdateDTO;
@@ -14,6 +13,7 @@ namespace LegalMateAI.BLL.Services.IService
         
         // ========== جلب القضايا ==========
         Task<List<CaseResponseDto>> GetCasesAsync(CaseFilterDto filter);
+        Task<List<CaseResponseDto>> GetCasesForUserAsync(Guid userId, CaseFilterDto filter, bool isLawyer = false);
         Task<CaseResponseDto?> GetCaseByIdAsync(Guid userId, Guid caseId, bool isLawyer = false);
         
         // ========== إدارة المستندات ==========
@@ -29,6 +29,7 @@ namespace LegalMateAI.BLL.Services.IService
         
         // ========== إحصائيات ==========
         Task<CaseStatsDto> GetCaseStatsAsync(Guid? lawyerId = null, Guid? clientId = null);
+        Task<CaseStatsDto> GetCaseStatsForUserAsync(Guid userId, bool isLawyer = false);
     }
     
     public class CaseStatsDto

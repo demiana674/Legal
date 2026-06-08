@@ -33,93 +33,91 @@ namespace LegalMateAI.BLL.Services.Service
 
         public async Task<CaseResponseDto?> CreateCaseAsync(Guid userId, CreateCaseDto request, bool isLawyer = false)
         {
-            Guid clientId;
-            
-            // ✅ إذا كان الـ ClientId موجوداً وليس Guid.Empty، استخدمه
-            if (request.ClientId != Guid.Empty && request.ClientId != null)
+            try
             {
-                var existingClient = await _context.Users
-                    .FirstOrDefaultAsync(u => u.UserID == request.ClientId && u.Role == UserRole.User);
+                _logger.LogInformation($"🔵 CreateCaseAsync - userId: {userId}, isLawyer: {isLawyer}");
                 
-                if (existingClient != null)
+                Guid clientId;
+                
+                if (request.ClientId.HasValue && request.ClientId.Value != Guid.Empty)
                 {
-                    clientId = existingClient.UserID;
+                    var existingClient = await _context.Users
+                        .FirstOrDefaultAsync(u => u.UserID == request.ClientId.Value && u.Role == UserRole.User);
+                    
+                    if (existingClient != null)
+                    {
+                        clientId = existingClient.UserID;
+                    }
+                    else
+                    {
+                        clientId = await CreateNewClientAsync(request);
+                    }
+                }
+                else if (!string.IsNullOrEmpty(request.ClientEmail) || !string.IsNullOrEmpty(request.ClientPhone))
+                {
+                    var existingClient = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Role == UserRole.User && 
+                            (u.Email == request.ClientEmail || u.Phone == request.ClientPhone));
+                    
+                    if (existingClient != null)
+                    {
+                        clientId = existingClient.UserID;
+                    }
+                    else
+                    {
+                        clientId = await CreateNewClientAsync(request);
+                    }
                 }
                 else
                 {
-                    // ✅ إنشاء موكل جديد إذا كان الـ ID غير موجود
                     clientId = await CreateNewClientAsync(request);
                 }
-            }
-            else if (!string.IsNullOrEmpty(request.ClientEmail) || !string.IsNullOrEmpty(request.ClientPhone))
-            {
-                // ✅ البحث عن موكل موجود بالإيميل أو الهاتف
-                var existingClient = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Role == UserRole.User && 
-                        (u.Email == request.ClientEmail || u.Phone == request.ClientPhone));
+
+                Guid? lawyerProfileId = null;
+                if (isLawyer)
+                {
+                    var lawyer = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
+                    if (lawyer == null) return null;
+                    lawyerProfileId = lawyer.Id;
+                }
+
+                var caseNumber = await GenerateCaseNumberAsync();
+
+                var newCase = new Case
+                {
+                    Id = Guid.NewGuid(),
+                    CaseNumber = caseNumber,
+                    Title = request.Title,
+                    Description = request.Description,
+                    ClientId = clientId,
+                    LawyerId = lawyerProfileId,
+                    Court = request.Court,
+                    NextHearingDate = request.NextHearingDate,
+                    Status = request.Status,
+                    Priority = request.Priority,
+                    CaseType = request.CaseType,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Cases.Add(newCase);
+                await _context.SaveChangesAsync();
                 
-                if (existingClient != null)
-                {
-                    clientId = existingClient.UserID;
-                }
-                else
-                {
-                    // ✅ إنشاء موكل جديد
-                    clientId = await CreateNewClientAsync(request);
-                }
+                return await GetCaseByIdAsync(userId, newCase.Id, isLawyer);
             }
-            else
+            catch (Exception ex)
             {
-                // ✅ إنشاء موكل جديد بالبيانات المدخلة
-                clientId = await CreateNewClientAsync(request);
+                _logger.LogError(ex, $"❌ Error in CreateCaseAsync: {ex.Message}");
+                return null;
             }
-
-            Guid? lawyerProfileId = null;
-            if (isLawyer)
-            {
-                var lawyer = await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
-                if (lawyer == null) return null;
-                lawyerProfileId = lawyer.Id;
-            }
-
-            var newCase = new Case
-            {
-                Id = Guid.NewGuid(),
-                CaseNumber = GenerateCaseNumber(),
-                Title = request.Title,
-                Description = request.Description,
-                ClientId = clientId,
-                LawyerId = lawyerProfileId,
-                Court = request.Court,
-                NextHearingDate = request.NextHearingDate,
-                Status = request.Status,
-                Priority = request.Priority,
-                CaseType = request.CaseType,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Cases.Add(newCase);
-            await _context.SaveChangesAsync();
-            return await GetCaseByIdAsync(userId, newCase.Id, isLawyer);
         }
 
-        /// <summary>
-        /// ✅ إنشاء موكل جديد تلقائياً من بيانات القضية
-        /// </summary>
         private async Task<Guid> CreateNewClientAsync(CreateCaseDto request)
         {
-            // توليد كلمة مرور عشوائية مؤقتة
             var tempPassword = GenerateRandomPassword();
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
-            
-            // توليد رقم قومي مؤقت فريد
             var tempNationalId = GenerateTempNationalId();
             
-            var email = request.ClientEmail;
-            if (string.IsNullOrEmpty(email))
-            {
-                email = $"client_{Guid.NewGuid():N}@tempclient.com";
-            }
+            var email = request.ClientEmail ?? $"client_{Guid.NewGuid():N}@tempclient.com";
             
             var newClient = new User
             {
@@ -141,7 +139,6 @@ namespace LegalMateAI.BLL.Services.Service
             
             _context.Users.Add(newClient);
             
-            // إنشاء UserProfile للموكل الجديد
             var userProfile = new UserProfile
             {
                 Id = Guid.NewGuid(),
@@ -163,14 +160,11 @@ namespace LegalMateAI.BLL.Services.Service
             _context.UserProfiles.Add(userProfile);
             await _context.SaveChangesAsync();
             
-            _logger.LogInformation($"✅ New client created automatically: {newClient.Email} (Temp Password: {tempPassword})");
+            _logger.LogInformation($"✅ New client created: {newClient.Email}");
             
             return newClient.UserID;
         }
 
-        /// <summary>
-        /// ✅ توليد كلمة مرور عشوائية مؤقتة
-        /// </summary>
         private string GenerateRandomPassword()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -178,252 +172,573 @@ namespace LegalMateAI.BLL.Services.Service
             return new string(Enumerable.Repeat(chars, 12).Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        /// <summary>
-        /// ✅ توليد رقم قومي مؤقت فريد
-        /// </summary>
         private string GenerateTempNationalId()
         {
             var random = new Random();
             return $"TEMP{DateTime.Now.Ticks}{random.Next(1000, 9999)}";
         }
 
+        private async Task<string> GenerateCaseNumberAsync()
+        {
+            var count = await _context.Cases.CountAsync() + 1;
+            return $"CS-{DateTime.UtcNow.Year}-{count:D6}";
+        }
+
+        private async Task<LawyerProfile?> GetLawyerProfileByUserIdAsync(Guid userId)
+        {
+            return await _context.LawyerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
+        }
+
         public async Task<CaseResponseDto?> UpdateCaseAsync(Guid userId, Guid caseId, UpdateCaseDto request, bool isLawyer = false)
         {
-            var existingCase = await _context.Cases
-                .Include(c => c.Client).Include(c => c.Lawyer).ThenInclude(l => l!.User)
-                .FirstOrDefaultAsync(c => c.Id == caseId);
+            try
+            {
+                var existingCase = await _context.Cases
+                    .Include(c => c.Client)
+                    .Include(c => c.Lawyer)
+                        .ThenInclude(l => l!.User)
+                    .FirstOrDefaultAsync(c => c.Id == caseId);
 
-            if (existingCase == null) return null;
-            if (isLawyer && existingCase.LawyerId != userId) return null;
-            if (!isLawyer && existingCase.ClientId != userId) return null;
+                if (existingCase == null) return null;
+                
+                if (isLawyer)
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer == null || existingCase.LawyerId != lawyer.Id) return null;
+                }
+                else if (!isLawyer && existingCase.ClientId != userId) return null;
 
-            bool hasChanges = false;
-            if (!string.IsNullOrEmpty(request.Title) && existingCase.Title != request.Title) { existingCase.Title = request.Title; hasChanges = true; }
-            if (!string.IsNullOrEmpty(request.Description) && existingCase.Description != request.Description) { existingCase.Description = request.Description; hasChanges = true; }
-            if (request.Status.HasValue && existingCase.Status != request.Status) { existingCase.Status = request.Status.Value; if (request.Status.Value == CaseStatus.Completed || request.Status.Value == CaseStatus.Rejected) existingCase.ClosedAt = DateTime.UtcNow; hasChanges = true; }
-            if (request.Priority.HasValue && existingCase.Priority != request.Priority) { existingCase.Priority = request.Priority.Value; hasChanges = true; }
+                bool hasChanges = false;
+                
+                if (!string.IsNullOrEmpty(request.Title) && existingCase.Title != request.Title) 
+                { 
+                    existingCase.Title = request.Title; 
+                    hasChanges = true; 
+                }
+                
+                if (!string.IsNullOrEmpty(request.Description) && existingCase.Description != request.Description) 
+                { 
+                    existingCase.Description = request.Description; 
+                    hasChanges = true; 
+                }
+                
+                if (request.Status.HasValue && existingCase.Status != request.Status) 
+                { 
+                    existingCase.Status = request.Status.Value; 
+                    if (request.Status.Value == CaseStatus.Completed || request.Status.Value == CaseStatus.Rejected) 
+                        existingCase.ClosedAt = DateTime.UtcNow; 
+                    hasChanges = true; 
+                }
+                
+                if (request.Priority.HasValue && existingCase.Priority != request.Priority) 
+                { 
+                    existingCase.Priority = request.Priority.Value; 
+                    hasChanges = true; 
+                }
 
-            if (hasChanges) { existingCase.UpdatedAt = DateTime.UtcNow; await _context.SaveChangesAsync(); }
-            return await GetCaseByIdAsync(userId, caseId, isLawyer);
+                if (hasChanges) 
+                { 
+                    existingCase.UpdatedAt = DateTime.UtcNow; 
+                    await _context.SaveChangesAsync(); 
+                }
+                
+                return await GetCaseByIdAsync(userId, caseId, isLawyer);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in UpdateCaseAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<bool> DeleteCaseAsync(Guid userId, Guid caseId, bool isLawyer = false)
         {
-            var existingCase = await _context.Cases.Include(c => c.Documents).Include(c => c.Notes).FirstOrDefaultAsync(c => c.Id == caseId);
-            if (existingCase == null) return false;
-            if (isLawyer && existingCase.LawyerId != userId) return false;
-
-            foreach (var doc in existingCase.Documents)
+            try
             {
-                var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), doc.FileUrl.TrimStart('/'));
-                if (File.Exists(filePath)) File.Delete(filePath);
-            }
+                var existingCase = await _context.Cases
+                    .Include(c => c.Documents)
+                    .Include(c => c.Notes)
+                    .FirstOrDefaultAsync(c => c.Id == caseId);
+                    
+                if (existingCase == null) return false;
+                
+                if (isLawyer)
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer == null || existingCase.LawyerId != lawyer.Id) return false;
+                }
+                else if (!isLawyer && existingCase.ClientId != userId) return false;
 
-            _context.Cases.Remove(existingCase);
-            await _context.SaveChangesAsync();
-            return true;
+                foreach (var doc in existingCase.Documents)
+                {
+                    var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), doc.FileUrl.TrimStart('/'));
+                    if (File.Exists(filePath)) File.Delete(filePath);
+                }
+
+                _context.Cases.Remove(existingCase);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in DeleteCaseAsync: {ex.Message}");
+                return false;
+            }
         }
 
         // ========== جلب القضايا ==========
 
         public async Task<List<CaseResponseDto>> GetCasesAsync(CaseFilterDto filter)
         {
-            var query = _context.Cases
-                .Include(c => c.Client)
-                .Include(c => c.Lawyer).ThenInclude(l => l!.User)
-                .Include(c => c.Documents)
-                .Include(c => c.Notes)
-                .AsQueryable();
+            try
+            {
+                var query = _context.Cases
+                    .Include(c => c.Client)
+                    .Include(c => c.Lawyer)
+                        .ThenInclude(l => l!.User)
+                    .Include(c => c.Documents)
+                    .Include(c => c.Notes)
+                    .AsQueryable();
+                    
+                if (filter.ClientId.HasValue) query = query.Where(c => c.ClientId == filter.ClientId.Value);
+                if (filter.LawyerId.HasValue) query = query.Where(c => c.LawyerId == filter.LawyerId.Value);
+                if (filter.Status.HasValue) query = query.Where(c => c.Status == filter.Status.Value);
+                if (!string.IsNullOrEmpty(filter.CaseType)) query = query.Where(c => c.CaseType == filter.CaseType);
                 
-            if (filter.ClientId.HasValue) query = query.Where(c => c.ClientId == filter.ClientId.Value);
-            if (filter.LawyerId.HasValue) query = query.Where(c => c.LawyerId == filter.LawyerId.Value);
-            if (filter.Status.HasValue) query = query.Where(c => c.Status == filter.Status.Value);
-            if (!string.IsNullOrEmpty(filter.SearchTerm)) 
-            { 
-                var t = filter.SearchTerm.ToLower(); 
-                query = query.Where(c => c.Title.ToLower().Contains(t) || 
-                    (c.Description != null && c.Description.ToLower().Contains(t)) ||
-                    (c.Client != null && c.Client.FullName.ToLower().Contains(t)) ||
-                    (c.CaseNumber.ToLower().Contains(t)));
-            }
+                if (!string.IsNullOrEmpty(filter.SearchTerm)) 
+                { 
+                    var t = filter.SearchTerm.ToLower(); 
+                    query = query.Where(c => c.Title.ToLower().Contains(t) || 
+                        (c.Description != null && c.Description.ToLower().Contains(t)) ||
+                        (c.Client != null && c.Client.FullName.ToLower().Contains(t)) ||
+                        (c.CaseNumber.ToLower().Contains(t)));
+                }
 
-            int page = Math.Max(1, filter.Page);
-            int pageSize = Math.Max(1, Math.Min(100, filter.PageSize));
-            var cases = await query.OrderByDescending(c => c.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            return cases.Select(MapToDto).ToList();
+                int page = Math.Max(1, filter.Page);
+                int pageSize = Math.Max(1, Math.Min(100, filter.PageSize));
+                
+                var cases = await query
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                    
+                return cases.Select(MapToDto).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in GetCasesAsync: {ex.Message}");
+                return new List<CaseResponseDto>();
+            }
+        }
+
+        public async Task<List<CaseResponseDto>> GetCasesForUserAsync(Guid userId, CaseFilterDto filter, bool isLawyer = false)
+        {
+            try
+            {
+                var query = _context.Cases
+                    .Include(c => c.Client)
+                    .Include(c => c.Lawyer)
+                        .ThenInclude(l => l!.User)
+                    .Include(c => c.Documents)
+                    .Include(c => c.Notes)
+                    .AsQueryable();
+                
+                if (isLawyer)
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer != null)
+                    {
+                        query = query.Where(c => c.LawyerId == lawyer.Id);
+                    }
+                    else
+                    {
+                        return new List<CaseResponseDto>();
+                    }
+                }
+                else
+                {
+                    query = query.Where(c => c.ClientId == userId);
+                }
+                
+                if (filter.Status.HasValue)
+                {
+                    query = query.Where(c => c.Status == filter.Status.Value);
+                }
+                
+                if (!string.IsNullOrEmpty(filter.CaseType))
+                {
+                    query = query.Where(c => c.CaseType == filter.CaseType);
+                }
+                
+                if (!string.IsNullOrEmpty(filter.SearchTerm))
+                {
+                    var term = filter.SearchTerm.ToLower();
+                    query = query.Where(c => c.Title.ToLower().Contains(term) || 
+                        (c.Description != null && c.Description.ToLower().Contains(term)) ||
+                        (c.Client != null && c.Client.FullName.ToLower().Contains(term)) ||
+                        (c.CaseNumber.ToLower().Contains(term)));
+                }
+
+                int page = Math.Max(1, filter.Page);
+                int pageSize = Math.Max(1, Math.Min(100, filter.PageSize));
+                
+                var cases = await query
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                    
+                return cases.Select(MapToDto).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in GetCasesForUserAsync: {ex.Message}");
+                return new List<CaseResponseDto>();
+            }
         }
 
         public async Task<CaseResponseDto?> GetCaseByIdAsync(Guid userId, Guid caseId, bool isLawyer = false)
         {
-            var c = await _context.Cases
-                .Include(x => x.Client)
-                .Include(x => x.Lawyer).ThenInclude(l => l!.User)
-                .Include(x => x.Documents)
-                .Include(x => x.Notes)
-                .FirstOrDefaultAsync(x => x.Id == caseId);
+            try
+            {
+                var c = await _context.Cases
+                    .Include(x => x.Client)
+                    .Include(x => x.Lawyer)
+                        .ThenInclude(l => l!.User)
+                    .Include(x => x.Documents)
+                    .Include(x => x.Notes)
+                    .FirstOrDefaultAsync(x => x.Id == caseId);
+                    
+                if (c == null) return null;
                 
-            if (c == null) return null;
-            
-            if (isLawyer && c.LawyerId != userId) return null;
-            if (!isLawyer && c.ClientId != userId) return null;
-            
-            return MapToDto(c);
+                if (isLawyer)
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer == null) return null;
+                    if (c.LawyerId != lawyer.Id) return null;
+                }
+                else if (!isLawyer && c.ClientId != userId) return null;
+                
+                return MapToDto(c);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in GetCaseByIdAsync: {ex.Message}");
+                return null;
+            }
         }
 
         // ========== إدارة المستندات ==========
 
         public async Task<CaseDocumentResponseDto?> UploadDocumentAsync(Guid userId, CreateCaseDocumentDto request)
         {
-            var caseEntity = await _context.Cases.FirstOrDefaultAsync(c => c.Id == request.CaseId);
-            if (caseEntity == null || (caseEntity.LawyerId != userId && caseEntity.ClientId != userId)) return null;
-            if (request.File == null || request.File.Length == 0) return null;
-
-            var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
-            var allowedExtensions = new[] { ".pdf", ".docx", ".doc", ".txt", ".jpg", ".jpeg", ".png" };
-            if (!allowedExtensions.Contains(extension) || request.File.Length > 10 * 1024 * 1024) return null;
-
-            var uploadsFolder = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), "uploads", "cases", request.CaseId.ToString());
-            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
-            var fileName = $"{Guid.NewGuid()}{extension}";
-            var filePath = Path.Combine(uploadsFolder, fileName);
-            using (var stream = new FileStream(filePath, FileMode.Create)) await request.File.CopyToAsync(stream);
-
-            var document = new CaseDocument
+            try
             {
-                Id = Guid.NewGuid(), 
-                CaseId = request.CaseId, 
-                FileName = request.File.FileName,
-                FileUrl = $"/uploads/cases/{request.CaseId}/{fileName}", 
-                FileType = request.File.ContentType,
-                FileSize = request.File.Length, 
-                Description = request.Description, 
-                UploadedBy = userId,
-                UploadedAt = DateTime.UtcNow, 
-                IsVerified = caseEntity.LawyerId == userId
-            };
+                var caseEntity = await _context.Cases.FirstOrDefaultAsync(c => c.Id == request.CaseId);
+                if (caseEntity == null) return null;
+                
+                bool hasAccess = false;
+                
+                if (caseEntity.ClientId == userId)
+                {
+                    hasAccess = true;
+                }
+                else
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer != null && caseEntity.LawyerId == lawyer.Id)
+                    {
+                        hasAccess = true;
+                    }
+                }
+                
+                if (!hasAccess) return null;
+                
+                if (request.File == null || request.File.Length == 0) return null;
 
-            _context.CaseDocuments.Add(document);
-            await _context.SaveChangesAsync();
-            return await GetDocumentByIdAsync(document.Id);
+                var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+                var allowedExtensions = new[] { ".pdf", ".docx", ".doc", ".txt", ".jpg", ".jpeg", ".png" };
+                if (!allowedExtensions.Contains(extension) || request.File.Length > 10 * 1024 * 1024) return null;
+
+                var uploadsFolder = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), "uploads", "cases", request.CaseId.ToString());
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create)) await request.File.CopyToAsync(stream);
+
+                var document = new CaseDocument
+                {
+                    Id = Guid.NewGuid(), 
+                    CaseId = request.CaseId, 
+                    FileName = request.File.FileName,
+                    FileUrl = $"/uploads/cases/{request.CaseId}/{fileName}", 
+                    FileType = request.File.ContentType,
+                    FileSize = request.File.Length, 
+                    Description = request.Description, 
+                    UploadedBy = userId,
+                    UploadedAt = DateTime.UtcNow, 
+                    IsVerified = caseEntity.LawyerId == (await GetLawyerProfileByUserIdAsync(userId))?.Id
+                };
+
+                _context.CaseDocuments.Add(document);
+                await _context.SaveChangesAsync();
+                
+                return await GetDocumentByIdAsync(document.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in UploadDocumentAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<bool> DeleteDocumentAsync(Guid userId, Guid documentId)
         {
-            var document = await _context.CaseDocuments.Include(d => d.Case).FirstOrDefaultAsync(d => d.Id == documentId);
-            if (document == null) return false;
-            if (document.Case.LawyerId != userId && document.Case.ClientId != userId && document.UploadedBy != userId) return false;
+            try
+            {
+                var document = await _context.CaseDocuments
+                    .Include(d => d.Case)
+                    .FirstOrDefaultAsync(d => d.Id == documentId);
+                    
+                if (document == null) return false;
+                
+                bool hasAccess = false;
+                
+                if (document.Case.ClientId == userId || document.UploadedBy == userId)
+                {
+                    hasAccess = true;
+                }
+                else
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer != null && document.Case.LawyerId == lawyer.Id)
+                    {
+                        hasAccess = true;
+                    }
+                }
+                
+                if (!hasAccess) return false;
 
-            var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), document.FileUrl.TrimStart('/'));
-            if (File.Exists(filePath)) File.Delete(filePath);
+                var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), document.FileUrl.TrimStart('/'));
+                if (File.Exists(filePath)) File.Delete(filePath);
 
-            _context.CaseDocuments.Remove(document);
-            await _context.SaveChangesAsync();
-            return true;
+                _context.CaseDocuments.Remove(document);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in DeleteDocumentAsync: {ex.Message}");
+                return false;
+            }
         }
 
         public async Task<byte[]?> DownloadDocumentAsync(Guid documentId)
         {
-            var document = await _context.CaseDocuments.FirstOrDefaultAsync(d => d.Id == documentId);
-            if (document == null) return null;
+            try
+            {
+                var document = await _context.CaseDocuments.FirstOrDefaultAsync(d => d.Id == documentId);
+                if (document == null) return null;
 
-            var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), document.FileUrl.TrimStart('/'));
-            return File.Exists(filePath) ? await File.ReadAllBytesAsync(filePath) : null;
+                var filePath = Path.Combine(_env.WebRootPath ?? Directory.GetCurrentDirectory(), document.FileUrl.TrimStart('/'));
+                return File.Exists(filePath) ? await File.ReadAllBytesAsync(filePath) : null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in DownloadDocumentAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<CaseDocumentResponseDto?> GetDocumentByIdAsync(Guid documentId)
         {
-            var document = await _context.CaseDocuments.FirstOrDefaultAsync(d => d.Id == documentId);
-            if (document == null) return null;
-
-            var uploader = await _context.Users.FindAsync(document.UploadedBy);
-            return new CaseDocumentResponseDto
+            try
             {
-                Id = document.Id, 
-                FileName = document.FileName, 
-                FileUrl = document.FileUrl,
-                FileType = document.FileType, 
-                FileSizeFormatted = FormatFileSize(document.FileSize),
-                Description = document.Description, 
-                UploadedByName = uploader?.FullName ?? "غير معروف",
-                UploadedAt = document.UploadedAt, 
-                IsVerified = document.IsVerified
-            };
+                var document = await _context.CaseDocuments.FirstOrDefaultAsync(d => d.Id == documentId);
+                if (document == null) return null;
+
+                var uploader = await _context.Users.FindAsync(document.UploadedBy);
+                return new CaseDocumentResponseDto
+                {
+                    Id = document.Id, 
+                    FileName = document.FileName, 
+                    FileUrl = document.FileUrl,
+                    FileType = document.FileType, 
+                    FileSizeFormatted = FormatFileSize(document.FileSize),
+                    Description = document.Description, 
+                    UploadedByName = uploader?.FullName ?? "غير معروف",
+                    UploadedAt = document.UploadedAt, 
+                    IsVerified = document.IsVerified
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in GetDocumentByIdAsync: {ex.Message}");
+                return null;
+            }
         }
 
         // ========== إدارة الملاحظات ==========
 
         public async Task<CaseNoteResponseDto?> AddNoteAsync(Guid userId, CreateCaseNoteDto request, bool isLawyer = false)
         {
-            var caseEntity = await _context.Cases.FirstOrDefaultAsync(c => c.Id == request.CaseId);
-            if (caseEntity == null) return null;
-            if (isLawyer && caseEntity.LawyerId != userId) return null;
-            if (!isLawyer && caseEntity.ClientId != userId) return null;
+            try
+            {
+                var caseEntity = await _context.Cases.FirstOrDefaultAsync(c => c.Id == request.CaseId);
+                if (caseEntity == null) return null;
+                
+                if (isLawyer)
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer == null || caseEntity.LawyerId != lawyer.Id) return null;
+                }
+                else if (!isLawyer && caseEntity.ClientId != userId) return null;
 
-            var note = new CaseNote 
-            { 
-                Id = Guid.NewGuid(), 
-                CaseId = request.CaseId, 
-                Content = request.Content, 
-                WrittenBy = userId, 
-                CreatedAt = DateTime.UtcNow, 
-                IsPrivate = request.IsPrivate && isLawyer 
-            };
-            _context.CaseNotes.Add(note);
-            await _context.SaveChangesAsync();
-            return await GetNoteByIdAsync(note.Id);
+                var note = new CaseNote 
+                { 
+                    Id = Guid.NewGuid(), 
+                    CaseId = request.CaseId, 
+                    Content = request.Content, 
+                    WrittenBy = userId, 
+                    CreatedAt = DateTime.UtcNow, 
+                    IsPrivate = request.IsPrivate && isLawyer 
+                };
+                _context.CaseNotes.Add(note);
+                await _context.SaveChangesAsync();
+                
+                return await GetNoteByIdAsync(note.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in AddNoteAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<CaseNoteResponseDto?> UpdateNoteAsync(Guid userId, Guid noteId, string content)
         {
-            var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
-            if (note == null || note.WrittenBy != userId) return null;
-            note.Content = content; 
-            note.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return await GetNoteByIdAsync(noteId);
+            try
+            {
+                var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
+                if (note == null || note.WrittenBy != userId) return null;
+                
+                note.Content = content; 
+                note.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                
+                return await GetNoteByIdAsync(noteId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in UpdateNoteAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<bool> DeleteNoteAsync(Guid userId, Guid noteId)
         {
-            var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
-            if (note == null || note.WrittenBy != userId) return false;
-            _context.CaseNotes.Remove(note);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
+                if (note == null || note.WrittenBy != userId) return false;
+                
+                _context.CaseNotes.Remove(note);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in DeleteNoteAsync: {ex.Message}");
+                return false;
+            }
         }
 
         // ========== إحصائيات ==========
 
         public async Task<CaseStatsDto> GetCaseStatsAsync(Guid? lawyerId = null, Guid? clientId = null)
         {
-            var query = _context.Cases.AsQueryable();
-            if (lawyerId.HasValue) query = query.Where(c => c.LawyerId == lawyerId.Value);
-            if (clientId.HasValue) query = query.Where(c => c.ClientId == clientId.Value);
-
-            var now = DateTime.UtcNow;
-            var weekLater = now.AddDays(7);
-            return new CaseStatsDto
+            try
             {
-                Total = await query.CountAsync(),
-                Active = await query.CountAsync(c => c.Status == CaseStatus.Active),
-                Pending = await query.CountAsync(c => c.Status == CaseStatus.Pending),
-                Completed = await query.CountAsync(c => c.Status == CaseStatus.Completed),
-                Rejected = await query.CountAsync(c => c.Status == CaseStatus.Rejected),
-                OnHold = await query.CountAsync(c => c.Status == CaseStatus.OnHold),
-                Urgent = await query.CountAsync(c => c.Priority == CasePriority.Urgent),
-                UpcomingHearings = await query.CountAsync(c => c.NextHearingDate.HasValue && c.NextHearingDate.Value >= now && c.NextHearingDate.Value <= weekLater)
-            };
+                var query = _context.Cases.AsQueryable();
+                if (lawyerId.HasValue) query = query.Where(c => c.LawyerId == lawyerId.Value);
+                if (clientId.HasValue) query = query.Where(c => c.ClientId == clientId.Value);
+
+                var now = DateTime.UtcNow;
+                var weekLater = now.AddDays(7);
+                
+                return new CaseStatsDto
+                {
+                    Total = await query.CountAsync(),
+                    Active = await query.CountAsync(c => c.Status == CaseStatus.Active),
+                    Pending = await query.CountAsync(c => c.Status == CaseStatus.Pending),
+                    Completed = await query.CountAsync(c => c.Status == CaseStatus.Completed),
+                    Rejected = await query.CountAsync(c => c.Status == CaseStatus.Rejected),
+                    OnHold = await query.CountAsync(c => c.Status == CaseStatus.OnHold),
+                    Urgent = await query.CountAsync(c => c.Priority == CasePriority.Urgent),
+                    UpcomingHearings = await query.CountAsync(c => c.NextHearingDate.HasValue && c.NextHearingDate.Value >= now && c.NextHearingDate.Value <= weekLater)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in GetCaseStatsAsync: {ex.Message}");
+                return new CaseStatsDto();
+            }
+        }
+
+        public async Task<CaseStatsDto> GetCaseStatsForUserAsync(Guid userId, bool isLawyer = false)
+        {
+            try
+            {
+                IQueryable<Case> query = _context.Cases;
+                
+                if (isLawyer)
+                {
+                    var lawyer = await GetLawyerProfileByUserIdAsync(userId);
+                    if (lawyer != null)
+                    {
+                        query = query.Where(c => c.LawyerId == lawyer.Id);
+                    }
+                    else
+                    {
+                        return new CaseStatsDto();
+                    }
+                }
+                else
+                {
+                    query = query.Where(c => c.ClientId == userId);
+                }
+
+                var now = DateTime.UtcNow;
+                var weekLater = now.AddDays(7);
+                
+                return new CaseStatsDto
+                {
+                    Total = await query.CountAsync(),
+                    Active = await query.CountAsync(c => c.Status == CaseStatus.Active),
+                    Pending = await query.CountAsync(c => c.Status == CaseStatus.Pending),
+                    Completed = await query.CountAsync(c => c.Status == CaseStatus.Completed),
+                    Rejected = await query.CountAsync(c => c.Status == CaseStatus.Rejected),
+                    OnHold = await query.CountAsync(c => c.Status == CaseStatus.OnHold),
+                    Urgent = await query.CountAsync(c => c.Priority == CasePriority.Urgent),
+                    UpcomingHearings = await query.CountAsync(c => c.NextHearingDate.HasValue && c.NextHearingDate.Value >= now && c.NextHearingDate.Value <= weekLater)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error in GetCaseStatsForUserAsync: {ex.Message}");
+                return new CaseStatsDto();
+            }
         }
 
         // ========== Helpers ==========
-
-        private string GenerateCaseNumber() => $"CS-{DateTime.UtcNow.Year}-{(_context.Cases.Count() + 1):D6}";
 
         private async Task<CaseNoteResponseDto?> GetNoteByIdAsync(Guid noteId)
         {
             var note = await _context.CaseNotes.FirstOrDefaultAsync(n => n.Id == noteId);
             if (note == null) return null;
+            
             var writer = await _context.Users.FindAsync(note.WrittenBy);
             return new CaseNoteResponseDto 
             { 
@@ -441,7 +756,11 @@ namespace LegalMateAI.BLL.Services.Service
             string[] sizes = { "B", "KB", "MB", "GB" };
             double len = bytes; 
             int order = 0;
-            while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
+            while (len >= 1024 && order < sizes.Length - 1) 
+            { 
+                order++; 
+                len /= 1024; 
+            }
             return $"{len:0.##} {sizes[order]}";
         }
 

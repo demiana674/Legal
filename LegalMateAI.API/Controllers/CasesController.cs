@@ -1,4 +1,3 @@
-// LegalMateAI.API/Controllers/CasesController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LegalMateAI.BLL.Services.IService;
@@ -89,14 +88,9 @@ namespace LegalMateAI.API.Controllers
             if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
             var isLawyer = IsLawyer();
-            filter ??= new CaseFilterDto();
-
-            if (isLawyer && !filter.LawyerId.HasValue && !filter.ClientId.HasValue)
-                filter.LawyerId = userId;
-            else if (!isLawyer && !filter.ClientId.HasValue && !filter.LawyerId.HasValue)
-                filter.ClientId = userId;
-
-            var cases = await _caseService.GetCasesAsync(filter);
+            
+            // ✅ استخدام الدالة الآمنة الجديدة
+            var cases = await _caseService.GetCasesForUserAsync(userId.Value, filter ?? new CaseFilterDto(), isLawyer);
             return Ok(cases);
         }
 
@@ -215,12 +209,9 @@ namespace LegalMateAI.API.Controllers
             if (!userId.HasValue) return Unauthorized(new { message = "يجب تسجيل الدخول" });
 
             var isLawyer = IsLawyer();
-            CaseStatsDto stats;
-            if (isLawyer)
-                stats = await _caseService.GetCaseStatsAsync(lawyerId: userId.Value);
-            else
-                stats = await _caseService.GetCaseStatsAsync(clientId: userId.Value);
-
+            
+            // ✅ استخدام الدالة الآمنة الجديدة
+            var stats = await _caseService.GetCaseStatsForUserAsync(userId.Value, isLawyer);
             return Ok(stats);
         }
 
